@@ -1,15 +1,32 @@
 {
   "name": "plataforma-esoe-sms",
   "version": "1.0.0",
+  "private": true,
   "description": "Sistema de Gestion Academica y Escolar (SMS) - Escuela de Suboficiales del Ejercito (ESOE)",
-  "main": "server.js",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "lint": "eslint .",
+    "test": "node --test \"tests/*.test.js\"",
+    "test:cobertura": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-lines=80 --test-coverage-branches=70 \"tests/*.test.js\"",
+    "auditar": "npm audit --audit-level=high",
+    "secretos": "node scripts/buscar-secretos.js",
+    "verificar": "bash scripts/verificar.sh"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.19.2",
-    "pg": "^8.12.0",
-    "cors": "^2.8.5"
+    "express-rate-limit": "^8.7.4",
+    "helmet": "^8.3.0",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0"
   }
 }

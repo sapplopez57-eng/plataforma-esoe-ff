@@ -1,8 +1,13 @@
 .git
-.gitignore
+.github
 .env
 .env.*
 node_modules
+coverage
+tests
+scripts
 docs
-*.bundle
 *.md
+docker-compose.yml
+Dockerfile
+eslint.config.js

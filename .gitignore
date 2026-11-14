@@ -1,19 +1,18 @@
-# Secretos y entorno
+node_modules/
+coverage/
+npm-debug.log*
+*.log
+
+# Secretos y configuracion local
 .env
 .env.*
 !.env.example
 *.pem
 *.key
 
-# Dependencias y artefactos
-node_modules/
-npm-debug.log*
-*.log
-*.bundle
-
-# Herramientas locales y sistema
-.cursorrules
-.vscode/
-.idea/
+# Sistema y editores
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
+*.swp
