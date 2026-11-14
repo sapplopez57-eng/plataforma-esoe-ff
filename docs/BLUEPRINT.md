@@ -6,7 +6,7 @@ va el producto, con qué se construye y en qué orden. El trabajo diario se rige
 
 | | |
 |---|---|
-| Estado | Vigente desde la vuelta 1 |
+| Estado | Vigente; última revisión en la vuelta 3 |
 | Punto de partida | Prototipo de gestión escolar (SMS) con datos en el navegador |
 | Destino | Plataforma educativa completa: gestión escolar + aula virtual (LMS) |
 
@@ -47,7 +47,7 @@ los datos en el navegador de cada persona.
 | 6 | Accesibilidad e inclusión (WCAG 2.1 AA) | Sin auditar | 2 |
 | 7 | Estándares SCORM / xAPI / LTI | No existe | 5 |
 | 8 | Gamificación y motivación | No existe | 4 |
-| 9 | Integración institucional (SSO, SIS, videoconferencia) | No existe | 5 |
+| 9 | Integración institucional (SSO, SIS, videoconferencia) | Parcial: inicio de sesión con Clerk; conexión con Moodle e INFOP | 1 → 5 |
 | 10 | Escalabilidad, seguridad y disponibilidad | Base puesta en la vuelta 1 | Continua |
 
 ## 4. Fuera de alcance por ahora
@@ -63,9 +63,14 @@ los datos en el navegador de cada persona.
 
 ```
 Navegador ──HTTPS──▶ Proxy inverso / túnel ──▶ Aplicación Node (Express) ──▶ PostgreSQL 16
-                                                 ├─ /api/*   reglas de negocio, sesión, permisos
-                                                 └─ /public  interfaz estática
+    │                                            ├─ /api/*   reglas de negocio, permisos
+    │                                            └─ /public  interfaz estática
+    │                                                 │
+    └──▶ Clerk (inicio de sesión)                     └──▶ Moodle / INFOP (cursos del usuario)
 ```
+
+Dos servicios externos, cada uno con una sola función: Clerk identifica a la persona; las
+plataformas Moodle entregan los cursos que esa persona lleva fuera de la escuela.
 
 Un solo servicio de aplicación y una base de datos. Sin microservicios: la escuela necesita algo
 que una persona pueda operar y respaldar. La aplicación no guarda estado propio (todo vive en
@@ -81,6 +86,7 @@ Versiones instaladas y verificadas en la vuelta 1 (`npm ls --depth=0`).
 | Servidor | Express 4.22 | Ya estaba en el proyecto; suficiente para el tamaño |
 | Base de datos | PostgreSQL 16 | Ya estaba; integridad referencial, columnas calculadas |
 | Acceso a datos | `pg` 8 con consultas parametrizadas | Sin ORM: el esquema es pequeño y se quiere ver el SQL |
+| Inicio de sesión | Clerk (`@clerk/express` 2.1 en el servidor, ClerkJS 6 en el navegador) | Contraseñas, verificación de correo, segundo factor y bloqueo por intentos resueltos por un proveedor especializado |
 | Cabeceras | `helmet` 8 | CSP, HSTS, nosniff con valores seguros por defecto |
 | Límite de peticiones | `express-rate-limit` 8 | Freno a fuerza bruta y abuso |
 | Interfaz | HTML, CSS y JavaScript sin framework | Es lo que hay y funciona; no se reescribe sin motivo |
@@ -89,10 +95,11 @@ Versiones instaladas y verificadas en la vuelta 1 (`npm ls --depth=0`).
 
 ## 7. Modelo de datos
 
-Fuente de verdad: [`database/schema.sql`](../database/schema.sql). Diez tablas:
+Fuente de verdad: [`database/schema.sql`](../database/schema.sql). Doce tablas:
 
 `usuarios` · `periodos_lectivos` · `promociones` · `estudiantes` · `catedraticos` · `materias` ·
-`clases` · `sesiones_asistencia` · `detalle_asistencia` · `calificaciones`
+`clases` · `sesiones_asistencia` · `detalle_asistencia` · `calificaciones` ·
+`plataformas_externas` · `cuentas_externas`
 
 Reglas de negocio que la base de datos hace cumplir por sí sola (cada una tiene su prueba en
 `tests/esquema.test.js`):
@@ -108,22 +115,26 @@ auditoría de cambios en notas y asistencia.
 
 ## 8. Autenticación y permisos
 
-**Estado actual: no hay autenticación real.** La pantalla de acceso deja entrar con cualquier
-usuario y cualquier contraseña, y un selector en la barra superior permite cambiar de rol. Es
-aceptable solo mientras los datos sean de demostración y vivan en el navegador. Corregirlo es el
-primer objetivo de la fase 1.
+El inicio de sesión lo resuelve **Clerk**. La plataforma no guarda contraseñas.
 
-Diseño a implementar:
-
-| Tema | Decisión |
+| Tema | Cómo queda |
 |---|---|
-| Contraseñas | Argon2id; nunca reversibles; mínimo 12 caracteres |
-| Sesión | Cookie `HttpOnly`, `Secure`, `SameSite=Strict`; sesión guardada en el servidor para poder revocarla |
-| Fuerza bruta | 5 intentos por cuenta y por IP cada 15 minutos, con bloqueo progresivo |
-| Permisos | Comprobación por rol **y por pertenencia** en cada ruta (un catedrático solo toca sus clases) |
-| Respuesta por defecto | Toda ruta de `/api` exige sesión salvo `/api/health` y el inicio de sesión |
-| Formularios | Protección CSRF en toda operación que modifique datos |
-| Rastro | Se registra quién cambió cada nota y cada asistencia, y cuándo |
+| Identidad | Clerk: contraseña, verificación de correo, segundo factor y protección contra fuerza bruta |
+| Sesión | El navegador obtiene de Clerk un token de corta duración y lo envía en la cabecera `Authorization` en cada petición |
+| Verificación | El servidor comprueba firma, vigencia y sitio de emisión (`ORIGEN_PUBLICO`) en cada petición |
+| Rol | Vive en los metadatos públicos del usuario en Clerk (`{"rol": "ADMIN"}`), que solo el servidor puede modificar. Roles: `ADMIN`, `CATEDRATICO`, `ESTUDIANTE` |
+| Sin rol | Una cuenta recién registrada no tiene rol y no accede a nada hasta que la administración se lo asigne |
+| CSRF | Las cookies no autentican: sin la cabecera `Authorization` la petición se rechaza, así que un sitio ajeno no puede actuar con la sesión abierta |
+| Respuesta por defecto | Toda ruta de `/api` exige sesión salvo `/api/health` y `/api/config` |
+| Modo demostración | Si Clerk no está configurado (solo fuera de producción), la interfaz funciona con datos locales y la API protegida responde 503. En producción la aplicación no arranca sin Clerk |
+
+Pendiente: los permisos **por pertenencia** (un catedrático solo sobre sus clases, un alumno solo
+sobre su boletín) llegan con la API de gestión escolar, SEC-06. Los datos de gestión escolar todavía
+viven en el navegador; ver sección 3.
+
+Dato a tener presente: los nombres y correos de las cuentas se almacenan en Clerk, un servicio
+externo alojado fuera del país. Los expedientes (DNI, datos médicos, notas) no salen de la base de
+datos propia.
 
 ## 9. Protección de la aplicación y de los datos
 
@@ -134,7 +145,8 @@ Hecho en la vuelta 1 (cada punto tiene prueba automática):
 - API cerrada a otros orígenes salvo los declarados en `CORS_ORIGINS`.
 - Límite de peticiones en `/api` y tamaño máximo de cuerpo de 100 kB.
 - Los errores no revelan detalles internos.
-- En producción la aplicación se niega a arrancar con secretos ausentes o de ejemplo.
+- En producción la aplicación se niega a arrancar si falta Clerk, la clave de cifrado, el origen
+  público o la base de datos, o si la contraseña es de ejemplo.
 - Contenedor sin privilegios: usuario `node`, sistema de archivos de solo lectura.
 
 Datos personales que se manejan: DNI, fecha de nacimiento, tipo de sangre, dirección, teléfono y
@@ -167,18 +179,56 @@ La respuesta ante un incidente está en el
 
 ## 11. API
 
-Existente: `GET /api/health`.
+Todas devuelven JSON y validan la entrada.
 
-Fase 1, en este orden. Todas devuelven JSON, validan la entrada y exigen sesión.
+| Ruta | Quién | Qué hace |
+|---|---|---|
+| `GET /api/health` | Público | Estado del servicio |
+| `GET /api/config` | Público | Datos no secretos que la interfaz necesita para iniciar sesión |
+| `GET /api/sesion` | Con sesión | Identidad y rol de quien llama |
+| `GET /api/integraciones/catalogo` | Administración | Plataformas conocidas (INFOP) |
+| `GET /api/integraciones/plataformas` | Con sesión | Plataformas registradas y si el usuario las tiene vinculadas |
+| `POST /api/integraciones/plataformas` | Administración | Registra una plataforma tras comprobar que es un Moodle con servicios web |
+| `POST /api/integraciones/plataformas/:id/probar` | Administración | Comprueba que la plataforma responde |
+| `DELETE /api/integraciones/plataformas/:id` | Administración | Elimina la plataforma y las cuentas vinculadas a ella |
+| `POST /api/integraciones/plataformas/:id/cuenta` | Con sesión | Vincula la cuenta propia del usuario |
+| `DELETE /api/integraciones/plataformas/:id/cuenta` | Con sesión | Desvincula la cuenta propia |
+| `GET /api/integraciones/mis-cursos` | Con sesión | Cursos, avance y calificación del usuario en sus plataformas vinculadas |
 
-| Recurso | Rutas |
+Pendiente (fase 1): estructura académica, expedientes, clases, asistencia y calificaciones.
+
+### Conexión con otras plataformas
+
+Investigado el 14-11-2026: las dos plataformas de INFOP —E-Learning
+(`plataformavirtual.infop.hn`) y Academias (`academias.infop.hn`)— son sitios **Moodle** con los
+servicios web y el servicio móvil habilitados. Por eso un único conector cubre Moodle e INFOP.
+
+Cómo funciona:
+
+1. La administración registra la plataforma. El servidor verifica que la dirección es un Moodle con
+   servicios web antes de guardarla.
+2. Cada persona vincula **su propia cuenta**: escribe su usuario y contraseña de esa plataforma, el
+   servidor los cambia por una llave de acceso personal (el mismo mecanismo de la aplicación móvil
+   oficial de Moodle) y descarta la contraseña.
+3. La llave se guarda cifrada (AES-256-GCM). Con ella se consultan los cursos, el avance y la
+   calificación de esa persona, y nada más.
+
+No hace falta ningún acuerdo ni permiso de administrador en INFOP: cada quien accede solo a lo suyo.
+Lo que **no** se puede hacer sin un acuerdo con INFOP es inscribir alumnos, crear cursos o leer
+datos de terceros.
+
+Controles específicos:
+
+| Riesgo | Control |
 |---|---|
-| Sesión | `POST /api/sesion`, `DELETE /api/sesion`, `GET /api/sesion` |
-| Estructura | `/api/periodos`, `/api/promociones`, `/api/materias` |
-| Personas | `/api/estudiantes`, `/api/catedraticos` |
-| Clases | `/api/clases` |
-| Asistencia | `/api/clases/:id/asistencia` |
-| Calificaciones | `/api/clases/:id/calificaciones`, `/api/estudiantes/:id/boletin` |
+| Que el servidor sea usado para alcanzar la red interna (SSRF) | Solo `https`; se rechazan direcciones IP y nombres que resuelvan a redes internas; la comprobación se hace en la misma resolución que usa la conexión; no se siguen redirecciones |
+| Fuga de credenciales | La contraseña no se guarda ni se registra; las llaves van cifradas en la base y nunca se devuelven por la API; viajan en el cuerpo de la petición, no en la URL |
+| Usar la escuela como intermediario para adivinar contraseñas de INFOP | Diez intentos de vinculación por usuario cada 15 minutos |
+| Contenido malicioso desde la plataforma externa | Todo texto recibido se muestra escapado |
+| Plataforma caída o llave revocada | La consulta no falla: informa el estado y pide volver a vincular |
+| Respuestas enormes o lentas | Límite de 2 MB y de 10 segundos |
+
+Otros tipos de plataforma se agregan como un cliente más junto a `src/integraciones/moodle.js`.
 
 ## 12. Interfaz y diseño
 
@@ -231,7 +281,7 @@ aceptación y comando de verificación, está en [BACKLOG.md](BACKLOG.md).
 | Fase | Objetivo | Listo cuando |
 |---|---|---|
 | 0 | Base del ciclo: estructura, pruebas, CI, seguridad mínima | **Hecho (vuelta 1)** |
-| 1 | Gestión escolar real: sesión, permisos, API y datos en PostgreSQL | Dos personas en dos equipos ven los mismos datos y cada rol solo accede a lo suyo |
+| 1 | Gestión escolar real: API y datos en PostgreSQL. **Hecho:** inicio de sesión y roles (vuelta 2), conexión con Moodle e INFOP (vuelta 3) | Dos personas en dos equipos ven los mismos datos y cada rol solo accede a lo suyo |
 | 2 | Calidad de uso: accesibilidad AA, rediseño tipográfico, reportes, respaldos | Auditoría de accesibilidad sin fallos graves; restauración ensayada |
 | 3 | Aula virtual: cursos, contenidos, tareas, exámenes con banco de preguntas | Un catedrático publica un curso y un alumno lo completa y recibe nota |
 | 4 | Comunidad y motivación: anuncios, foros, insignias | — |

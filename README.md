@@ -48,9 +48,10 @@ npm run dev
 La interfaz queda en `http://localhost:8080`. También puede abrirse `public/index.html` directamente
 en un navegador moderno, sin servidor.
 
-En esta etapa los datos se guardan en el almacenamiento local de cada navegador y la pantalla de
-acceso no valida credenciales: es una demostración, no un sistema listo para datos reales. El camino
-hasta ahí está en [`docs/BACKLOG.md`](docs/BACKLOG.md).
+Sin llaves de Clerk la interfaz arranca en **modo demostración**: datos en el navegador y acceso
+sin validar. Con las llaves en `.env`, el inicio de sesión es real, el rol lo decide el servidor y
+se habilita la conexión con otras plataformas (Moodle, INFOP). Los datos de gestión escolar
+todavía se guardan en el navegador; el camino restante está en [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
 Antes de entregar cualquier cambio:
 
@@ -63,7 +64,7 @@ npm run verificar
 ## 4. Despliegue
 
 ```bash
-cp .env.example .env    # completar DB_PASSWORD y JWT_SECRET con: openssl rand -hex 48
+cp .env.example .env    # completar según las instrucciones del propio archivo
 docker compose up -d --build
 ```
 

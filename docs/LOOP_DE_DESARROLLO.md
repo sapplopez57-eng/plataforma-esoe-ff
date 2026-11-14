@@ -109,3 +109,5 @@ Se anotan en el registro; importa la tendencia, no el número aislado.
 | Vuelta | Fecha | Objetivo | Resultado | Verificación |
 |---|---|---|---|---|
 | 1 | 2026-11-14 | Fase 0: base del ciclo y seguridad mínima (SEC-01, SEC-02, CAL-01) | Hecho | 24 pruebas, 99 % líneas, 0 vulnerabilidades, 0 secretos |
+| 2 | 2026-11-14 | Inicio de sesión con Clerk y rol decidido por el servidor (SEC-05) | Hecho; falta validar con llaves reales (OPS-03) | 43 pruebas; 10 formas de sesión inválida rechazadas |
+| 3 | 2026-11-14 | Conexión con Moodle e INFOP (INT-04) | Hecho | 57 pruebas, 97 % líneas; recorrido en navegador con 14 comprobaciones |

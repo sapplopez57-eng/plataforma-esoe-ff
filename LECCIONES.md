@@ -7,6 +7,39 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-14 — Vueltas 2 y 3
+
+### L-010 · La pantalla de acceso se desbordaba en teléfonos
+- **Qué pasó:** a 360 px de ancho la página medía 401 px y aparecía desplazamiento horizontal. El
+  defecto venía del prototipo; lo destapó la primera comprobación a ancho de teléfono.
+- **Causa raíz:** una columna de rejilla `1fr` no puede encogerse por debajo de su contenido, y el
+  titular de 38 px contenía una palabra más ancha que la pantalla.
+- **Corrección:** `minmax(0, 1fr)` y titular más pequeño con corte de palabra.
+- **Regla:** toda vuelta que toque la interfaz se comprueba a 360 px, como pide la definición de
+  terminado. En rejillas de una columna, `minmax(0, 1fr)`.
+
+### L-009 · Un título de ventana salía con entidades HTML visibles
+- **Qué pasó:** se escapó un nombre antes de pasarlo a una función que ya lo inserta como texto.
+- **Causa raíz:** escapar sin mirar cómo se inserta el valor en el destino.
+- **Regla:** se escapa una sola vez y en el punto donde el dato se convierte en HTML.
+
+### L-008 · PostgreSQL local detenido a mitad de la sesión
+- **Qué pasó:** ocho pruebas fallaron con `ECONNREFUSED 127.0.0.1:5432`.
+- **Causa raíz:** el servicio de base de datos del entorno de trabajo se había detenido; el código
+  no tenía ningún defecto.
+- **Regla:** ante un fallo masivo y repentino de pruebas, comprobar primero que los servicios de
+  los que dependen están arriba (`pg_lsclusters`).
+
+### L-007 · Clerk rechazaba sesiones bien firmadas en las pruebas
+- **Qué pasó:** el SDK respondía `token-type-mismatch` a un token con firma y fechas correctas.
+- **Causa raíz:** el SDK distingue los tokens de sesión por un campo `cat` en la cabecera del token,
+  que no aparece en la guía de inicio. Se halló leyendo el código del SDK instalado.
+- **Corrección:** las sesiones de prueba llevan esa categoría.
+- **Regla:** cuando una biblioteca se comporta distinto de lo documentado, se lee su código
+  instalado antes de suponer; no se rodea la verificación con un sustituto hecho a mano.
+
+---
+
 ## 2026-11-14 — Vuelta 1
 
 ### L-006 · `git add -A` incluyó archivos generados por una herramienta local
@@ -70,3 +103,6 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 6. Un error se investiga hasta la causa raíz y se corrige en la misma vuelta.
 7. Las versiones de dependencias se comprueban contra el registro, no de memoria.
 8. Los commits se preparan por ruta explícita, nunca con `git add -A` a ciegas.
+9. Todo dato externo —del usuario o de otra plataforma— se escapa una vez, al convertirse en HTML.
+10. El servidor nunca conecta con una dirección dada por un usuario sin validarla contra redes internas.
+11. Las credenciales de terceros se guardan cifradas y las contraseñas de terceros no se guardan.

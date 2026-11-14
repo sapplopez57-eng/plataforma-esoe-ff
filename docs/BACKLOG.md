@@ -13,6 +13,9 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | SEC-01 | El servidor publica solo `public/`; código, esquema y configuración dejan de ser descargables | 1 |
 | SEC-02 | Sin secretos por defecto; producción no arranca con secretos ausentes o de ejemplo | 1 |
 | CAL-01 | Compuerta `npm run verificar`, pruebas, cobertura, análisis de secretos y CI | 1 |
+| SEC-05 | Inicio de sesión real con Clerk; el rol lo decide el servidor; el selector de rol desaparece con sesión real | 2 |
+| INT-04 | Conexión con Moodle e INFOP: registro de plataformas, vinculación de cuenta personal y consulta de cursos | 3 |
+| DIS-05 | La pantalla de acceso ya no se desborda en teléfonos de 360 px | 3 |
 
 ## Fase 1 — Gestión escolar real
 
@@ -31,17 +34,17 @@ Sustituir el `schema.sql` único por migraciones numeradas con registro de cuál
   última versión sin errores ni cambios duplicados.
 - **Verificación:** `npm test` (la prueba del esquema usa las migraciones).
 
-### SEC-05 · Inicio de sesión real — Pendiente · prioridad alta
-Hoy cualquier usuario y contraseña entran. Implementar el diseño de la sección 8 del plano:
-Argon2id, sesión en servidor con cookie `HttpOnly`, límite de intentos, alta del primer
-administrativo por línea de comandos.
-- **Aceptación:** cuando las credenciales son incorrectas el sistema responde 401 con un mensaje
-  genérico; al sexto intento en 15 minutos responde 429; con credenciales válidas entrega una cookie
-  `HttpOnly; Secure; SameSite=Strict`.
-- **Verificación:** `npm test` con casos de éxito, fallo, bloqueo y cierre de sesión.
+### OPS-03 · Validar Clerk con las llaves reales — Pendiente · prioridad alta
+El inicio de sesión está probado con sesiones firmadas localmente y con un Clerk simulado en el
+navegador. Falta la comprobación contra la instancia real, que requiere sus llaves.
+- **Aceptación:** con las llaves en `.env`, una persona se registra, la administración le asigna rol
+  con `node scripts/asignar-rol.js`, entra y ve su vista; la consola del navegador no muestra
+  bloqueos de la política de contenido.
+- **Verificación:** recorrido en navegador + `npm run verificar`.
 
-### SEC-06 · Permisos por rol y por pertenencia — Pendiente · prioridad alta
-Eliminar el selector de rol de la barra superior. El rol sale de la sesión.
+### SEC-06 · Permisos por pertenencia — Pendiente · prioridad alta
+El rol ya sale de la sesión. Falta ligar cada cuenta con su expediente (tabla `usuarios`) y limitar
+cada consulta a lo propio.
 - **Aceptación:** cuando un catedrático pide la asistencia de una clase que no imparte, recibe 403;
   cuando un estudiante pide el boletín de otro, recibe 403; sin sesión, toda ruta de `/api` salvo
   salud e inicio de sesión responde 401.
@@ -87,6 +90,7 @@ Cierre de fase: revisión completa por dominios y corrección de lo que aparezca
 | DIS-01 | Unificar la identidad visual | El README describe una paleta oliva/marrón y la hoja de estilos usa azul. Decisión del dueño; después, una sola fuente de verdad en variables CSS |
 | DIS-02 | Accesibilidad WCAG 2.1 AA | Análisis automático sin fallos graves; todo operable con teclado; foco visible; contraste 4.5:1 |
 | DIS-03 | Rediseño tipográfico | Texto base de 16 px, un solo color de acento, jerarquía por tipografía |
+| CAL-02 | Pruebas de navegador dentro de la compuerta | El recorrido de acceso y de otras plataformas corre en `npm run verificar` y en CI |
 | DIS-04 | Vista de teléfono para el alumno | Boletín y asistencia legibles a 360 px sin desplazamiento horizontal |
 | SMS-06 | Reportes y exportación | Boletín y actas en PDF y CSV; solo para quien tiene permiso |
 | SMS-07 | Panel de analítica | Aprobación, asistencia y alumnos en riesgo por clase y promoción |
@@ -116,7 +120,9 @@ Cierre de fase: revisión completa por dominios y corrección de lo que aparezca
 
 | Id | Elemento |
 |---|---|
-| INT-01 | Inicio de sesión único con el directorio institucional (OIDC) |
+| INT-01 | Inicio de sesión con la cuenta institucional (Google o Microsoft) a través de Clerk |
+| INT-05 | Registrar en el expediente los cursos completados en plataformas externas, con validación de la administración |
+| INT-06 | Acceso a los cursos del Moodle propio sin volver a iniciar sesión (LTI 1.3) |
 | INT-02 | Importar paquetes SCORM 1.2 y 2004 |
 | INT-03 | Enlace a videoconferencia por sesión de clase |
 | LMS-10 | Itinerarios por promoción y recomendación del siguiente paso |

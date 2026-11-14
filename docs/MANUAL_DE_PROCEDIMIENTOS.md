@@ -13,6 +13,13 @@ se avanza).
 | `public/js/data.js` | Almacenamiento en el navegador (temporal, hasta SMS-05) |
 | `src/config.js` | Lectura y validación de variables de entorno |
 | `src/app.js` | Aplicación Express: seguridad, API, archivos estáticos |
+| `src/auth.js` | Verificación de sesiones de Clerk y control por rol |
+| `src/db.js` | Conexión a PostgreSQL |
+| `src/integraciones/` | Conexión con Moodle e INFOP: cliente, catálogo y rutas |
+| `src/seguridad/` | Cifrado de credenciales y peticiones salientes protegidas |
+| `public/js/sesion.js` | Inicio de sesión en el navegador y llamadas a la API |
+| `public/js/integraciones.js` | Vista «Otras plataformas» |
+| `scripts/asignar-rol.js` | Asigna el rol de un usuario |
 | `src/server.js` | Arranque y apagado ordenado |
 | `database/schema.sql` | Esquema de PostgreSQL |
 | `tests/` | Pruebas: servidor, configuración y esquema |
@@ -30,6 +37,7 @@ se avanza).
 | PostgreSQL | 16 | Base de datos; también para las pruebas del esquema |
 | Docker + Compose | — | Empaquetado y despliegue |
 | Express | 4.22 | Servidor web |
+| Clerk | `@clerk/express` 2.1 · ClerkJS 6 | Inicio de sesión y gestión de cuentas |
 | helmet | 8.3 | Cabeceras de seguridad |
 | express-rate-limit | 8.7 | Límite de peticiones |
 | pg | 8.23 | Cliente de PostgreSQL |
@@ -38,7 +46,8 @@ se avanza).
 
 Referencias externas usadas para decidir: OWASP Top 10 y OWASP Top 10 para aplicaciones con modelos
 de lenguaje (seguridad), WCAG 2.1 nivel AA (accesibilidad), NIST AI RMF (riesgo de IA), y los
-sitios y plataformas citados en la sección 12 del plano (diseño).
+sitios y plataformas citados en la sección 12 del plano (diseño). Para las integraciones: la
+documentación de Clerk para Express y JavaScript, y la de servicios web de Moodle.
 
 ## 3. Preparar un equipo de desarrollo
 
@@ -102,7 +111,12 @@ Sin esa variable las pruebas del esquema se omiten y `npm run verificar` lo avis
 | `PORT` | No (8080) | Puerto de escucha |
 | `DB_PASSWORD` | Sí | Contraseña de PostgreSQL (la usa Compose) |
 | `DATABASE_URL` | Sí | La arma Compose a partir de `DB_PASSWORD` |
-| `JWT_SECRET` | Sí | Secreto de firma, 32 caracteres o más |
+| `CLERK_PUBLISHABLE_KEY` | Sí | Llave pública de Clerk (`pk_...`) |
+| `CLERK_SECRET_KEY` | Sí | Llave secreta de Clerk (`sk_...`) |
+| `CLERK_JWT_KEY` | No | Llave pública PEM de la instancia; evita consultar a Clerk para verificar |
+| `ORIGEN_PUBLICO` | Sí | URL pública de la plataforma; solo se aceptan sesiones emitidas para ella |
+| `CLAVE_CIFRADO` | Sí | 64 caracteres hexadecimales; cifra las llaves de plataformas externas |
+| `INTEGRACIONES_RED_PRIVADA` | No (`false`) | `true` para conectar un Moodle de la red interna o por http |
 | `CORS_ORIGINS` | No | Orígenes externos permitidos, separados por coma. Vacío = ninguno |
 | `TRUST_PROXY` | No (0) | Número de proxies delante de la aplicación |
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | No | Ventana y máximo de peticiones a `/api` por IP |
@@ -115,7 +129,7 @@ como una sola IP. Ajustarlo al número real de proxies.
 ## 6. Manejo de secretos
 
 1. Los secretos viven solo en `.env`, que está en `.gitignore`.
-2. Se generan, no se inventan: `openssl rand -hex 48`.
+2. Se generan, no se inventan: `openssl rand -hex 32`. Las de Clerk se copian de su panel.
 3. `.env.example` lleva los nombres de las variables, nunca valores.
 4. Antes de cada entrega corre `npm run secretos` (incluido en `verificar`).
 5. Si un secreto llega a un commit: **se cambia primero** en todos los sitios donde se use y
@@ -131,7 +145,8 @@ git clone <url-del-repositorio> /opt/plataforma-esoe && cd /opt/plataforma-esoe
 cp .env.example .env && chmod 600 .env
 ```
 
-Completar `DB_PASSWORD` y `JWT_SECRET` con valores generados. Luego:
+Completar `DB_PASSWORD` y `CLAVE_CIFRADO` con valores generados, las dos llaves de Clerk y
+`ORIGEN_PUBLICO` (sección 11). Luego:
 
 ```bash
 docker compose up -d --build
@@ -147,8 +162,8 @@ docker compose ps
 curl -fsS http://127.0.0.1:8080/api/health
 ```
 
-Compose se niega a arrancar si falta `DB_PASSWORD` o `JWT_SECRET`, y la aplicación se niega si son
-cortos o de ejemplo. Es intencional.
+Compose se niega a arrancar si falta cualquiera de esas variables, y la aplicación se niega si
+están mal formadas o son de ejemplo. Es intencional.
 
 Publicación: siempre detrás de un proxy inverso o túnel con HTTPS. La base de datos no expone
 puerto fuera de la red de Compose.
@@ -192,7 +207,7 @@ donde el fallo suele estar en el comportamiento del modelo y no en un control ro
 |---|---|
 | 1. Contener | Desactivar la función o la ruta afectada. Retirar al componente su acceso a datos y herramientas. **Guardar los registros antes de reiniciar nada.** Avisar al responsable |
 | 2. Delimitar | Listar todo aquello a lo que el componente podía acceder: ese es el daño máximo. Tratar como expuesto todo dato alcanzable hasta que los registros demuestren lo contrario |
-| 3. Revocar | Cambiar `JWT_SECRET`, `DB_PASSWORD` y toda clave de servicio externo. Invalidar las sesiones abiertas durante el incidente |
+| 3. Revocar | Cambiar `CLERK_SECRET_KEY` (panel de Clerk), `DB_PASSWORD` y `CLAVE_CIFRADO`. Cerrar las sesiones desde el panel de Clerk. Cambiar `CLAVE_CIFRADO` inutiliza las llaves guardadas: cada usuario vuelve a vincular sus cuentas externas |
 | 4. Restaurar | Reconstruir desde el repositorio, no desde el sistema en ejecución. Usar un respaldo anterior al inicio del incidente |
 | 5. Validar | Repetir el ataque original contra la corrección. Volver a abrir de forma gradual, vigilando |
 | 6. Documentar | Entrada en `LECCIONES.md`: cronología, qué permiso lo hizo posible y por qué existía. Añadir la prueba que lo detecta |
@@ -216,11 +231,13 @@ hallazgos se ordenan por gravedad y entran al backlog con prefijo `SEC`.
 | Registro | ¿Queda rastro de las operaciones sensibles, sin datos personales? |
 | Disponibilidad | ¿Límites de peticiones y tamaño? ¿Respaldo restaurable? |
 
-### Estado tras la vuelta 1
+### Estado tras la vuelta 3
 
 | Gravedad | Hallazgo | Elemento |
 |---|---|---|
-| Crítica | No hay autenticación: cualquier credencial entra y el rol se elige en pantalla | SEC-05, SEC-06 |
+| Alta | Clerk no se ha probado con las llaves reales de la instancia | OPS-03 |
+| Alta | Los datos de gestión escolar siguen en el navegador y sin permisos por pertenencia | SEC-06, SMS-05 |
+| Corregida | No había autenticación: cualquier credencial entraba y el rol se elegía en pantalla | SEC-05 |
 | Alta | Datos del usuario insertados en HTML sin escapar | SEC-03 |
 | Media | La política de contenido aún permite manejadores en línea | SEC-04 |
 | Media | Fuentes cargadas desde un tercero | SEC-04 |
@@ -228,16 +245,92 @@ hallazgos se ordenan por gravedad y entran al backlog con prefijo `SEC`.
 | Corregida | El servidor publicaba todo el repositorio | SEC-01 |
 | Corregida | Secretos con valor por defecto | SEC-02 |
 
-Los dos hallazgos más graves no ponen datos reales en riesgo **hoy** porque la aplicación todavía no
-guarda nada en el servidor. Lo harán en cuanto se conecte la base de datos; por eso van primero.
+La auditoría de las vueltas 2 y 3 recorrió los once dominios sobre el código nuevo. Lo único que
+el servidor guarda hoy son las plataformas registradas y las llaves cifradas de las cuentas
+vinculadas; expedientes, notas y asistencia todavía no salen del navegador.
 
 ## 10. Solución de problemas
 
 | Síntoma | Causa | Solución |
 |---|---|---|
-| `Configuracion invalida: JWT_SECRET...` | Falta o es un valor de ejemplo | Generar uno y ponerlo en `.env` |
-| Compose: `Defina DB_PASSWORD en .env` | Falta la variable | Completar `.env` |
+| `Configuracion invalida: ...` | Falta una variable o está mal formada | El mensaje dice cuál; completar `.env` |
+| Compose: `Defina ... en .env` | Falta la variable | Completar `.env` |
+| «Su cuenta todavía no tiene un rol asignado» | Cuenta nueva sin rol | Sección 11 |
+| Todas las sesiones dan 401 | `ORIGEN_PUBLICO` no coincide con la URL real | Corregirlo; sin barra final |
+| El acceso no carga y la consola menciona CSP | Clerk usa un dominio no previsto | Anotar el dominio bloqueado y agregarlo en `src/app.js`; registrar el cambio |
+| «La plataforma apunta a una red interna» | Moodle en la LAN | `INTEGRACIONES_RED_PRIVADA=true` |
+| Estado «Volver a vincular» en una plataforma | La llave fue revocada o cambió la contraseña | El usuario vincula de nuevo |
 | Las pruebas del esquema aparecen omitidas | Falta `PRUEBAS_DATABASE_URL` | Sección 3 |
 | Todos los usuarios reciben 429 a la vez | `TRUST_PROXY` en 0 detrás de un proxy | Ajustarlo |
 | Un recurso de la interfaz no carga y la consola menciona CSP | La política de contenido lo bloquea | Servirlo desde `public/`; no relajar la política sin registrarlo en el backlog |
 | Cambié `schema.sql` y la base no cambió | Solo se aplica al crear el volumen | Sección 7 |
+
+## 11. Inicio de sesión con Clerk
+
+### Configurar la instancia (una vez)
+
+1. En el panel de Clerk, crear la aplicación y copiar a `.env` las dos llaves de **API keys**:
+   `CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY`.
+2. Definir `ORIGEN_PUBLICO` con la URL pública de la plataforma.
+3. En **Sessions → Customize session token**, agregar:
+   ```json
+   { "metadata": "{{user.public_metadata}}" }
+   ```
+   Con esto el rol viaja dentro de la sesión. Sin este paso todo funciona igual, pero el servidor
+   consulta a Clerk el rol de cada usuario (con un minuto de memoria).
+4. Recomendado: en **User & authentication**, desactivar el registro abierto o limitarlo al dominio
+   de correo de la institución, y exigir segundo factor al personal administrativo.
+
+### Dar acceso a una persona
+
+1. La persona se registra en la pantalla de acceso. Queda sin rol y no puede entrar a nada.
+2. La administración le asigna el rol:
+   ```bash
+   node scripts/asignar-rol.js persona@ejemplo.hn ESTUDIANTE
+   ```
+   Roles: `ADMIN`, `CATEDRATICO`, `ESTUDIANTE`. También puede hacerse en el panel de Clerk, en los
+   metadatos públicos del usuario: `{"rol": "ESTUDIANTE"}`.
+3. El cambio aplica cuando la persona renueva su sesión (como mucho un minuto, o al volver a entrar).
+
+Para **quitar** el acceso: borrar el rol o bloquear al usuario en el panel de Clerk.
+
+El primer administrador se crea igual: registrarse y ejecutar el comando con `ADMIN`.
+
+### Qué se guarda dónde
+
+| Dato | Lugar |
+|---|---|
+| Correo, nombre, contraseña, segundo factor | Clerk |
+| Rol | Clerk (metadatos públicos) |
+| Expedientes, notas, asistencia | Base de datos propia (hoy, aún en el navegador) |
+| Llaves de plataformas externas | Base de datos propia, cifradas |
+
+## 12. Conexión con otras plataformas (Moodle, INFOP)
+
+### Registrar una plataforma (administración)
+
+Menú **Otras plataformas**. Las de INFOP aparecen como sugeridas y se agregan con un clic. Para
+cualquier otro Moodle: **Agregar plataforma**, nombre y dirección `https://`. El sistema comprueba
+que es un Moodle con servicios web antes de guardarla.
+
+Un Moodle propio en la red interna requiere `INTEGRACIONES_RED_PRIVADA=true`. Esa opción desactiva
+la protección que impide al servidor conectarse a direcciones internas, así que solo debe activarse
+si hace falta.
+
+### Vincular una cuenta (cualquier usuario)
+
+**Vincular mi cuenta** en la plataforma deseada, con el usuario y la contraseña que la persona usa
+allí. La contraseña se usa una vez para pedir una llave de acceso y se descarta. Desde ese momento
+la persona ve sus cursos, su avance y su calificación. **Desvincular** borra la llave.
+
+No funciona con plataformas que solo permiten entrar con una cuenta externa (Google, Microsoft):
+ese caso se informa como credenciales rechazadas.
+
+### Operación
+
+| Situación | Qué hacer |
+|---|---|
+| INFOP en mantenimiento | Nada: la vista muestra «no responde» y se recupera sola |
+| Se cambió `CLAVE_CIFRADO` | Las llaves guardadas ya no sirven; los usuarios vinculan de nuevo |
+| Se elimina una plataforma | Se borran también las cuentas vinculadas a ella |
+| Sospecha de fuga de la base de datos | Las llaves están cifradas; aun así, cambiar `CLAVE_CIFRADO` y pedir a los usuarios que cambien su contraseña en la plataforma externa |
