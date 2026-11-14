@@ -9,6 +9,13 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ## 2026-11-14 — Vuelta 1
 
+### L-006 · `git add -A` incluyó archivos generados por una herramienta local
+- **Qué pasó:** un commit arrastró una carpeta `vault/` creada por un gancho local de pre-commit,
+  ajena al proyecto. Se detectó al leer el resumen del commit, antes de subirlo.
+- **Causa raíz:** preparar el commit con `git add -A` sin revisar qué había de nuevo en la carpeta.
+- **Corrección:** se retiró del commit y la carpeta quedó en `.gitignore`.
+- **Regla:** preparar los commits por ruta explícita y leer `git status` antes de confirmar.
+
 ### L-005 · Una ruta comodín convertía los errores en respuestas 200
 - **Qué pasó:** la prueba que exige 404 para archivos internos falló con `/Dockerfile` y `/.env`:
   respondían 200.
@@ -62,3 +69,4 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 5. Ninguna vuelta se cierra sin `npm run verificar` en verde, y no se desactiva una prueba para lograrlo.
 6. Un error se investiga hasta la causa raíz y se corrige en la misma vuelta.
 7. Las versiones de dependencias se comprueban contra el registro, no de memoria.
+8. Los commits se preparan por ruta explícita, nunca con `git add -A` a ciegas.
