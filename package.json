@@ -15,7 +15,8 @@
     "test:cobertura": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-lines=80 --test-coverage-branches=70 \"tests/*.test.js\"",
     "auditar": "npm audit --audit-level=high",
     "secretos": "node scripts/buscar-secretos.js",
-    "verificar": "bash scripts/verificar.sh"
+    "verificar": "bash scripts/verificar.sh",
+    "localizacion": "node scripts/generar-localizacion.js"
   },
   "dependencies": {
     "@clerk/express": "^2.1.90",
@@ -26,6 +27,7 @@
     "pg": "^8.12.0"
   },
   "devDependencies": {
+    "@clerk/localizations": "^4.24.8",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.15.0",
     "globals": "^17.14.0"

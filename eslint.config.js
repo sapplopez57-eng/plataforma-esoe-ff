@@ -4,7 +4,7 @@ const js = require('@eslint/js');
 const globals = require('globals');
 
 module.exports = [
-  { ignores: ['node_modules/**', 'coverage/**'] },
+  { ignores: ['node_modules/**', 'coverage/**', 'public/js/clerk-es.js'] },
   js.configs.recommended,
   {
     files: ['src/**/*.js', 'tests/**/*.js', 'scripts/**/*.js', 'eslint.config.js'],

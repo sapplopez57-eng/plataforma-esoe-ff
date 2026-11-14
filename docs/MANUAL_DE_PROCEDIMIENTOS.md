@@ -19,6 +19,7 @@ se avanza).
 | `src/seguridad/` | Cifrado de credenciales y peticiones salientes protegidas |
 | `public/js/sesion.js` | Inicio de sesión en el navegador y llamadas a la API |
 | `public/js/integraciones.js` | Vista «Otras plataformas» |
+| `public/js/clerk-es.js` | Traducción del formulario de acceso (generada, no se edita) |
 | `scripts/asignar-rol.js` | Asigna el rol de un usuario |
 | `src/server.js` | Arranque y apagado ordenado |
 | `database/schema.sql` | Esquema de PostgreSQL |
@@ -101,6 +102,7 @@ Sin esa variable las pruebas del esquema se omiten y `npm run verificar` lo avis
 | `npm run test:cobertura` | Pruebas con umbral de cobertura (80 % líneas, 70 % ramas) |
 | `npm run auditar` | Vulnerabilidades altas o críticas en dependencias |
 | `npm run secretos` | Busca secretos en archivos versionados |
+| `npm run localizacion` | Regenera la traducción del formulario de acceso |
 | `npm run verificar` | **Todo lo anterior más `.env` y Compose. Es la compuerta del ciclo.** |
 
 ## 5. Variables de entorno

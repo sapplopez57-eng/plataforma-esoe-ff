@@ -89,7 +89,10 @@ async function iniciarSesionReal(configuracion) {
   await cargarScript(`https://${dominio}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, {
     'data-clerk-publishable-key': llavePublica
   });
-  await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
+  await window.Clerk.load({
+    ui: { ClerkUI: window.__internal_ClerkUICtor },
+    localization: window.LOCALIZACION_ES
+  });
 
   sesionReal.activa = true;
   sesionReal.clerk = window.Clerk;

@@ -49,11 +49,12 @@ proyecto puede iniciar sesión aquí (sin rol no accede a nada, pero aparece en 
 - **Aceptación:** la plataforma usa una aplicación de Clerk propia, con su padrón separado.
 - **Verificación:** el formulario de acceso nombra a la ESOE y la instancia no comparte usuarios.
 
-### DIS-06 · Pantalla de acceso en español — Pendiente
-El formulario de Clerk se muestra en inglés. Clerk admite traducción: se pasa la localización en
-`Clerk.load({ localization })`. Revisar también qué proveedores sociales quedan habilitados: hoy
-aparecen Google y Base (billetera cripto), que no corresponde a una escuela militar.
-- **Aceptación:** el formulario aparece en español y solo con los métodos de acceso aprobados.
+### DIS-06 · Métodos de acceso aprobados — Pendiente
+El formulario ya aparece en español (`esMX`, vendorizado en `public/js/clerk-es.js`). Queda lo que
+depende de la instancia: hoy ofrece Google y Base (billetera cripto). Se conserva Google y se retira
+la billetera. Es configuración de la aplicación de Clerk, no del código, así que se resuelve junto
+con SEC-08.
+- **Aceptación:** el formulario ofrece correo y Google, y ninguna billetera.
 
 ### SEC-06 · Permisos por pertenencia — Pendiente · prioridad alta
 El rol ya sale de la sesión. Falta ligar cada cuenta con su expediente (tabla `usuarios`) y limitar
