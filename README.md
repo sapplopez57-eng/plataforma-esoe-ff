@@ -37,18 +37,48 @@ El sistema visual sigue estrictamente la paleta cromática definida:
 
 ---
 
-## 3. Cómo Probar la Interfaz Ahora Mismo (Sin Servidor)
+## 3. Puesta en Marcha
 
-Puedes abrir el archivo `index.html` directamente haciendo doble clic desde tu explorador de archivos en cualquier navegador moderno (Chrome, Edge, Firefox, Safari). Todos los cambios que realices (crear promociones, registrar alumnos, pasar asistencia o modificar notas) se guardan automáticamente en el almacenamiento local del navegador.
+```bash
+npm ci
+cp .env.example .env
+npm run dev
+```
+
+La interfaz queda en `http://localhost:8080`. También puede abrirse `public/index.html` directamente
+en un navegador moderno, sin servidor.
+
+En esta etapa los datos se guardan en el almacenamiento local de cada navegador y la pantalla de
+acceso no valida credenciales: es una demostración, no un sistema listo para datos reales. El camino
+hasta ahí está en [`docs/BACKLOG.md`](docs/BACKLOG.md).
+
+Antes de entregar cualquier cambio:
+
+```bash
+npm run verificar
+```
 
 ---
 
-## 4. Despliegue en tu Servidor Proxmox (Cuando los Nodos Estén Activos)
+## 4. Despliegue
 
-1. Crea un contenedor **LXC (Ubuntu 24.04 o Debian 12)** en Proxmox con Docker y Docker Compose instalados.
-2. Copia esta carpeta al contenedor (vía SCP/SFTP usando la IP de **Tailscale** de tu nodo).
-3. Ejecuta:
-   ```bash
-   docker compose up -d --build
-   ```
-4. La plataforma quedará activa en el puerto `8080` con su base de datos PostgreSQL inicializada automáticamente mediante `database/schema.sql`.
+```bash
+cp .env.example .env    # completar DB_PASSWORD y JWT_SECRET con: openssl rand -hex 48
+docker compose up -d --build
+```
+
+La plataforma queda en el puerto `8080` con PostgreSQL inicializado desde `database/schema.sql`.
+Debe publicarse siempre detrás de un proxy con HTTPS. Procedimiento completo, respaldos y reversión
+en el [manual](docs/MANUAL_DE_PROCEDIMIENTOS.md).
+
+---
+
+## 5. Documentación
+
+| Documento | Contenido |
+|---|---|
+| [`docs/BLUEPRINT.md`](docs/BLUEPRINT.md) | Visión, arquitectura, seguridad, diseño y orden de construcción |
+| [`docs/LOOP_DE_DESARROLLO.md`](docs/LOOP_DE_DESARROLLO.md) | Ciclo de trabajo, definición de terminado y registro de vueltas |
+| [`docs/BACKLOG.md`](docs/BACKLOG.md) | Cola priorizada con criterios de aceptación |
+| [`docs/MANUAL_DE_PROCEDIMIENTOS.md`](docs/MANUAL_DE_PROCEDIMIENTOS.md) | Instalación, operación, secretos, incidentes y auditoría |
+| [`LECCIONES.md`](LECCIONES.md) | Errores encontrados, causa raíz y regla que los evita |
