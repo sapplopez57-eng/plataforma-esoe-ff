@@ -269,8 +269,17 @@ vinculadas; expedientes, notas y asistencia todavía no salen del navegador.
 
 ### Configurar la instancia (una vez)
 
-1. En el panel de Clerk, crear la aplicación y copiar a `.env` las dos llaves de **API keys**:
-   `CLERK_PUBLISHABLE_KEY` y `CLERK_SECRET_KEY`.
+> **No ejecutar `npx clerk init` en este proyecto.** La integración con Clerk ya está hecha
+> (`@clerk/express` en el servidor, ClerkJS en el navegador). `init` está pensado para proyectos
+> sin Clerk y puede crear otra aplicación y sobrescribir las llaves. La guía del panel asume
+> Next.js; aquí el servidor es Express y la interfaz es propia, así que esa plantilla no aplica.
+>
+> El CLI de Clerk tampoco puede iniciar sesión desde un entorno de desarrollo remoto: espera que el
+> navegador responda a `127.0.0.1` en la misma máquina. Las llaves se copian a mano.
+
+1. En el panel de Clerk, abrir la aplicación y, en **API keys**, copiar a `.env`:
+   `CLERK_PUBLISHABLE_KEY` (empieza con `pk_`) y `CLERK_SECRET_KEY` (empieza con `sk_`).
+   La llave secreta no se comparte ni se versiona: vive solo en `.env`.
 2. Definir `ORIGEN_PUBLICO` con la URL pública de la plataforma.
 3. En **Sessions → Customize session token**, agregar:
    ```json

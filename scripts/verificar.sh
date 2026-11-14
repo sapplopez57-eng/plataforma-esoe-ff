@@ -44,6 +44,23 @@ compose_valido() {
   DB_PASSWORD=x CLERK_PUBLISHABLE_KEY=x CLERK_SECRET_KEY=x ORIGEN_PUBLICO=x CLAVE_CIFRADO=x docker compose config -q
 }
 
+base_de_pruebas_viva() {
+  if [ -z "${PRUEBAS_DATABASE_URL:-}" ]; then
+    echo "   PRUEBAS_DATABASE_URL no definida; las pruebas del esquema se omitiran"
+    return 0
+  fi
+  if node -e "
+    const { Client } = require('pg');
+    const c = new Client({ connectionString: process.env.PRUEBAS_DATABASE_URL, connectionTimeoutMillis: 3000 });
+    c.connect().then(() => c.end()).catch((e) => { console.error('   ' + e.message); process.exit(1); });
+  "; then
+    return 0
+  fi
+  echo "   La base de pruebas no responde. Arranquela antes de seguir (p. ej. pg_ctlcluster 16 main start)."
+  return 1
+}
+
+paso "Base de datos de pruebas disponible" base_de_pruebas_viva
 paso "Estilo y errores estaticos (eslint)" npx --no-install eslint .
 paso "Pruebas con cobertura minima" npm run --silent test:cobertura
 paso "Dependencias sin vulnerabilidades altas" npm audit --audit-level=high

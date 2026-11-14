@@ -7,6 +7,27 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-14 — Configuración de Clerk
+
+### L-012 · `clerk init` no se ejecuta sobre un proyecto que ya integra Clerk
+- **Qué pasó:** la guía oficial empieza por `npx clerk init`. Aquí habría sido un error: la
+  integración ya existe y `init` puede crear otra aplicación y sobrescribir las llaves del
+  proyecto. La propia guía lo advierte para proyectos que ya usan Clerk.
+- **Regla:** con Clerk ya integrado, solo se completan las llaves; nunca se ejecuta `init`.
+  Además, la guía del panel asume Next.js: este proyecto es Express con interfaz propia, así que
+  manda el proyecto, no la plantilla.
+
+### L-011 · El inicio de sesión del CLI de Clerk no puede completarse desde el contenedor
+- **Qué pasó:** `clerk auth login` quedó esperando indefinidamente.
+- **Causa raíz:** el CLI abre un servidor en `127.0.0.1` **dentro del contenedor** y espera que el
+  navegador lo llame de vuelta. El navegador del usuario está en otra máquina, así que esa llamada
+  nunca llega. Sin sesión del CLI tampoco funcionan `link`, `env pull` ni `doctor` completo.
+- **Corrección:** las llaves se copian del panel de Clerk y se escriben en `.env`.
+- **Regla:** una herramienta que se autentica por navegador contra `localhost` solo funciona en la
+  máquina del usuario. Desde el contenedor se configura por llaves, no por sesión interactiva.
+
+---
+
 ## 2026-11-14 — Vueltas 2 y 3
 
 ### L-010 · La pantalla de acceso se desbordaba en teléfonos
