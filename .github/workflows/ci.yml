@@ -1,0 +1,66 @@
+name: Verificacion
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verificacion-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: esoe_pruebas
+          POSTGRES_PASSWORD: ${{ github.run_id }}-efimera
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U esoe_pruebas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PRUEBAS_DATABASE_URL: postgresql://esoe_pruebas:${{ github.run_id }}-efimera@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verificar
+
+  imagen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagen
+        run: docker build -t esoe-sms:ci .
+      - name: La imagen arranca y responde
+        run: |
+          docker run -d --name esoe -p 8080:8080 \
+            -e JWT_SECRET="$(openssl rand -hex 48)" \
+            -e DATABASE_URL="postgresql://esoe_admin:$(openssl rand -hex 16)@localhost:5432/esoe_sms" \
+            esoe-sms:ci
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:8080/api/health && exit 0
+            sleep 1
+          done
+          docker logs esoe
+          exit 1
+      - name: La imagen no publica archivos internos
+        run: |
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/package.json)" = "404"
+          test "$(docker exec esoe whoami)" = "node"
