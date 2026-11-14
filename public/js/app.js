@@ -139,6 +139,7 @@ function selectLoginRole(role) {
 
 function handleLoginSubmit(e) {
   e.preventDefault();
+  if (sesionReal.activa) return;
   appState.authenticated = true;
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
@@ -155,12 +156,18 @@ function handleLoginSubmit(e) {
 }
 
 function handleLogout() {
+  if (sesionReal.activa) {
+    cerrarSesionReal();
+    return;
+  }
   appState.authenticated = false;
   document.getElementById('app-shell').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
 }
 
 function switchActiveRole(role) {
+  // Con sesion real el rol lo decide el servidor.
+  if (sesionReal.activa) return;
   appState.currentRole = role;
   if (role === 'ESTUDIANTE' && ['estructura', 'catedraticos'].includes(appState.currentView)) {
     appState.currentView = 'boletin';
@@ -203,7 +210,8 @@ function renderSidebarAndHeader() {
     { id: 'catedraticos', label: 'Catedráticos', icon: ICONS.teachers, roles: ['ADMIN'], section: 'Directorio Institucional' },
     { id: 'asistencia', label: 'Control de Asistencia', icon: ICONS.attendance, roles: ['ADMIN', 'CATEDRATICO', 'ESTUDIANTE'], section: 'Evaluación y Control' },
     { id: 'calificaciones', label: 'Libro de Calificaciones', icon: ICONS.grades, roles: ['ADMIN', 'CATEDRATICO'], section: 'Evaluación y Control' },
-    { id: 'boletin', label: 'Boletín y Expediente', icon: ICONS.grades, roles: ['ADMIN', 'CATEDRATICO', 'ESTUDIANTE'], section: 'Evaluación y Control' }
+    { id: 'boletin', label: 'Boletín y Expediente', icon: ICONS.grades, roles: ['ADMIN', 'CATEDRATICO', 'ESTUDIANTE'], section: 'Evaluación y Control' },
+    { id: 'integraciones', label: 'Otras Plataformas', icon: ICONS.structure, roles: ['ADMIN', 'CATEDRATICO', 'ESTUDIANTE'], section: 'Formación Externa' }
   ];
 
   const allowed = menuItems.filter(item => item.roles.includes(role));
@@ -231,7 +239,13 @@ function renderSidebarAndHeader() {
   const profileRole = document.getElementById('sidebar-user-role');
   const profileAvatar = document.getElementById('sidebar-user-avatar');
 
-  if (role === 'ADMIN') {
+  if (sesionReal.activa) {
+    const etiquetas = { ADMIN: 'Personal Administrativo', CATEDRATICO: 'Catedrático', ESTUDIANTE: 'Estudiante' };
+    const nombre = sesionReal.nombre || sesionReal.correo || 'Usuario';
+    profileName.textContent = nombre;
+    profileRole.textContent = etiquetas[role] || '';
+    profileAvatar.textContent = nombre.slice(0, 2).toUpperCase();
+  } else if (role === 'ADMIN') {
     profileName.textContent = 'Jefatura de Estudios';
     profileRole.textContent = 'Personal Administrativo';
     profileAvatar.textContent = 'JE';
@@ -302,6 +316,12 @@ function renderMainView() {
       titleEl.textContent = 'Boletín';
       subtitleEl.textContent = '';
       container.innerHTML = renderBoletinView();
+      break;
+    case 'integraciones':
+      titleEl.textContent = 'Otras plataformas';
+      subtitleEl.textContent = 'Moodle · INFOP';
+      container.innerHTML = renderIntegracionesView();
+      pintarIntegraciones();
       break;
     default:
       container.innerHTML = renderDashboardView();

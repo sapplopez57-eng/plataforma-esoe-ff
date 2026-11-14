@@ -398,7 +398,7 @@ select.form-control { width: auto; min-width: 180px; }
 }
 
 @media (max-width: 860px) {
-  .login-screen { grid-template-columns: 1fr; }
+  .login-screen { grid-template-columns: minmax(0, 1fr); }
   .login-brand-panel { padding: 28px 24px; gap: 32px; }
   .brand-description h2 { font-size: 38px; }
   .login-footer-meta { display: none; }
@@ -417,6 +417,7 @@ select.form-control { width: auto; min-width: 180px; }
 
 @media (max-width: 540px) {
   .role-QuickSwitch { display: none; }
+  .brand-description h2 { font-size: 30px; overflow-wrap: anywhere; }
   .stat-card-info h3 { font-size: 40px; }
 }
 
@@ -433,3 +434,9 @@ select.form-control { width: auto; min-width: 180px; }
 /* Acento del icono sobre fondos azules */
 .btn-primary .ico [fill='#2859C5'], .btn-choco .ico [fill='#2859C5'], .nav-item.active .ico [fill='#2859C5'], .role-card-btn.active .ico [fill='#2859C5'] { fill: var(--sky); }
 .btn-primary .ico [stroke='#2859C5'], .nav-item.active .ico [stroke='#2859C5'] { stroke: var(--sky); }
+
+/* ---------- Acceso y conexiones externas ---------- */
+.login-aviso { border-left: 3px solid var(--blue); background: var(--sand-soft); padding: 10px 12px; margin-bottom: 16px; font-size: 13px; }
+#login-clerk { display: flex; justify-content: center; }
+#login-salir { margin-top: 12px; }
+.section-title { font-family: var(--font-display); font-size: 15px; text-transform: uppercase; letter-spacing: .04em; margin: 24px 0 10px; }

@@ -51,8 +51,11 @@ jobs:
       - name: La imagen arranca y responde
         run: |
           docker run -d --name esoe -p 8080:8080 \
-            -e JWT_SECRET="$(openssl rand -hex 48)" \
             -e DATABASE_URL="postgresql://esoe_admin:$(openssl rand -hex 16)@localhost:5432/esoe_sms" \
+            -e CLERK_PUBLISHABLE_KEY="pk_test_$(printf 'clerk.ci.example$' | base64)" \
+            -e CLERK_SECRET_KEY="sk_test_$(openssl rand -hex 20)" \
+            -e ORIGEN_PUBLICO="https://ci.example" \
+            -e CLAVE_CIFRADO="$(openssl rand -hex 32)" \
             esoe-sms:ci
           for i in $(seq 1 20); do
             curl -fsS http://127.0.0.1:8080/api/health && exit 0

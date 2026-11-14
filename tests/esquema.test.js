@@ -71,8 +71,9 @@ test('esquema: se aplica completo sobre una base vacia', { skip: omitir }, async
   const { rows } = await db.query(
     `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY 1`);
   assert.deepEqual(rows.map((r) => r.table_name), [
-    'calificaciones', 'catedraticos', 'clases', 'detalle_asistencia', 'estudiantes',
-    'materias', 'periodos_lectivos', 'promociones', 'sesiones_asistencia', 'usuarios'
+    'calificaciones', 'catedraticos', 'clases',
+    'cuentas_externas', 'detalle_asistencia', 'estudiantes',
+    'materias', 'periodos_lectivos', 'plataformas_externas', 'promociones', 'sesiones_asistencia', 'usuarios'
   ]);
 });
 

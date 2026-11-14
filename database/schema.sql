@@ -16,7 +16,8 @@ CREATE TYPE estado_asistencia AS ENUM ('PRESENTE', 'AUSENTE', 'TARDANZA', 'EXCUS
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(60) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    -- La identidad y la contrasena las gestiona el proveedor de autenticacion.
+    proveedor_id VARCHAR(64) UNIQUE NOT NULL,
     rol rol_usuario NOT NULL,
     nombre_completo VARCHAR(150) NOT NULL,
     referencia_id UUID,
@@ -150,4 +151,30 @@ CREATE TABLE calificaciones (
     ) STORED,
     actualizado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(clase_id, estudiante_id)
+);
+
+-- 12. Conexion con otras plataformas educativas (Moodle, INFOP)
+CREATE TYPE tipo_plataforma AS ENUM ('MOODLE');
+
+CREATE TABLE plataformas_externas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre VARCHAR(120) NOT NULL,
+    tipo tipo_plataforma NOT NULL,
+    url_base VARCHAR(300) UNIQUE NOT NULL,
+    activa BOOLEAN NOT NULL DEFAULT TRUE,
+    creada_por VARCHAR(64) NOT NULL,
+    creada_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Cuenta personal de un usuario en una plataforma externa.
+-- El token se guarda cifrado; la contrasena nunca se almacena.
+CREATE TABLE cuentas_externas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    plataforma_id UUID NOT NULL REFERENCES plataformas_externas(id) ON DELETE CASCADE,
+    usuario_id VARCHAR(64) NOT NULL,
+    token_cifrado TEXT NOT NULL,
+    usuario_remoto_id INTEGER NOT NULL,
+    nombre_remoto VARCHAR(150),
+    vinculada_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(plataforma_id, usuario_id)
 );

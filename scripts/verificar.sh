@@ -41,7 +41,7 @@ compose_valido() {
     echo "   docker no instalado; se omite"
     return 0
   fi
-  DB_PASSWORD=verificacion JWT_SECRET=verificacion docker compose config -q
+  DB_PASSWORD=x CLERK_PUBLISHABLE_KEY=x CLERK_SECRET_KEY=x ORIGEN_PUBLICO=x CLAVE_CIFRADO=x docker compose config -q
 }
 
 paso "Estilo y errores estaticos (eslint)" npx --no-install eslint .

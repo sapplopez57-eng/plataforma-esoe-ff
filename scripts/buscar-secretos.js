@@ -11,6 +11,7 @@ const REGLAS = [
   { nombre: 'Llave de AWS', patron: /\bAKIA[0-9A-Z]{16}\b/ },
   { nombre: 'Token de GitHub', patron: /\bgh[pousr]_[A-Za-z0-9]{36,}\b/ },
   { nombre: 'Token de Slack', patron: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/ },
+  { nombre: 'Llave secreta de Clerk', patron: /\bsk_(?:test|live)_[A-Za-z0-9]{20,}\b/ },
   { nombre: 'Token JWT', patron: /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/ },
   { nombre: 'Credencial en URL', patron: /\b[a-z][a-z0-9+.-]*:\/\/[^\s:/@${}<>]+:[^\s:/@${}<>]{6,}@[^\s/]+/i },
   {

@@ -5,21 +5,28 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { rateLimit } = require('express-rate-limit');
+const { crearAutenticacion } = require('./auth');
+const { crearRutasDeIntegraciones } = require('./integraciones/rutas');
 
 const DIRECTORIO_PUBLICO = path.join(__dirname, '..', 'public');
 
-function politicaDeContenido() {
+function politicaDeContenido(config) {
+  // Con Clerk activo el navegador carga su script y habla con su API.
+  const clerk = config.clerk.habilitado ? [`https://${config.clerk.dominio}`] : [];
+  const desafio = config.clerk.habilitado ? ['https://challenges.cloudflare.com'] : [];
   return {
     useDefaults: true,
     directives: {
       'default-src': ["'self'"],
-      'script-src': ["'self'"],
+      'script-src': ["'self'", ...clerk, ...desafio],
       // Deuda registrada (BACKLOG SEC-04): la interfaz aun usa manejadores en linea.
       'script-src-attr': ["'unsafe-inline'"],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
-      'img-src': ["'self'", 'data:'],
-      'connect-src': ["'self'"],
+      'img-src': ["'self'", 'data:', ...(config.clerk.habilitado ? ['https://img.clerk.com'] : [])],
+      'connect-src': ["'self'", ...clerk],
+      'worker-src': ["'self'", 'blob:'],
+      'frame-src': ["'self'", ...desafio],
       'object-src': ["'none'"],
       'frame-ancestors': ["'none'"],
       'base-uri': ["'self'"],
@@ -28,14 +35,16 @@ function politicaDeContenido() {
   };
 }
 
-function crearApp(config) {
+function crearApp(config, dependencias = {}) {
   const app = express();
+  const auth = dependencias.auth || crearAutenticacion(config);
+  const db = dependencias.db || null;
 
   app.disable('x-powered-by');
   if (config.proxiesDeConfianza > 0) app.set('trust proxy', config.proxiesDeConfianza);
 
   app.use(helmet({
-    contentSecurityPolicy: politicaDeContenido(),
+    contentSecurityPolicy: politicaDeContenido(config),
     referrerPolicy: { policy: 'no-referrer' },
     crossOriginEmbedderPolicy: false
   }));
@@ -59,6 +68,26 @@ function crearApp(config) {
     res.set('Cache-Control', 'no-store');
     res.json({ status: 'OK', service: 'ESOE-SMS-Platform', timestamp: new Date().toISOString() });
   });
+
+  // Datos publicos que la interfaz necesita para iniciar sesion. Ninguno es secreto.
+  app.get('/api/config', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      autenticacion: auth.habilitada
+        ? { proveedor: 'clerk', llavePublica: config.clerk.llavePublica, dominio: config.clerk.dominio }
+        : null,
+      integraciones: Boolean(db && config.integraciones.claveCifrado)
+    });
+  });
+
+  app.use('/api', auth.middleware);
+
+  app.get('/api/sesion', auth.exigirSesion, (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json({ usuarioId: req.identidad.usuarioId, rol: req.identidad.rol });
+  });
+
+  app.use('/api/integraciones', crearRutasDeIntegraciones({ config, auth, db }));
 
   app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Recurso no encontrado.' });
