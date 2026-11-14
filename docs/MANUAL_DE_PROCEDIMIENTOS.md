@@ -257,6 +257,7 @@ vinculadas; expedientes, notas y asistencia todavía no salen del navegador.
 | Compose: `Defina ... en .env` | Falta la variable | Completar `.env` |
 | «Su cuenta todavía no tiene un rol asignado» | Cuenta nueva sin rol | Sección 11 |
 | Todas las sesiones dan 401 | `ORIGEN_PUBLICO` no coincide con la URL real | Corregirlo; sin barra final |
+| `fetch failed` al hablar con Clerk desde un entorno de desarrollo remoto | La red del contenedor filtra los hosts salientes | Permitir `api.clerk.com` y el dominio de la instancia, y arrancar Node con `NODE_USE_ENV_PROXY=1`. En un servidor propio no aplica: la salida es directa |
 | El acceso no carga y la consola menciona CSP | Clerk usa un dominio no previsto | Anotar el dominio bloqueado y agregarlo en `src/app.js`; registrar el cambio |
 | «La plataforma apunta a una red interna» | Moodle en la LAN | `INTEGRACIONES_RED_PRIVADA=true` |
 | Estado «Volver a vincular» en una plataforma | La llave fue revocada o cambió la contraseña | El usuario vincula de nuevo |

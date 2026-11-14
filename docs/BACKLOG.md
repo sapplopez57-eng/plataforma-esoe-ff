@@ -34,13 +34,26 @@ Sustituir el `schema.sql` único por migraciones numeradas con registro de cuál
   última versión sin errores ni cambios duplicados.
 - **Verificación:** `npm test` (la prueba del esquema usa las migraciones).
 
-### OPS-03 · Validar Clerk con las llaves reales — Pendiente · prioridad alta
-El inicio de sesión está probado con sesiones firmadas localmente y con un Clerk simulado en el
-navegador. Falta la comprobación contra la instancia real, que requiere sus llaves.
-- **Aceptación:** con las llaves en `.env`, una persona se registra, la administración le asigna rol
-  con `node scripts/asignar-rol.js`, entra y ve su vista; la consola del navegador no muestra
-  bloqueos de la política de contenido.
+### OPS-03 · Primer usuario y recorrido de acceso completo — Pendiente · prioridad alta
+Las llaves reales ya están en `.env` y la instancia responde: ClerkJS carga desde su dominio, el
+formulario de acceso se monta, la política de contenido no bloquea nada y `CLERK_JWT_KEY` coincide
+con la instancia. Falta el último tramo, que necesita una cuenta: la instancia tiene cero usuarios.
+- **Aceptación:** una persona se registra desde la pantalla de acceso, la administración le asigna
+  rol con `node scripts/asignar-rol.js <correo> ADMIN`, entra y ve el panel con su rol.
 - **Verificación:** recorrido en navegador + `npm run verificar`.
+
+### SEC-08 · Aplicación de Clerk propia para la ESOE — Pendiente · prioridad alta
+La instancia configurada se llama `ares-gateway` y es compartida con otro proyecto: su formulario
+dice «Sign in to ares-gateway» y su padrón de usuarios es el mismo. Quien tenga cuenta en el otro
+proyecto puede iniciar sesión aquí (sin rol no accede a nada, pero aparece en el padrón).
+- **Aceptación:** la plataforma usa una aplicación de Clerk propia, con su padrón separado.
+- **Verificación:** el formulario de acceso nombra a la ESOE y la instancia no comparte usuarios.
+
+### DIS-06 · Pantalla de acceso en español — Pendiente
+El formulario de Clerk se muestra en inglés. Clerk admite traducción: se pasa la localización en
+`Clerk.load({ localization })`. Revisar también qué proveedores sociales quedan habilitados: hoy
+aparecen Google y Base (billetera cripto), que no corresponde a una escuela militar.
+- **Aceptación:** el formulario aparece en español y solo con los métodos de acceso aprobados.
 
 ### SEC-06 · Permisos por pertenencia — Pendiente · prioridad alta
 El rol ya sale de la sesión. Falta ligar cada cuenta con su expediente (tabla `usuarios`) y limitar

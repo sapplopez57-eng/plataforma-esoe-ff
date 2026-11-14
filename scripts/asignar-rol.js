@@ -15,8 +15,11 @@ function leerEnv() {
   const archivo = path.join(__dirname, '..', '.env');
   if (!fs.existsSync(archivo)) return;
   for (const linea of fs.readFileSync(archivo, 'utf8').split('\n')) {
-    const partes = /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/.exec(linea);
-    if (partes && process.env[partes[1]] === undefined) process.env[partes[1]] = partes[2];
+    const partes = /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/.exec(linea);
+    if (!partes || process.env[partes[1]] !== undefined) continue;
+    // Un valor con espacios (una llave PEM) viene entre comillas en el archivo.
+    const valor = partes[2].replace(/^"(.*)"$/s, '$1').replace(/^'(.*)'$/s, '$1');
+    process.env[partes[1]] = valor;
   }
 }
 
