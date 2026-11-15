@@ -346,3 +346,51 @@ ese caso se informa como credenciales rechazadas.
 | Se cambió `CLAVE_CIFRADO` | Las llaves guardadas ya no sirven; los usuarios vinculan de nuevo |
 | Se elimina una plataforma | Se borran también las cuentas vinculadas a ella |
 | Sospecha de fuga de la base de datos | Las llaves están cifradas; aun así, cambiar `CLAVE_CIFRADO` y pedir a los usuarios que cambien su contraseña en la plataforma externa |
+
+## 13. Permisos: rol y pertenencia
+
+El rol dice **qué clase de cosas** puede hacer una cuenta. La pertenencia dice **sobre cuáles**. Las
+dos se comprueban en el servidor; la interfaz no decide ninguna.
+
+### Cómo se liga una cuenta con su expediente
+
+| Dónde vive | Qué guarda |
+|---|---|
+| Clerk (proveedor) | la identidad y el rol, en `publicMetadata.rol` |
+| `usuarios.proveedor_id` | liga la cuenta del proveedor con la fila local |
+| `usuarios.referencia_id` | el expediente: `estudiantes.id` o `catedraticos.id` |
+| `usuarios.activo` | si está en `false`, la cuenta entra pero no consulta nada |
+
+Una cuenta sin fila en `usuarios` puede iniciar sesión y no es dueña de nada: toda consulta con
+pertenencia responde 403 con código `SIN_EXPEDIENTE`. Es el estado de una cuenta recién creada,
+antes de que la administración la ligue a un expediente.
+
+Para ligar una cuenta nueva:
+
+```sql
+INSERT INTO usuarios (username, proveedor_id, rol, nombre_completo, referencia_id)
+VALUES ('apellido.nombre', '<id de Clerk>', 'ESTUDIANTE', 'Nombre Completo', '<id del expediente>');
+```
+
+El `id` de Clerk se ve en su panel, o en la respuesta de `GET /api/sesion` de esa persona.
+
+### Quién alcanza qué
+
+| Consulta | ADMIN | CATEDRATICO | ESTUDIANTE |
+|---|---|---|---|
+| `GET /api/clases` | todas | las que imparte | las de su promoción |
+| `GET /api/clases/:id/asistencia` | sí | solo si la imparte | no |
+| `GET /api/estudiantes/:id/boletin` | sí | solo si le da clase | solo el propio |
+
+Un 403 por pertenencia devuelve siempre el mismo cuerpo (`codigo: NO_ES_SUYO`) exista o no el
+recurso: de otro modo la respuesta diría qué clases o expedientes existen a quien no debería saberlo.
+
+### Al agregar una ruta
+
+1. Se monta con `auth.exigirSesion` (o `auth.exigirRol`) y, si toca un recurso de alguien,
+   con el guardián de pertenencia de `src/permisos.js`.
+2. Todo guardián lleva nombre y empieza por `exigirSesion` o `guardianDe`. Una prueba recorre las
+   rutas registradas y falla si alguna queda sin uno, así que un guardián anónimo se lee como
+   ausente.
+3. Si la ruta debe ser pública, se agrega a `PUBLICAS` en `tests/permisos.test.js`. Es una decisión
+   consciente que queda escrita.

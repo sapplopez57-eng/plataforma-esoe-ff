@@ -18,6 +18,7 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | DIS-05 | La pantalla de acceso ya no se desborda en teléfonos de 360 px | 3 |
 | SEC-03 | Escapar todo dato mostrado en la interfaz; guardián automático contra reintroducirlo | 4 |
 | SEC-04 | Sin manejadores en línea; CSP sin `unsafe-inline` para scripts; fuentes propias | 4 |
+| SEC-06 | Permisos por pertenencia: cada cuenta ligada a su expediente y cada consulta limitada a lo propio | 5 |
 
 ## Fase 1 — Gestión escolar real
 
@@ -59,13 +60,18 @@ la billetera. Es configuración de la aplicación de Clerk, no del código, así
 con SEC-08.
 - **Aceptación:** el formulario ofrece correo y Google, y ninguna billetera.
 
-### SEC-06 · Permisos por pertenencia — Pendiente · prioridad alta
-El rol ya sale de la sesión. Falta ligar cada cuenta con su expediente (tabla `usuarios`) y limitar
-cada consulta a lo propio.
+### SEC-06 · Permisos por pertenencia — Hecho
+`usuarios.proveedor_id` liga la cuenta del proveedor con la fila local y `referencia_id` con su
+expediente. `src/permisos.js` resuelve ese vínculo por petición y expone los guardianes de
+pertenencia; `src/academico/rutas.js` monta las tres consultas de lectura que el criterio necesita.
+Una cuenta sin fila en `usuarios` entra pero no es dueña de nada (`SIN_EXPEDIENTE`), y una
+desactivada no consulta nada (`CUENTA_INACTIVA`).
 - **Aceptación:** cuando un catedrático pide la asistencia de una clase que no imparte, recibe 403;
   cuando un estudiante pide el boletín de otro, recibe 403; sin sesión, toda ruta de `/api` salvo
-  salud e inicio de sesión responde 401.
-- **Verificación:** matriz de pruebas rol × ruta en `npm test`.
+  salud y configuración responde 401.
+- **Verificación:** `tests/permisos.test.js`. Matriz rol × ruta con dos catedráticos y dos
+  estudiantes reales en la base, más un guardián que recorre las rutas registradas y falla si alguna
+  de `/api` queda sin exigir sesión, con su caso que demuestra que falla cuando debe.
 
 ### SMS-02 · API de estructura académica — Pendiente
 Periodos, promociones y materias con validación de entrada.

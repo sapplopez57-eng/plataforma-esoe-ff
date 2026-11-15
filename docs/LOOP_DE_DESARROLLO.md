@@ -112,3 +112,4 @@ Se anotan en el registro; importa la tendencia, no el número aislado.
 | 2 | 2026-11-14 | Inicio de sesión con Clerk y rol decidido por el servidor (SEC-05) | Hecho; falta validar con llaves reales (OPS-03) | 43 pruebas; 10 formas de sesión inválida rechazadas |
 | 3 | 2026-11-14 | Conexión con Moodle e INFOP (INT-04) | Hecho | 57 pruebas, 97 % líneas; recorrido en navegador con 14 comprobaciones |
 | 4 | 2026-11-15 | Escapar la salida y cerrar la política de contenido (SEC-03, SEC-04) | Hecho | 67 pruebas, 97.61 % líneas; guardián de escape que falla con archivo y línea |
+| 5 | 2026-11-15 | Permisos por pertenencia (SEC-06) | Hecho | 77 pruebas, 96.88 % líneas; matriz rol × ruta y guardián de rutas sin sesión |

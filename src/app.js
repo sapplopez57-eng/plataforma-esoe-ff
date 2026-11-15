@@ -6,7 +6,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { rateLimit } = require('express-rate-limit');
 const { crearAutenticacion } = require('./auth');
+const { crearPermisos } = require('./permisos');
 const { crearRutasDeIntegraciones } = require('./integraciones/rutas');
+const { crearRutasAcademicas } = require('./academico/rutas');
 
 const DIRECTORIO_PUBLICO = path.join(__dirname, '..', 'public');
 
@@ -88,6 +90,9 @@ function crearApp(config, dependencias = {}) {
   });
 
   app.use('/api/integraciones', crearRutasDeIntegraciones({ config, auth, db }));
+
+  // Consultas academicas: cada una tras su guardian de pertenencia (SEC-06).
+  app.use('/api', crearRutasAcademicas({ auth, db, permisos: db ? crearPermisos(db) : null }));
 
   app.use('/api', (req, res) => {
     res.status(404).json({ error: 'Recurso no encontrado.' });

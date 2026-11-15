@@ -7,6 +7,36 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-15 — Permisos por pertenencia
+
+### L-019 · Un atrapatodo montado en el prefijo compartido se traga las rutas de los demás
+
+- **Qué pasó:** las consultas académicas se montan en `/api` y, copiando el patrón de las
+  integraciones, cuando faltaba la base de datos registraban `rutas.use(...)` para responder 503. Eso
+  hizo que **cualquier** ruta desconocida de `/api` devolviera 503 en vez de 404, y rompió una prueba
+  del servidor que ya existía.
+- **Causa raíz:** el router de integraciones se monta en su propio prefijo (`/api/integraciones`), así
+  que su atrapatodo solo alcanza lo suyo. El patrón se copió sin ver que la diferencia estaba en
+  dónde se monta, no en el código copiado.
+- **Corrección:** sin base de datos no se registra nada y responde el 404 general. Una prueba
+  comprueba que `/api/lo-que-sea` sigue dando 404 en ese estado.
+- **Regla:** un manejador de respaldo pertenece solo a un router montado en su propio prefijo. En el
+  prefijo compartido se declaran rutas exactas. Al copiar un patrón se comprueba dónde se monta el
+  original, no solo qué hace.
+
+### L-020 · Un guardián anónimo se lee como un guardián ausente
+
+- **Qué pasó:** la prueba que recorre las rutas registradas señaló cuatro rutas de integraciones como
+  desprotegidas. Sí estaban protegidas, con `exigirRol`, pero esa función devolvía una flecha anónima
+  y la comprobación solo ve el nombre de cada manejador.
+- **Causa raíz:** el permiso estaba bien; lo que faltaba era poder comprobarlo desde fuera.
+- **Corrección:** los middlewares que devuelven `exigirRol`, `exigirClasePropia` y
+  `exigirEstudiantePropio` llevan nombre (`guardianDeRol`, `guardianDe...`), que además aparece en las
+  trazas de error. La comprobación exige ese nombre.
+- **Regla:** lo que tiene que ser verificable desde fuera lleva nombre. Se prefiere aflojar el código
+  a aflojar la comprobación: bajar el listón de la prueba habría dejado pasar también a las rutas
+  realmente desprotegidas.
+
 ## 2026-11-15 — Cierre de SEC-03
 
 ### L-018 · Un elemento se cierra con una comprobación, no con una lectura
@@ -216,3 +246,7 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 12. Toda regla que se pueda comprobar con un comando se convierte en ese comando. Un elemento se
     cierra cuando existe la comprobación que falla si se rompe, no cuando el código está escrito.
 13. Toda comprobación nueva trae su propio caso que demuestra que falla cuando debe.
+14. El rol dice qué clase de cosas puede hacer una cuenta; la pertenencia, sobre cuáles. Ninguna de
+    las dos llega desde la interfaz, y un 403 por pertenencia no revela si el recurso existe.
+15. Lo que tiene que ser verificable desde fuera lleva nombre. Antes de aflojar una comprobación se
+    cambia el código para que pueda comprobarse.

@@ -90,8 +90,10 @@ function crearAutenticacion(config) {
     }
   }
 
+  // El middleware que devuelve lleva nombre a proposito: una prueba recorre las
+  // rutas registradas y reconoce por el nombre que cada una tiene su guardian.
   function exigirRol(...rolesPermitidos) {
-    return (req, res, next) => {
+    return function guardianDeRol(req, res, next) {
       exigirSesion(req, res, (error) => {
         if (error) return next(error);
         if (!rolesPermitidos.includes(req.identidad.rol)) {
