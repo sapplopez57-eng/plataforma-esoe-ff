@@ -7,6 +7,35 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-15 — Publicación del código
+
+### L-013 · El repositorio de destino no acepta escrituras; el fork sí
+
+- **Qué pasó:** `git push` a `oacoello/plataforma-esoe` devolvía 403 en cada intento, con la rama y
+  los commits correctos.
+- **Causa raíz:** el permiso de escritura no depende del colaborador sino de dónde está instalada la
+  aplicación de GitHub que firma la conexión. Estaba instalada en `sapplopez57-eng`, no en
+  `oacoello`, así que ninguna llave personal cambiaba el resultado.
+- **Corrección:** se trabaja contra el fork `sapplopez57-eng/plataforma-esoe-ff`, donde la escritura
+  sí está concedida, y el trabajo llega al repositorio de destino por solicitud de cambio.
+- **Regla:** antes de dar un 403 por falta de permisos del usuario, comprobar en qué cuenta está
+  instalada la aplicación; se escribe en el repositorio que la tiene y se integra por solicitud de
+  cambio.
+
+### L-014 · Dos ramas con el mismo objetivo dejan documentación duplicada
+
+- **Qué pasó:** la rama de la solicitud de cambio traía `docs/LECCIONES.md` y `docs/MANUAL.md`, que
+  describían una superficie pública (`server.js`, `/css`, `/js`) que esta rama ya había reemplazado
+  por `src/` y `public/`.
+- **Causa raíz:** el mismo objetivo se resolvió dos veces por separado; al unir las dos historias,
+  los archivos que no chocaban línea a línea sobrevivieron los dos.
+- **Corrección:** se conserva un solo registro (`LECCIONES.md`) y un solo manual
+  (`docs/MANUAL_DE_PROCEDIMIENTOS.md`); las lecciones útiles del duplicado se trasladaron aquí.
+- **Regla:** al unir ramas con el mismo objetivo, revisar los archivos añadidos por ambas, no solo
+  los conflictos: un documento obsoleto que nadie contradice es peor que un conflicto.
+
+---
+
 ## 2026-11-14 — Configuración de Clerk
 
 ### L-012 · `clerk init` no se ejecuta sobre un proyecto que ya integra Clerk
