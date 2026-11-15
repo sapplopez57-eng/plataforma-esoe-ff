@@ -1,3 +1,8 @@
+@font-face { font-family: 'Roboto'; font-style: normal; font-weight: 400; font-display: swap; src: url('../fonts/roboto-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto'; font-style: normal; font-weight: 500; font-display: swap; src: url('../fonts/roboto-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto'; font-style: normal; font-weight: 700; font-display: swap; src: url('../fonts/roboto-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Roboto Condensed'; font-style: normal; font-weight: 700; font-display: swap; src: url('../fonts/roboto-condensed-latin-700-normal.woff2') format('woff2'); }
+
 /* ESOE SMS - Sistema visual
    Paleta azul: blue #2859C5 | sky #8FBFFA | navy #0F1C45 */
 

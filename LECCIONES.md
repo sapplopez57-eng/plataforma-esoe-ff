@@ -19,7 +19,11 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
   aplicación, los filtros y los avisos que usan `textContent` (escaparlos duplicaría las entidades).
   Verificado en un DOM real con un nombre malicioso: antes 14 elementos inyectados, después 0.
 - **Regla:** al agregar un ayudante de seguridad, se busca todo el código que debía usarlo antes de cerrar la vuelta.
-  Pendiente (SEC-04): migrar los manejadores `onclick` en línea para cerrar la CSP.
+- **Cierre de SEC-04 (misma vuelta):** los manejadores en línea pasaron a `data-on-*` con un despachador de gramática
+  cerrada y la CSP quedó con `script-src-attr 'none'`. Una prueba que recorre todos los `data-on-*` detectó 6
+  manejadores compuestos que un listado recortado con `head` había ocultado: las comprobaciones deben cubrir el
+  conjunto completo, no una muestra.
+
 ### L-016 · Una regla escrita en prosa no protege nada
 
 - **Qué pasó:** el manual decía desde la primera vuelta que un respaldo del repositorio (`*.bundle`)

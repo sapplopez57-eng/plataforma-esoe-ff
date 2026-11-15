@@ -19,10 +19,10 @@ function politicaDeContenido(config) {
     directives: {
       'default-src': ["'self'"],
       'script-src': ["'self'", ...clerk, ...desafio],
-      // Deuda registrada (BACKLOG SEC-04): la interfaz aun usa manejadores en linea.
-      'script-src-attr': ["'unsafe-inline'"],
-      'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      'font-src': ["'self'", 'https://fonts.gstatic.com'],
+      // Sin manejadores en linea: los eventos se delegan desde public/js/eventos.js.
+      'script-src-attr': ["'none'"],
+      'style-src': ["'self'", "'unsafe-inline'"],
+      'font-src': ["'self'"],
       'img-src': ["'self'", 'data:', ...(config.clerk.habilitado ? ['https://img.clerk.com'] : [])],
       'connect-src': ["'self'", ...clerk],
       'worker-src': ["'self'", 'blob:'],

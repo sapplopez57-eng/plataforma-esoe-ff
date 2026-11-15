@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESOE — Plataforma de Gestión Académica y Administrativa (SMS)</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+  <link rel="preload" href="fonts/roboto-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -43,23 +41,23 @@
 
         <p id="login-aviso" class="login-aviso hidden" role="alert"></p>
         <div id="login-clerk"></div>
-        <button type="button" id="login-salir" class="btn btn-outline hidden" onclick="cerrarSesionReal()">Usar otra cuenta</button>
+        <button type="button" id="login-salir" class="btn btn-outline hidden" data-on-click="cerrarSesionReal()">Usar otra cuenta</button>
 
         <div id="login-demo">
           <p class="login-aviso">Modo demostración: los datos se guardan solo en este navegador.</p>
           <div class="role-selector-cards">
-            <button type="button" class="role-card-btn active" data-role="ADMIN" onclick="selectLoginRole('ADMIN')">
+            <button type="button" class="role-card-btn active" data-role="ADMIN" data-on-click="selectLoginRole('ADMIN')">
               <span>Administrativo</span>
             </button>
-            <button type="button" class="role-card-btn" data-role="CATEDRATICO" onclick="selectLoginRole('CATEDRATICO')">
+            <button type="button" class="role-card-btn" data-role="CATEDRATICO" data-on-click="selectLoginRole('CATEDRATICO')">
               <span>Catedrático</span>
             </button>
-            <button type="button" class="role-card-btn" data-role="ESTUDIANTE" onclick="selectLoginRole('ESTUDIANTE')">
+            <button type="button" class="role-card-btn" data-role="ESTUDIANTE" data-on-click="selectLoginRole('ESTUDIANTE')">
               <span>Estudiante</span>
             </button>
           </div>
 
-          <form onsubmit="handleLoginSubmit(event)">
+          <form data-on-submit="handleLoginSubmit(event)">
             <div class="form-group">
               <label class="form-label" for="login-username">Usuario</label>
               <input type="text" id="login-username" class="form-control" required>
@@ -84,7 +82,7 @@
        ==================================================================== -->
   <div id="app-shell" class="app-shell hidden">
     <!-- Overlay para menu movil -->
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+    <div id="sidebar-overlay" class="sidebar-overlay" data-on-click="closeMobileSidebar()"></div>
 
     <!-- Barra Lateral (Sidebar) -->
     <aside id="sidebar" class="sidebar">
@@ -108,7 +106,7 @@
             <span id="sidebar-user-role">Personal Administrativo</span>
           </div>
         </div>
-        <button type="button" class="btn-logout" onclick="handleLogout()">
+        <button type="button" class="btn-logout" data-on-click="handleLogout()">
           <span data-icon="logout" class="ico-wrap"></span>
           <span>Cerrar Sesión</span>
         </button>
@@ -119,7 +117,7 @@
     <div class="main-wrapper">
       <header class="topbar">
         <div class="topbar-left">
-          <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="Abrir menú">
+          <button type="button" class="mobile-menu-btn" data-on-click="toggleMobileSidebar()" aria-label="Abrir menú">
             <span data-icon="menu" class="ico-wrap"></span>
           </button>
           <div class="page-title-block">
@@ -134,9 +132,9 @@
           </div>
 
           <div id="role-quick-switch" class="role-QuickSwitch" title="Cambiar vista de rol para demostración">
-            <button type="button" data-role="ADMIN" class="active" onclick="switchActiveRole('ADMIN')">Admin</button>
-            <button type="button" data-role="CATEDRATICO" onclick="switchActiveRole('CATEDRATICO')">Catedrático</button>
-            <button type="button" data-role="ESTUDIANTE" onclick="switchActiveRole('ESTUDIANTE')">Estudiante</button>
+            <button type="button" data-role="ADMIN" class="active" data-on-click="switchActiveRole('ADMIN')">Admin</button>
+            <button type="button" data-role="CATEDRATICO" data-on-click="switchActiveRole('CATEDRATICO')">Catedrático</button>
+            <button type="button" data-role="ESTUDIANTE" data-on-click="switchActiveRole('ESTUDIANTE')">Estudiante</button>
           </div>
         </div>
       </header>
@@ -152,7 +150,7 @@
     <div class="modal-dialog">
       <div class="modal-header">
         <h3 id="modal-title">Ventana de Gestión</h3>
-        <button type="button" class="modal-close" onclick="closeModal()">
+        <button type="button" class="modal-close" data-on-click="closeModal()">
           <span data-icon="close" class="ico-wrap"></span>
         </button>
       </div>
@@ -168,6 +166,7 @@
   <script src="js/clerk-es.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/integraciones.js"></script>
+  <script src="js/eventos.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

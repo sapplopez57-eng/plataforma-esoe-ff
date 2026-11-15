@@ -225,7 +225,7 @@ function renderSidebarAndHeader() {
     }
     const activeClass = appState.currentView === item.id ? 'active' : '';
     html += `
-      <button class="nav-item ${activeClass}" onclick="navigateTo('${item.id}')">
+      <button class="nav-item ${activeClass}" data-on-click="navigateTo('${item.id}')">
         ${item.icon}
         <span>${item.label}</span>
       </button>
@@ -362,8 +362,8 @@ function renderDashboardView() {
         <td>${esc(formatNombreConGrado(cat))}</td>
         <td>${alumnosSeccion} alumnos</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="irACalificacionesDeClase('${cls.id}')">Notas</button>
-          <button class="btn btn-primary btn-sm" onclick="irAAsistenciaDeClase('${cls.id}')">Asistencia</button>
+          <button class="btn btn-outline btn-sm" data-on-click="irACalificacionesDeClase('${cls.id}')">Notas</button>
+          <button class="btn btn-primary btn-sm" data-on-click="irAAsistenciaDeClase('${cls.id}')">Asistencia</button>
         </td>
       </tr>
     `;
@@ -415,7 +415,7 @@ function renderDashboardView() {
           <p>Cada clase cuenta con 1 catedrático titular</p>
         </div>
         <div style="display:flex; gap:8px;">
-          ${appState.currentRole === 'ADMIN' ? `<button class="btn btn-primary" onclick="openModalNuevaClase()">${ICONS.plus} Nueva clase</button>` : ''}
+          ${appState.currentRole === 'ADMIN' ? `<button class="btn btn-primary" data-on-click="openModalNuevaClase()">${ICONS.plus} Nueva clase</button>` : ''}
         </div>
       </div>
       <div class="panel-body" style="padding:0;">
@@ -496,7 +496,7 @@ function renderEstructuraView() {
           <h2>Periodos lectivos</h2>
           <p>Soporte simultáneo para periodos Semestrales, Cuatrimestrales, Modulares y Anuales</p>
         </div>
-        <button class="btn btn-primary" onclick="openModalNuevoPeriodo()">${ICONS.plus} Nuevo periodo</button>
+        <button class="btn btn-primary" data-on-click="openModalNuevoPeriodo()">${ICONS.plus} Nuevo periodo</button>
       </div>
       <div class="panel-body" style="padding:0;">
         <div class="table-responsive">
@@ -525,7 +525,7 @@ function renderEstructuraView() {
           <h2>Promociones</h2>
           
         </div>
-        <button class="btn btn-choco" onclick="openModalNuevaPromocion()">${ICONS.plus} Nueva Promoción</button>
+        <button class="btn btn-choco" data-on-click="openModalNuevaPromocion()">${ICONS.plus} Nueva Promoción</button>
       </div>
       <div class="panel-body">
         <div class="cards-grid">
@@ -572,8 +572,8 @@ function renderEstudiantesView() {
         <td><span class="badge badge-choco">${esc(prom.codigo)}</span></td>
         <td>${esc(est.telefono)}</td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="verExpedienteEstudiante('${est.id}')">${ICONS.eye} Expediente</button>
-          <button class="btn btn-primary btn-sm" onclick="verBoletinDeEstudiante('${est.id}')">Boletín</button>
+          <button class="btn btn-outline btn-sm" data-on-click="verExpedienteEstudiante('${est.id}')">${ICONS.eye} Expediente</button>
+          <button class="btn btn-primary btn-sm" data-on-click="verBoletinDeEstudiante('${est.id}')">Boletín</button>
         </td>
       </tr>
     `;
@@ -586,7 +586,7 @@ function renderEstudiantesView() {
           <h2>Expedientes</h2>
           <p>Identificación por Código de Alumno (FFAA), DNI, Grado Militar y Promoción asignada</p>
         </div>
-        ${appState.currentRole === 'ADMIN' ? `<button class="btn btn-primary" onclick="openModalNuevoEstudiante()">${ICONS.plus} Nuevo estudiante</button>` : ''}
+        ${appState.currentRole === 'ADMIN' ? `<button class="btn btn-primary" data-on-click="openModalNuevoEstudiante()">${ICONS.plus} Nuevo estudiante</button>` : ''}
       </div>
       <div class="panel-body">
         <div class="toolbar">
@@ -595,9 +595,9 @@ function renderEstudiantesView() {
               ${ICONS.search}
               <input type="text" class="form-control"
                 value="${esc(appState.filters.estudianteSearch)}"
-                oninput="updateEstudianteFilter('estudianteSearch', this.value)">
+                data-on-input="updateEstudianteFilter('estudianteSearch', this.value)">
             </div>
-            <select class="form-control" style="width:auto;" onchange="updateEstudianteFilter('estudiantePromocion', this.value)">
+            <select class="form-control" style="width:auto;" data-on-change="updateEstudianteFilter('estudiantePromocion', this.value)">
               <option value="ALL">Todas las Promociones</option>
               ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
             </select>
@@ -625,6 +625,28 @@ function renderEstudiantesView() {
       </div>
     </div>
   `;
+}
+
+const FILTROS_PERMITIDOS = ['clasePromocion', 'claseModalidad', 'asistenciaClaseId', 'asistenciaFecha', 'notasClaseId', 'boletinEstudianteId'];
+
+function actualizarFiltro(clave, valor) {
+  if (!FILTROS_PERMITIDOS.includes(clave)) return;
+  appState.filters[clave] = valor;
+  renderMainView();
+}
+
+function filtrarCatedraticos(valor) {
+  appState.filters.catedraticoSearch = valor;
+  renderMainView();
+}
+
+function confirmarActaCalificaciones() {
+  saveStore(store);
+  showToast('Calificaciones registradas en el acta oficial');
+}
+
+function imprimirPagina() {
+  window.print();
 }
 
 function updateEstudianteFilter(key, val) {
@@ -684,7 +706,7 @@ function renderCatedraticosView() {
           <h2>Directorio</h2>
           <p>Registro oficial con Nombre, DNI, Título Académico y Grado Militar (en caso de ser militar)</p>
         </div>
-        <button class="btn btn-primary" onclick="openModalNuevoCatedratico()">${ICONS.plus} Nuevo catedrático</button>
+        <button class="btn btn-primary" data-on-click="openModalNuevoCatedratico()">${ICONS.plus} Nuevo catedrático</button>
       </div>
       <div class="panel-body">
         <div class="toolbar">
@@ -692,7 +714,7 @@ function renderCatedraticosView() {
             ${ICONS.search}
             <input type="text" class="form-control"
               value="${esc(appState.filters.catedraticoSearch)}"
-              oninput="appState.filters.catedraticoSearch = this.value; renderMainView();">
+              data-on-input="filtrarCatedraticos(this.value)">
           </div>
         </div>
 
@@ -761,8 +783,8 @@ function renderClasesView() {
           <small style="color:var(--stone);">${esc(cl.aula)}</small>
         </td>
         <td>
-          <button class="btn btn-outline btn-sm" onclick="irAAsistenciaDeClase('${cl.id}')">Asistencia</button>
-          ${appState.currentRole !== 'ESTUDIANTE' ? `<button class="btn btn-primary btn-sm" onclick="irACalificacionesDeClase('${cl.id}')">Calificar</button>` : ''}
+          <button class="btn btn-outline btn-sm" data-on-click="irAAsistenciaDeClase('${cl.id}')">Asistencia</button>
+          ${appState.currentRole !== 'ESTUDIANTE' ? `<button class="btn btn-primary btn-sm" data-on-click="irACalificacionesDeClase('${cl.id}')">Calificar</button>` : ''}
         </td>
       </tr>
     `;
@@ -777,19 +799,19 @@ function renderClasesView() {
         </div>
         ${appState.currentRole === 'ADMIN' ? `
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-outline" onclick="openModalNuevaMateria()">${ICONS.plus} Nueva Materia</button>
-            <button class="btn btn-primary" onclick="openModalNuevaClase()">${ICONS.plus} Nueva clase</button>
+            <button class="btn btn-outline" data-on-click="openModalNuevaMateria()">${ICONS.plus} Nueva Materia</button>
+            <button class="btn btn-primary" data-on-click="openModalNuevaClase()">${ICONS.plus} Nueva clase</button>
           </div>
         ` : ''}
       </div>
       <div class="panel-body">
         <div class="toolbar">
           <div class="toolbar-filters">
-            <select class="form-control" style="width:auto;" onchange="appState.filters.clasePromocion = this.value; renderMainView();">
+            <select class="form-control" style="width:auto;" data-on-change="actualizarFiltro('clasePromocion', this.value)">
               <option value="ALL">Todas las Promociones</option>
               ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
             </select>
-            <select class="form-control" style="width:auto;" onchange="appState.filters.claseModalidad = this.value; renderMainView();">
+            <select class="form-control" style="width:auto;" data-on-change="actualizarFiltro('claseModalidad', this.value)">
               <option value="ALL">Todas las Modalidades de Periodo</option>
               ${MODALIDADES_PERIODO.map(m => `<option value="${esc(m.codigo)}" ${modFilter === m.codigo ? 'selected' : ''}>${esc(m.etiqueta)}</option>`).join('')}
             </select>
@@ -870,7 +892,7 @@ function renderAsistenciaView() {
             ${['PRESENTE', 'AUSENTE', 'TARDANZA', 'EXCUSA'].map(st => `
               <button type="button" class="att-btn ${reg.estado === st ? 'active-' + st : ''}"
                 ${readOnly ? 'disabled' : ''}
-                onclick="setEstadoAsistencia('${sesion.id}', '${est.id}', '${st}')">
+                data-on-click="setEstadoAsistencia('${sesion.id}', '${est.id}', '${st}')">
                 ${st}
               </button>
             `).join('')}
@@ -880,7 +902,7 @@ function renderAsistenciaView() {
           <input type="text" class="form-control"
             value="${esc(reg.observacion)}"
             ${readOnly ? 'disabled' : ''}
-            onchange="setObservacionAsistencia('${sesion.id}', '${est.id}', this.value)">
+            data-on-change="setObservacionAsistencia('${sesion.id}', '${est.id}', this.value)">
         </td>
         <td>
           <span class="badge ${pctHistorico >= 80 ? 'badge-olive' : 'badge-rust'}">${pctHistorico}%</span>
@@ -898,8 +920,8 @@ function renderAsistenciaView() {
         </div>
         ${appState.currentRole !== 'ESTUDIANTE' ? `
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-outline" onclick="marcarTodosPresentes('${sesion.id}')">${ICONS.check} Todos presentes</button>
-            <button class="btn btn-primary" onclick="guardarSesionAsistencia()">Guardar</button>
+            <button class="btn btn-outline" data-on-click="marcarTodosPresentes('${sesion.id}')">${ICONS.check} Todos presentes</button>
+            <button class="btn btn-primary" data-on-click="guardarSesionAsistencia()">Guardar</button>
           </div>
         ` : ''}
       </div>
@@ -907,7 +929,7 @@ function renderAsistenciaView() {
         <div class="form-grid-3" style="margin-bottom:18px; background:var(--sand-soft); padding:14px; border-radius:var(--radius); border:1px solid var(--line);">
           <div>
             <label class="form-label">Clase</label>
-            <select class="form-control" onchange="appState.filters.asistenciaClaseId = this.value; renderMainView();">
+            <select class="form-control" data-on-change="actualizarFiltro('asistenciaClaseId', this.value)">
               ${store.clases.map(cl => {
                 const m = getMateria(cl.materiaId);
                 const p = getPromocion(cl.promocionId);
@@ -918,13 +940,13 @@ function renderAsistenciaView() {
           <div>
             <label class="form-label">Fecha</label>
             <input type="date" class="form-control" value="${fecha}"
-              onchange="appState.filters.asistenciaFecha = this.value; renderMainView();">
+              data-on-change="actualizarFiltro('asistenciaFecha', this.value)">
           </div>
           <div>
             <label class="form-label">Tema</label>
             <input type="text" class="form-control" value="${esc(sesion.tema)}"
               ${appState.currentRole === 'ESTUDIANTE' ? 'disabled' : ''}
-              onchange="actualizarTemaAsistencia('${sesion.id}', this.value)">
+              data-on-change="actualizarTemaAsistencia('${sesion.id}', this.value)">
           </div>
         </div>
 
@@ -1021,19 +1043,19 @@ function renderCalificacionesView() {
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial1)}"
-            onchange="actualizarNota('${claseActual.id}', '${est.id}', 'parcial1', this.value)"> %
+            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'parcial1', this.value)"> %
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial2)}"
-            onchange="actualizarNota('${claseActual.id}', '${est.id}', 'parcial2', this.value)"> %
+            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'parcial2', this.value)"> %
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial3)}"
-            onchange="actualizarNota('${claseActual.id}', '${est.id}', 'parcial3', this.value)"> %
+            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'parcial3', this.value)"> %
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.acumulativo)}"
-            onchange="actualizarNota('${claseActual.id}', '${est.id}', 'acumulativo', this.value)"> %
+            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'acumulativo', this.value)"> %
         </td>
         <td>
           <strong style="font-size:15px; color:var(--ink);">${notaFinal}%</strong>
@@ -1054,7 +1076,7 @@ function renderCalificacionesView() {
           <h2>Libro de notas</h2>
           <p>Escala de 0% a 100% | Nota mínima aprobatoria: <strong>70%</strong> | Catedrático: <strong>${esc(formatNombreConGrado(cat))}</strong></p>
         </div>
-        <button class="btn btn-primary" onclick="saveStore(store); showToast('Calificaciones registradas en el acta oficial');">
+        <button class="btn btn-primary" data-on-click="confirmarActaCalificaciones()">
           ${ICONS.check} Guardar
         </button>
       </div>
@@ -1062,7 +1084,7 @@ function renderCalificacionesView() {
         <div class="toolbar">
           <div class="toolbar-filters">
             <label class="form-label" style="margin-bottom:0;">Clase:</label>
-            <select class="form-control" style="max-width:460px;" onchange="appState.filters.notasClaseId = this.value; renderMainView();">
+            <select class="form-control" style="max-width:460px;" data-on-change="actualizarFiltro('notasClaseId', this.value)">
               ${store.clases.map(cl => {
                 const m = getMateria(cl.materiaId);
                 const p = getPromocion(cl.promocionId);
@@ -1165,11 +1187,11 @@ function renderBoletinView() {
       <div class="toolbar" style="background:var(--paper); padding:14px 18px; border-radius:var(--radius); border:1px solid var(--line);">
         <div class="toolbar-filters">
           <label class="form-label" style="margin-bottom:0;">Estudiante:</label>
-          <select class="form-control" style="max-width:420px;" onchange="appState.filters.boletinEstudianteId = this.value; renderMainView();">
+          <select class="form-control" style="max-width:420px;" data-on-change="actualizarFiltro('boletinEstudianteId', this.value)">
             ${store.estudiantes.map(e => `<option value="${e.id}" ${e.id === est.id ? 'selected' : ''}>[${esc(e.codigoAlumno)}] ${esc(e.apellidos)}, ${esc(e.nombres)} (${esc(e.grado)})</option>`).join('')}
           </select>
         </div>
-        <button class="btn btn-outline" onclick="window.print()">${ICONS.print} Imprimir</button>
+        <button class="btn btn-outline" data-on-click="imprimirPagina()">${ICONS.print} Imprimir</button>
       </div>
     ` : ''}
 
@@ -1294,8 +1316,8 @@ function verExpedienteEstudiante(id) {
       <input class="form-control" value="${esc(est.direccion)}" disabled>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-      <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
-      <button class="btn btn-primary" onclick="closeModal(); verBoletinDeEstudiante('${est.id}')">Ver Boletín de Calificaciones</button>
+      <button class="btn btn-outline" data-on-click="closeModal()">Cerrar</button>
+      <button class="btn btn-primary" data-on-click="closeModal(); verBoletinDeEstudiante('${est.id}')">Ver Boletín de Calificaciones</button>
     </div>
   `);
 }
@@ -1303,7 +1325,7 @@ function verExpedienteEstudiante(id) {
 function openModalNuevoEstudiante() {
   if (!store.promociones.length) { showToast('Primero registre una promoción'); return; }
   openModal('Registrar Nuevo Estudiante en la ESOE', `
-    <form onsubmit="guardarNuevoEstudiante(event)">
+    <form data-on-submit="guardarNuevoEstudiante(event)">
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Código del Alumno (Numérico FFAA) *</label>
@@ -1323,7 +1345,7 @@ function openModalNuevoEstudiante() {
         </div>
         <div class="form-group">
           <label class="form-label">Condición *</label>
-          <select id="est-condicion" class="form-control" onchange="toggleGradoEstudiante(this.value)">
+          <select id="est-condicion" class="form-control" data-on-change="toggleGradoEstudiante(this.value)">
             <option value="MILITAR">Militar</option>
             <option value="CIVIL">Civil</option>
           </select>
@@ -1367,7 +1389,7 @@ function openModalNuevoEstudiante() {
         <input type="text" id="est-emergencia" class="form-control" required>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-outline" data-on-click="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar Expediente</button>
       </div>
     </form>
@@ -1411,7 +1433,7 @@ function guardarNuevoEstudiante(e) {
 
 function openModalNuevoCatedratico() {
   openModal('Registrar Nuevo Catedrático', `
-    <form onsubmit="guardarNuevoCatedratico(event)">
+    <form data-on-submit="guardarNuevoCatedratico(event)">
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Nombres *</label>
@@ -1431,7 +1453,7 @@ function openModalNuevoCatedratico() {
         </div>
         <div class="form-group">
           <label class="form-label">Condición *</label>
-          <select id="cat-condicion" class="form-control" onchange="toggleGradoCatedratico(this.value)">
+          <select id="cat-condicion" class="form-control" data-on-change="toggleGradoCatedratico(this.value)">
             <option value="MILITAR">Militar</option>
             <option value="CIVIL">Civil</option>
           </select>
@@ -1446,7 +1468,7 @@ function openModalNuevoCatedratico() {
         <input type="text" id="cat-titulo" class="form-control" required>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-outline" data-on-click="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Nuevo catedrático</button>
       </div>
     </form>
@@ -1484,7 +1506,7 @@ function guardarNuevoCatedratico(e) {
 
 function openModalNuevoPeriodo() {
   openModal('Crear Nuevo periodo', `
-    <form onsubmit="guardarNuevoPeriodo(event)">
+    <form data-on-submit="guardarNuevoPeriodo(event)">
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Código del Periodo *</label>
@@ -1512,7 +1534,7 @@ function openModalNuevoPeriodo() {
         </div>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-outline" data-on-click="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Crear Periodo</button>
       </div>
     </form>
@@ -1538,7 +1560,7 @@ function guardarNuevoPeriodo(e) {
 
 function openModalNuevaPromocion() {
   openModal('Registrar Nueva Promoción ESOE', `
-    <form onsubmit="guardarNuevaPromocion(event)">
+    <form data-on-submit="guardarNuevaPromocion(event)">
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Código de Promoción *</label>
@@ -1558,7 +1580,7 @@ function openModalNuevaPromocion() {
         </div>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-outline" data-on-click="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Crear Promoción</button>
       </div>
     </form>
@@ -1584,7 +1606,7 @@ function guardarNuevaPromocion(e) {
 
 function openModalNuevaMateria() {
   openModal('Registrar Nueva Materia en el Catálogo', `
-    <form onsubmit="guardarNuevaMateria(event)">
+    <form data-on-submit="guardarNuevaMateria(event)">
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Código de Materia *</label>
@@ -1600,7 +1622,7 @@ function openModalNuevaMateria() {
         <input type="text" id="mat-nombre" class="form-control" required>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-outline" data-on-click="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar Materia</button>
       </div>
     </form>
@@ -1625,7 +1647,7 @@ function guardarNuevaMateria(e) {
 function openModalNuevaClase() {
   if (!store.periodos.length || !store.promociones.length || !store.materias.length || !store.catedraticos.length) { showToast('Primero registre periodo, promoción, materia y catedrático'); return; }
   openModal('Nueva clase (1 Catedrático por Clase)', `
-    <form onsubmit="guardarNuevaClase(event)">
+    <form data-on-submit="guardarNuevaClase(event)">
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Código de Clase *</label>
@@ -1665,7 +1687,7 @@ function openModalNuevaClase() {
         </div>
       </div>
       <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        <button type="button" class="btn btn-outline" data-on-click="closeModal()">Cancelar</button>
         <button type="submit" class="btn btn-primary">Asignar Clase</button>
       </div>
     </form>

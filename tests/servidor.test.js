@@ -62,6 +62,9 @@ test('seguridad: cabeceras de proteccion presentes', async () => {
   assert.match(csp, /object-src 'none'/);
   assert.match(csp, /frame-ancestors 'none'/);
   assert.doesNotMatch(csp, /script-src [^;]*'unsafe-inline'/);
+  assert.match(csp, /script-src-attr 'none'/);
+  assert.match(csp, /font-src 'self'(;|$)/);
+  assert.doesNotMatch(csp, /googleapis|gstatic/);
   assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(res.headers.get('referrer-policy'), 'no-referrer');
   assert.equal(res.headers.get('x-powered-by'), null);

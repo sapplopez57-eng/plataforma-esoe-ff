@@ -86,10 +86,10 @@ Sustituir el almacenamiento en el navegador, vista por vista.
 - **Aceptación:** cuando dos personas entran desde equipos distintos, ven los mismos datos.
 - **Verificación:** prueba de navegador con dos sesiones.
 
-### SEC-04 · Retirar los manejadores en línea y cerrar la política de contenido — Pendiente
-La interfaz tiene más de 50 atributos `onclick`/`onsubmit`, lo que obliga a permitir
-`script-src-attr 'unsafe-inline'`. Pasar a delegación de eventos y servir las fuentes desde el
-propio servidor.
+### SEC-04 · Retirar los manejadores en línea y cerrar la política de contenido — Hecho
+Los 71 atributos `onclick`/`onchange`/`oninput`/`onsubmit` pasaron a `data-on-*` con un despachador
+sin `eval` (`public/js/eventos.js`), y las fuentes Roboto se sirven desde `public/fonts/`.
+La CSP queda con `script-src-attr 'none'` y `font-src 'self'`.
 - **Aceptación:** la cabecera CSP no contiene `unsafe-inline` para scripts y la aplicación funciona
   sin errores en consola.
 - **Verificación:** prueba de cabeceras en `npm test` + recorrido en navegador.

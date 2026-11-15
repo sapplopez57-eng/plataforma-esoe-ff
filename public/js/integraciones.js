@@ -25,7 +25,7 @@ function pintarIntegraciones() {
   }
   if (integraciones.error) {
     contenedor.innerHTML = `${emptyState(esc(integraciones.error))}
-      <div class="toolbar" style="margin-top:16px;"><button type="button" class="btn btn-outline" onclick="cargarIntegraciones()">Reintentar</button></div>`;
+      <div class="toolbar" style="margin-top:16px;"><button type="button" class="btn btn-outline" data-on-click="cargarIntegraciones()">Reintentar</button></div>`;
     return;
   }
 
@@ -40,10 +40,10 @@ function pintarIntegraciones() {
         : '<span class="badge badge-neutral">Sin vincular</span>'}</td>
       <td style="text-align:right;">
         ${p.vinculada
-          ? `<button type="button" class="btn btn-outline btn-sm" data-id="${esc(p.id)}" onclick="desvincularCuentaExterna(this.dataset.id)">Desvincular</button>`
-          : `<button type="button" class="btn btn-primary btn-sm" data-id="${esc(p.id)}" onclick="abrirVinculacion(this.dataset.id)">Vincular mi cuenta</button>`}
-        ${esAdmin ? `<button type="button" class="btn btn-outline btn-sm" data-id="${esc(p.id)}" onclick="probarPlataforma(this.dataset.id)">Probar</button>
-          <button type="button" class="btn btn-outline btn-sm" data-id="${esc(p.id)}" onclick="eliminarPlataforma(this.dataset.id)">Eliminar</button>` : ''}
+          ? `<button type="button" class="btn btn-outline btn-sm" data-id="${esc(p.id)}" data-on-click="desvincularCuentaExterna(this.dataset.id)">Desvincular</button>`
+          : `<button type="button" class="btn btn-primary btn-sm" data-id="${esc(p.id)}" data-on-click="abrirVinculacion(this.dataset.id)">Vincular mi cuenta</button>`}
+        ${esAdmin ? `<button type="button" class="btn btn-outline btn-sm" data-id="${esc(p.id)}" data-on-click="probarPlataforma(this.dataset.id)">Probar</button>
+          <button type="button" class="btn btn-outline btn-sm" data-id="${esc(p.id)}" data-on-click="eliminarPlataforma(this.dataset.id)">Eliminar</button>` : ''}
       </td>
     </tr>`).join('');
 
@@ -75,7 +75,7 @@ function pintarIntegraciones() {
   contenedor.innerHTML = `
     <div class="toolbar">
       <p>Vincule su cuenta de otras plataformas para ver aquí sus cursos, su avance y sus calificaciones.</p>
-      ${esAdmin ? `<button type="button" class="btn btn-primary" onclick="abrirNuevaPlataforma()">${ICONS.plus}<span>Agregar plataforma</span></button>` : ''}
+      ${esAdmin ? `<button type="button" class="btn btn-primary" data-on-click="abrirNuevaPlataforma()">${ICONS.plus}<span>Agregar plataforma</span></button>` : ''}
     </div>
     ${integraciones.plataformas.length === 0
       ? emptyState(esAdmin ? 'Aún no hay plataformas registradas.' : 'La administración aún no ha registrado plataformas.')
@@ -88,7 +88,7 @@ function pintarIntegraciones() {
       <table class="data-table"><tbody>${sugeridas.map((p) => `
         <tr>
           <td><strong>${esc(p.nombre)}</strong><br><small>${esc(p.descripcion)}</small></td>
-          <td style="text-align:right;"><button type="button" class="btn btn-outline btn-sm" data-clave="${esc(p.clave)}" onclick="agregarSugerida(this.dataset.clave)">Agregar</button></td>
+          <td style="text-align:right;"><button type="button" class="btn btn-outline btn-sm" data-clave="${esc(p.clave)}" data-on-click="agregarSugerida(this.dataset.clave)">Agregar</button></td>
         </tr>`).join('')}</tbody></table>` : ''}
     ${bloqueCursos ? `<h2 class="section-title" style="margin-top:32px;">Mis cursos en otras plataformas</h2>${bloqueCursos}` : ''}
   `;
@@ -128,7 +128,7 @@ async function operarIntegracion(accion, mensajeDeExito) {
 
 function abrirNuevaPlataforma() {
   openModal('Agregar plataforma', `
-    <form onsubmit="guardarNuevaPlataforma(event)">
+    <form data-on-submit="guardarNuevaPlataforma(event)">
       <div class="form-group">
         <label class="form-label" for="plataforma-nombre">Nombre</label>
         <input type="text" id="plataforma-nombre" class="form-control" maxlength="120" required>
@@ -176,7 +176,7 @@ function abrirVinculacion(id) {
   const plataforma = integraciones.plataformas.find((p) => p.id === id);
   if (!plataforma) return;
   openModal(`Vincular cuenta — ${plataforma.nombre}`, `
-    <form data-id="${esc(plataforma.id)}" onsubmit="guardarVinculacion(event)" autocomplete="off">
+    <form data-id="${esc(plataforma.id)}" data-on-submit="guardarVinculacion(event)" autocomplete="off">
       <p style="margin-bottom:16px;">Escriba el usuario y la contraseña que usa en <strong>${esc(plataforma.nombre)}</strong>.
       La contraseña se usa una sola vez para pedir una llave de acceso y no se guarda.</p>
       <div class="form-group">
