@@ -20,6 +20,27 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
   Verificado en un DOM real con un nombre malicioso: antes 14 elementos inyectados, después 0.
 - **Regla:** al agregar un ayudante de seguridad, se busca todo el código que debía usarlo antes de cerrar la vuelta.
   Pendiente (SEC-04): migrar los manejadores `onclick` en línea para cerrar la CSP.
+### L-016 · Una regla escrita en prosa no protege nada
+
+- **Qué pasó:** el manual decía desde la primera vuelta que un respaldo del repositorio (`*.bundle`)
+  nunca se versiona, y que la configuración de herramientas locales se queda fuera. El `.gitignore`
+  no cubría ninguno de los dos. Durante tres vueltas nadie lo notó porque nunca hizo falta.
+- **Causa raíz:** la regla vivía en un documento que se lee, no en una comprobación que falla. Se
+  habría cumplido solo mientras nadie dejara un `.bundle` en la carpeta del proyecto.
+- **Corrección:** `*.bundle` y las carpetas de herramientas locales, fuera del repositorio, y la comprobación incorporada al
+  preflight que corre antes de cada commit, donde falla sola.
+- **Regla:** toda regla que se pueda comprobar con un comando se convierte en ese comando. Si solo
+  existe como prosa, se cumple por suerte.
+
+### L-017 · Dos ramas de trabajo en paralelo se pisan en el número de la lección
+
+- **Qué pasó:** dos ramas de trabajo añadieron a la vez una lección numerada `L-015`. Al unirlas, el
+  conflicto no fue de contenido sino de identificador.
+- **Causa raíz:** el número se elige leyendo el último del archivo, y dos ramas que salen del mismo
+  punto leen el mismo último.
+- **Corrección:** se conservan las dos lecciones y se renumera la que llega después.
+- **Regla:** al rebasar, antes de resolver un conflicto de este registro se comprueba que no haya dos
+  entradas con el mismo número; el identificador se asigna al unir, no al escribir.
 
 ### L-013 · El repositorio de destino no acepta escrituras; el fork sí
 
