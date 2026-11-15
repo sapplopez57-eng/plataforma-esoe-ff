@@ -1,0 +1,19 @@
+# Secretos y entorno
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencias y artefactos
+node_modules/
+npm-debug.log*
+*.log
+*.bundle
+
+# Herramientas locales y sistema
+.cursorrules
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

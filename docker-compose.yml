@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   esoe-web:
     build:
@@ -9,11 +7,13 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - DATABASE_URL=postgresql://esoe_admin:${DB_PASSWORD:-esoe_secure_2026}@esoe-db:5432/esoe_sms
-      - JWT_SECRET=${JWT_SECRET:-esoe_jwt_secret_key_change_in_prod}
+      - DATABASE_URL=postgresql://esoe_admin:${DB_PASSWORD:?Define DB_PASSWORD en .env}@esoe-db:5432/esoe_sms
+      - JWT_SECRET=${JWT_SECRET:?Define JWT_SECRET en .env}
     depends_on:
       esoe-db:
         condition: service_healthy
@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=esoe_admin
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-esoe_secure_2026}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?Define DB_PASSWORD en .env}
       - POSTGRES_DB=esoe_sms
     volumes:
       - esoe_pgdata:/var/lib/postgresql/data
