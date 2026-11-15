@@ -7,6 +7,26 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-15 — Cierre de SEC-03
+
+### L-018 · Un elemento se cierra con una comprobación, no con una lectura
+
+- **Qué pasó:** SEC-03 (escapar los datos mostrados) se dio por resuelto tras recorrer el código y
+  envolver 89 interpolaciones en `esc()`. Al revisarlo con una comprobación automática quedaban: una
+  interpolación en atributo sin escapar (`value="${fecha}"`), 26 identificadores interpolados en
+  atributos sin escapar, y dos textos del menú. Además el backlog seguía diciendo `Pendiente`.
+- **Causa raíz:** el criterio de aceptación pedía una prueba de navegador y se sustituyó por una
+  inspección manual. Una inspección cubre lo que el ojo alcanza en una pasada y no deja nada que
+  falle después: el escape se puede deshacer sin que nadie se entere.
+- **Corrección:** `tests/escape.test.js` con dos niveles. Uno comprueba que `esc()` neutraliza el
+  dato del criterio (`<img src=x onerror=alert(1)>`) y los cinco caracteres de escape. El otro
+  recorre las plantillas de la interfaz, se queda solo con las que producen HTML, y falla nombrando
+  archivo y línea si alguna interpola un dato sin escapar. Un tercer caso comprueba que el guardián
+  **falla cuando debe**, para que no quede una comprobación que siempre pasa.
+- **Regla:** mientras no exista la comprobación que falla, el elemento sigue `Pendiente`, por mucho
+  que el código ya esté escrito. Es la misma causa de L-016 vista desde el otro lado, así que pasa a
+  ser regla permanente.
+
 ## 2026-11-15 — Publicación del código
 
 ### L-015 · La interfaz interpolaba datos de personas en `innerHTML` sin escapar
@@ -193,3 +213,6 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 9. Todo dato externo —del usuario o de otra plataforma— se escapa una vez, al convertirse en HTML.
 10. El servidor nunca conecta con una dirección dada por un usuario sin validarla contra redes internas.
 11. Las credenciales de terceros se guardan cifradas y las contraseñas de terceros no se guardan.
+12. Toda regla que se pueda comprobar con un comando se convierte en ese comando. Un elemento se
+    cierra cuando existe la comprobación que falla si se rompe, no cuando el código está escrito.
+13. Toda comprobación nueva trae su propio caso que demuestra que falla cuando debe.

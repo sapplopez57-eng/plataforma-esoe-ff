@@ -16,17 +16,20 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | SEC-05 | Inicio de sesión real con Clerk; el rol lo decide el servidor; el selector de rol desaparece con sesión real | 2 |
 | INT-04 | Conexión con Moodle e INFOP: registro de plataformas, vinculación de cuenta personal y consulta de cursos | 3 |
 | DIS-05 | La pantalla de acceso ya no se desborda en teléfonos de 360 px | 3 |
+| SEC-03 | Escapar todo dato mostrado en la interfaz; guardián automático contra reintroducirlo | 4 |
+| SEC-04 | Sin manejadores en línea; CSP sin `unsafe-inline` para scripts; fuentes propias | 4 |
 
 ## Fase 1 — Gestión escolar real
 
-### SEC-03 · Escapar todo dato mostrado en la interfaz — Pendiente · prioridad alta
-La interfaz arma HTML con plantillas e inserta nombres, observaciones y temas tal como se
-escribieron (12 asignaciones a `innerHTML`, ninguna función de escape). Hoy el daño se limita al
-propio navegador; en cuanto los datos se compartan desde el servidor, un nombre con código
-ejecutaría ese código en la sesión de un administrativo.
+### SEC-03 · Escapar todo dato mostrado en la interfaz — Hecho
+Las 89 interpolaciones de datos de personas pasan por `esc()`. Al cerrarlo quedaban cuatro huecos
+que la inspección manual no vio y que la comprobación automática encontró: `value="${fecha}"`, 26
+identificadores interpolados en atributos, y dos textos del menú.
 - **Aceptación:** cuando se registra un estudiante llamado `<img src=x onerror=alert(1)>`, la lista
   y el expediente muestran ese texto literal y no se ejecuta nada.
-- **Verificación:** prueba de navegador que crea el registro y falla si aparece un diálogo.
+- **Verificación:** `tests/escape.test.js`. Comprueba el comportamiento de `esc()` con ese dato, y
+  recorre las plantillas que producen HTML fallando con archivo y línea si alguna interpola un dato
+  sin escapar. Incluye el caso que demuestra que el guardián falla cuando debe.
 
 ### SMS-01 · Migraciones versionadas — Pendiente
 Sustituir el `schema.sql` único por migraciones numeradas con registro de cuáles se aplicaron.

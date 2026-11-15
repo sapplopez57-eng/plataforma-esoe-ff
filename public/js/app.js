@@ -220,14 +220,14 @@ function renderSidebarAndHeader() {
 
   allowed.forEach(item => {
     if (item.section !== lastSection) {
-      html += `<div class="nav-section-label">${item.section}</div>`;
+      html += `<div class="nav-section-label">${esc(item.section)}</div>`;
       lastSection = item.section;
     }
     const activeClass = appState.currentView === item.id ? 'active' : '';
     html += `
-      <button class="nav-item ${activeClass}" data-on-click="navigateTo('${item.id}')">
+      <button class="nav-item ${activeClass}" data-on-click="navigateTo('${esc(item.id)}')">
         ${item.icon}
-        <span>${item.label}</span>
+        <span>${esc(item.label)}</span>
       </button>
     `;
   });
@@ -362,8 +362,8 @@ function renderDashboardView() {
         <td>${esc(formatNombreConGrado(cat))}</td>
         <td>${alumnosSeccion} alumnos</td>
         <td>
-          <button class="btn btn-outline btn-sm" data-on-click="irACalificacionesDeClase('${cls.id}')">Notas</button>
-          <button class="btn btn-primary btn-sm" data-on-click="irAAsistenciaDeClase('${cls.id}')">Asistencia</button>
+          <button class="btn btn-outline btn-sm" data-on-click="irACalificacionesDeClase('${esc(cls.id)}')">Notas</button>
+          <button class="btn btn-primary btn-sm" data-on-click="irAAsistenciaDeClase('${esc(cls.id)}')">Asistencia</button>
         </td>
       </tr>
     `;
@@ -572,8 +572,8 @@ function renderEstudiantesView() {
         <td><span class="badge badge-choco">${esc(prom.codigo)}</span></td>
         <td>${esc(est.telefono)}</td>
         <td>
-          <button class="btn btn-outline btn-sm" data-on-click="verExpedienteEstudiante('${est.id}')">${ICONS.eye} Expediente</button>
-          <button class="btn btn-primary btn-sm" data-on-click="verBoletinDeEstudiante('${est.id}')">Boletín</button>
+          <button class="btn btn-outline btn-sm" data-on-click="verExpedienteEstudiante('${esc(est.id)}')">${ICONS.eye} Expediente</button>
+          <button class="btn btn-primary btn-sm" data-on-click="verBoletinDeEstudiante('${esc(est.id)}')">Boletín</button>
         </td>
       </tr>
     `;
@@ -599,7 +599,7 @@ function renderEstudiantesView() {
             </div>
             <select class="form-control" style="width:auto;" data-on-change="updateEstudianteFilter('estudiantePromocion', this.value)">
               <option value="ALL">Todas las Promociones</option>
-              ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
+              ${store.promociones.map(p => `<option value="${esc(p.id)}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -783,8 +783,8 @@ function renderClasesView() {
           <small style="color:var(--stone);">${esc(cl.aula)}</small>
         </td>
         <td>
-          <button class="btn btn-outline btn-sm" data-on-click="irAAsistenciaDeClase('${cl.id}')">Asistencia</button>
-          ${appState.currentRole !== 'ESTUDIANTE' ? `<button class="btn btn-primary btn-sm" data-on-click="irACalificacionesDeClase('${cl.id}')">Calificar</button>` : ''}
+          <button class="btn btn-outline btn-sm" data-on-click="irAAsistenciaDeClase('${esc(cl.id)}')">Asistencia</button>
+          ${appState.currentRole !== 'ESTUDIANTE' ? `<button class="btn btn-primary btn-sm" data-on-click="irACalificacionesDeClase('${esc(cl.id)}')">Calificar</button>` : ''}
         </td>
       </tr>
     `;
@@ -809,7 +809,7 @@ function renderClasesView() {
           <div class="toolbar-filters">
             <select class="form-control" style="width:auto;" data-on-change="actualizarFiltro('clasePromocion', this.value)">
               <option value="ALL">Todas las Promociones</option>
-              ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
+              ${store.promociones.map(p => `<option value="${esc(p.id)}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
             </select>
             <select class="form-control" style="width:auto;" data-on-change="actualizarFiltro('claseModalidad', this.value)">
               <option value="ALL">Todas las Modalidades de Periodo</option>
@@ -892,7 +892,7 @@ function renderAsistenciaView() {
             ${['PRESENTE', 'AUSENTE', 'TARDANZA', 'EXCUSA'].map(st => `
               <button type="button" class="att-btn ${reg.estado === st ? 'active-' + st : ''}"
                 ${readOnly ? 'disabled' : ''}
-                data-on-click="setEstadoAsistencia('${sesion.id}', '${est.id}', '${st}')">
+                data-on-click="setEstadoAsistencia('${esc(sesion.id)}', '${esc(est.id)}', '${st}')">
                 ${st}
               </button>
             `).join('')}
@@ -902,7 +902,7 @@ function renderAsistenciaView() {
           <input type="text" class="form-control"
             value="${esc(reg.observacion)}"
             ${readOnly ? 'disabled' : ''}
-            data-on-change="setObservacionAsistencia('${sesion.id}', '${est.id}', this.value)">
+            data-on-change="setObservacionAsistencia('${esc(sesion.id)}', '${esc(est.id)}', this.value)">
         </td>
         <td>
           <span class="badge ${pctHistorico >= 80 ? 'badge-olive' : 'badge-rust'}">${pctHistorico}%</span>
@@ -920,7 +920,7 @@ function renderAsistenciaView() {
         </div>
         ${appState.currentRole !== 'ESTUDIANTE' ? `
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-outline" data-on-click="marcarTodosPresentes('${sesion.id}')">${ICONS.check} Todos presentes</button>
+            <button class="btn btn-outline" data-on-click="marcarTodosPresentes('${esc(sesion.id)}')">${ICONS.check} Todos presentes</button>
             <button class="btn btn-primary" data-on-click="guardarSesionAsistencia()">Guardar</button>
           </div>
         ` : ''}
@@ -933,20 +933,20 @@ function renderAsistenciaView() {
               ${store.clases.map(cl => {
                 const m = getMateria(cl.materiaId);
                 const p = getPromocion(cl.promocionId);
-                return `<option value="${cl.id}" ${cl.id === claseActual.id ? 'selected' : ''}>${esc(cl.codigoClase)} - ${esc(m.nombre)} (${esc(p.codigo)})</option>`;
+                return `<option value="${esc(cl.id)}" ${cl.id === claseActual.id ? 'selected' : ''}>${esc(cl.codigoClase)} - ${esc(m.nombre)} (${esc(p.codigo)})</option>`;
               }).join('')}
             </select>
           </div>
           <div>
             <label class="form-label">Fecha</label>
-            <input type="date" class="form-control" value="${fecha}"
+            <input type="date" class="form-control" value="${esc(fecha)}"
               data-on-change="actualizarFiltro('asistenciaFecha', this.value)">
           </div>
           <div>
             <label class="form-label">Tema</label>
             <input type="text" class="form-control" value="${esc(sesion.tema)}"
               ${appState.currentRole === 'ESTUDIANTE' ? 'disabled' : ''}
-              data-on-change="actualizarTemaAsistencia('${sesion.id}', this.value)">
+              data-on-change="actualizarTemaAsistencia('${esc(sesion.id)}', this.value)">
           </div>
         </div>
 
@@ -1043,19 +1043,19 @@ function renderCalificacionesView() {
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial1)}"
-            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'parcial1', this.value)"> %
+            data-on-change="actualizarNota('${esc(claseActual.id)}', '${esc(est.id)}', 'parcial1', this.value)"> %
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial2)}"
-            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'parcial2', this.value)"> %
+            data-on-change="actualizarNota('${esc(claseActual.id)}', '${esc(est.id)}', 'parcial2', this.value)"> %
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial3)}"
-            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'parcial3', this.value)"> %
+            data-on-change="actualizarNota('${esc(claseActual.id)}', '${esc(est.id)}', 'parcial3', this.value)"> %
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.acumulativo)}"
-            data-on-change="actualizarNota('${claseActual.id}', '${est.id}', 'acumulativo', this.value)"> %
+            data-on-change="actualizarNota('${esc(claseActual.id)}', '${esc(est.id)}', 'acumulativo', this.value)"> %
         </td>
         <td>
           <strong style="font-size:15px; color:var(--ink);">${notaFinal}%</strong>
@@ -1088,7 +1088,7 @@ function renderCalificacionesView() {
               ${store.clases.map(cl => {
                 const m = getMateria(cl.materiaId);
                 const p = getPromocion(cl.promocionId);
-                return `<option value="${cl.id}" ${cl.id === claseActual.id ? 'selected' : ''}>${esc(cl.codigoClase)} — ${esc(m.nombre)} (${esc(p.codigo)})</option>`;
+                return `<option value="${esc(cl.id)}" ${cl.id === claseActual.id ? 'selected' : ''}>${esc(cl.codigoClase)} — ${esc(m.nombre)} (${esc(p.codigo)})</option>`;
               }).join('')}
             </select>
           </div>
@@ -1188,7 +1188,7 @@ function renderBoletinView() {
         <div class="toolbar-filters">
           <label class="form-label" style="margin-bottom:0;">Estudiante:</label>
           <select class="form-control" style="max-width:420px;" data-on-change="actualizarFiltro('boletinEstudianteId', this.value)">
-            ${store.estudiantes.map(e => `<option value="${e.id}" ${e.id === est.id ? 'selected' : ''}>[${esc(e.codigoAlumno)}] ${esc(e.apellidos)}, ${esc(e.nombres)} (${esc(e.grado)})</option>`).join('')}
+            ${store.estudiantes.map(e => `<option value="${esc(e.id)}" ${e.id === est.id ? 'selected' : ''}>[${esc(e.codigoAlumno)}] ${esc(e.apellidos)}, ${esc(e.nombres)} (${esc(e.grado)})</option>`).join('')}
           </select>
         </div>
         <button class="btn btn-outline" data-on-click="imprimirPagina()">${ICONS.print} Imprimir</button>
@@ -1317,7 +1317,7 @@ function verExpedienteEstudiante(id) {
     </div>
     <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
       <button class="btn btn-outline" data-on-click="closeModal()">Cerrar</button>
-      <button class="btn btn-primary" data-on-click="closeModal(); verBoletinDeEstudiante('${est.id}')">Ver Boletín de Calificaciones</button>
+      <button class="btn btn-primary" data-on-click="closeModal(); verBoletinDeEstudiante('${esc(est.id)}')">Ver Boletín de Calificaciones</button>
     </div>
   `);
 }
@@ -1357,7 +1357,7 @@ function openModalNuevoEstudiante() {
         <div class="form-group">
           <label class="form-label">Promoción *</label>
           <select id="est-promocion" class="form-control">
-            ${store.promociones.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('')}
+            ${store.promociones.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -1656,25 +1656,25 @@ function openModalNuevaClase() {
         <div class="form-group">
           <label class="form-label">Periodo Lectivo *</label>
           <select id="cls-periodo" class="form-control">
-            ${store.periodos.map(p => `<option value="${p.id}">${esc(p.nombre)} (${esc(p.modalidad)})</option>`).join('')}
+            ${store.periodos.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)} (${esc(p.modalidad)})</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Promoción *</label>
           <select id="cls-promocion" class="form-control">
-            ${store.promociones.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('')}
+            ${store.promociones.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Materia a Impartir *</label>
           <select id="cls-materia" class="form-control">
-            ${store.materias.map(m => `<option value="${m.id}">${esc(m.codigo)} - ${esc(m.nombre)}</option>`).join('')}
+            ${store.materias.map(m => `<option value="${esc(m.id)}">${esc(m.codigo)} - ${esc(m.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Catedrático (1 por Clase) *</label>
           <select id="cls-catedratico" class="form-control">
-            ${store.catedraticos.map(c => `<option value="${c.id}">${esc(formatNombreConGrado(c))}</option>`).join('')}
+            ${store.catedraticos.map(c => `<option value="${esc(c.id)}">${esc(formatNombreConGrado(c))}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
