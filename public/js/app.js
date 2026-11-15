@@ -355,11 +355,11 @@ function renderDashboardView() {
 
     return `
       <tr>
-        <td><strong>${cls.codigoClase}</strong></td>
-        <td>${mat.nombre}</td>
-        <td><span class="badge badge-choco">${prom.codigo}</span></td>
-        <td><span class="badge badge-neutral">${per.modalidad}</span></td>
-        <td>${formatNombreConGrado(cat)}</td>
+        <td><strong>${esc(cls.codigoClase)}</strong></td>
+        <td>${esc(mat.nombre)}</td>
+        <td><span class="badge badge-choco">${esc(prom.codigo)}</span></td>
+        <td><span class="badge badge-neutral">${esc(per.modalidad)}</span></td>
+        <td>${esc(formatNombreConGrado(cat))}</td>
         <td>${alumnosSeccion} alumnos</td>
         <td>
           <button class="btn btn-outline btn-sm" onclick="irACalificacionesDeClase('${cls.id}')">Notas</button>
@@ -459,11 +459,11 @@ function irAAsistenciaDeClase(claseId) {
 function renderEstructuraView() {
   const periodosRows = store.periodos.map(p => `
     <tr>
-      <td><strong>${p.codigo}</strong></td>
-      <td>${p.nombre}</td>
-      <td><span class="badge badge-olive">${p.modalidad}</span></td>
-      <td>${p.fechaInicio}</td>
-      <td>${p.fechaFin}</td>
+      <td><strong>${esc(p.codigo)}</strong></td>
+      <td>${esc(p.nombre)}</td>
+      <td><span class="badge badge-olive">${esc(p.modalidad)}</span></td>
+      <td>${esc(p.fechaInicio)}</td>
+      <td>${esc(p.fechaFin)}</td>
       <td><span class="badge badge-choco">${p.activo ? 'ACTIVO' : 'CERRADO'}</span></td>
     </tr>
   `).join('');
@@ -476,10 +476,10 @@ function renderEstructuraView() {
         <div>
           <div class="entity-card-header">
             <div>
-              <span class="badge badge-choco" style="margin-bottom:6px;">${prom.codigo}</span>
-              <h3>${prom.nombre}</h3>
+              <span class="badge badge-choco" style="margin-bottom:6px;">${esc(prom.codigo)}</span>
+              <h3>${esc(prom.nombre)}</h3>
             </div>
-            <span class="badge badge-olive">${prom.anioIngreso} - ${prom.anioEgreso}</span>
+            <span class="badge badge-olive">${esc(prom.anioIngreso)} - ${esc(prom.anioEgreso)}</span>
           </div>
           <p style="font-size:13px; color:var(--stone);">
             Estudiantes inscritos en la promoción: <strong>${totalAlumnos} alumnos</strong>
@@ -557,20 +557,20 @@ function renderEstudiantesView() {
   const rows = filtered.map(est => {
     const prom = getPromocion(est.promocionId);
     const badgeCondicion = est.condicion === 'MILITAR'
-      ? `<span class="badge badge-olive">${est.grado}</span>`
+      ? `<span class="badge badge-olive">${esc(est.grado)}</span>`
       : `<span class="badge badge-neutral">Civil</span>`;
 
     return `
       <tr>
-        <td><strong style="color:var(--ink); font-family:monospace; font-size:13.5px;">${est.codigoAlumno}</strong></td>
-        <td>${est.dni}</td>
+        <td><strong style="color:var(--ink); font-family:monospace; font-size:13.5px;">${esc(est.codigoAlumno)}</strong></td>
+        <td>${esc(est.dni)}</td>
         <td>
-          <strong style="display:block;">${est.apellidos}, ${est.nombres}</strong>
-          <small style="color:var(--stone);">${est.correo}</small>
+          <strong style="display:block;">${esc(est.apellidos)}, ${esc(est.nombres)}</strong>
+          <small style="color:var(--stone);">${esc(est.correo)}</small>
         </td>
         <td>${badgeCondicion}</td>
-        <td><span class="badge badge-choco">${prom.codigo}</span></td>
-        <td>${est.telefono}</td>
+        <td><span class="badge badge-choco">${esc(prom.codigo)}</span></td>
+        <td>${esc(est.telefono)}</td>
         <td>
           <button class="btn btn-outline btn-sm" onclick="verExpedienteEstudiante('${est.id}')">${ICONS.eye} Expediente</button>
           <button class="btn btn-primary btn-sm" onclick="verBoletinDeEstudiante('${est.id}')">Boletín</button>
@@ -594,12 +594,12 @@ function renderEstudiantesView() {
             <div class="search-input-wrap">
               ${ICONS.search}
               <input type="text" class="form-control"
-                value="${appState.filters.estudianteSearch}"
+                value="${esc(appState.filters.estudianteSearch)}"
                 oninput="updateEstudianteFilter('estudianteSearch', this.value)">
             </div>
             <select class="form-control" style="width:auto;" onchange="updateEstudianteFilter('estudiantePromocion', this.value)">
               <option value="ALL">Todas las Promociones</option>
-              ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${p.nombre}</option>`).join('')}
+              ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -654,24 +654,24 @@ function renderCatedraticosView() {
   const rows = filtered.map(cat => {
     const clasesImpartidas = store.clases.filter(cl => cl.catedraticoId === cat.id);
     const gradoBadge = cat.condicion === 'MILITAR'
-      ? `<span class="badge badge-olive">${cat.grado}</span>`
+      ? `<span class="badge badge-olive">${esc(cat.grado)}</span>`
       : `<span class="badge badge-neutral">Catedrático Civil</span>`;
 
     const resumenClases = clasesImpartidas.map(cl => {
       const m = getMateria(cl.materiaId);
       const p = getPromocion(cl.promocionId);
-      return `<div style="font-size:12px; margin-bottom:3px;">• <strong>${m.codigo}</strong> (${p.codigo})</div>`;
+      return `<div style="font-size:12px; margin-bottom:3px;">• <strong>${esc(m.codigo)}</strong> (${esc(p.codigo)})</div>`;
     }).join('') || '<span style="color:var(--stone); font-size:12px;">Sin clases asignadas</span>';
 
     return `
       <tr>
         <td>
-          <strong style="display:block; color:var(--ink);">${cat.apellidos}, ${cat.nombres}</strong>
-          <small style="color:var(--stone);">${cat.correo} | Tel: ${cat.telefono}</small>
+          <strong style="display:block; color:var(--ink);">${esc(cat.apellidos)}, ${esc(cat.nombres)}</strong>
+          <small style="color:var(--stone);">${esc(cat.correo)} | Tel: ${esc(cat.telefono)}</small>
         </td>
-        <td>${cat.dni}</td>
+        <td>${esc(cat.dni)}</td>
         <td>${gradoBadge}</td>
-        <td>${cat.titulo}</td>
+        <td>${esc(cat.titulo)}</td>
         <td>${resumenClases}</td>
       </tr>
     `;
@@ -691,7 +691,7 @@ function renderCatedraticosView() {
           <div class="search-input-wrap">
             ${ICONS.search}
             <input type="text" class="form-control"
-              value="${appState.filters.catedraticoSearch}"
+              value="${esc(appState.filters.catedraticoSearch)}"
               oninput="appState.filters.catedraticoSearch = this.value; renderMainView();">
           </div>
         </div>
@@ -740,25 +740,25 @@ function renderClasesView() {
 
     return `
       <tr>
-        <td><strong>${cl.codigoClase}</strong></td>
+        <td><strong>${esc(cl.codigoClase)}</strong></td>
         <td>
-          <strong style="display:block; color:var(--ink);">${mat.nombre}</strong>
-          <small style="color:var(--stone);">Código: ${mat.codigo} | ${mat.uv} UV</small>
+          <strong style="display:block; color:var(--ink);">${esc(mat.nombre)}</strong>
+          <small style="color:var(--stone);">Código: ${esc(mat.codigo)} | ${esc(mat.uv)} UV</small>
         </td>
         <td>
-          <span class="badge badge-choco">${prom.codigo}</span>
+          <span class="badge badge-choco">${esc(prom.codigo)}</span>
         </td>
         <td>
-          <span class="badge badge-olive">${per.modalidad}</span>
-          <small style="display:block; color:var(--stone); margin-top:2px;">${per.nombre}</small>
+          <span class="badge badge-olive">${esc(per.modalidad)}</span>
+          <small style="display:block; color:var(--stone); margin-top:2px;">${esc(per.nombre)}</small>
         </td>
         <td>
-          <strong style="display:block;">${formatNombreConGrado(cat)}</strong>
-          <small style="color:var(--stone);">${cat.titulo}</small>
+          <strong style="display:block;">${esc(formatNombreConGrado(cat))}</strong>
+          <small style="color:var(--stone);">${esc(cat.titulo)}</small>
         </td>
         <td>
-          <span style="display:block; font-size:12.5px;">${cl.horario}</span>
-          <small style="color:var(--stone);">${cl.aula}</small>
+          <span style="display:block; font-size:12.5px;">${esc(cl.horario)}</span>
+          <small style="color:var(--stone);">${esc(cl.aula)}</small>
         </td>
         <td>
           <button class="btn btn-outline btn-sm" onclick="irAAsistenciaDeClase('${cl.id}')">Asistencia</button>
@@ -787,11 +787,11 @@ function renderClasesView() {
           <div class="toolbar-filters">
             <select class="form-control" style="width:auto;" onchange="appState.filters.clasePromocion = this.value; renderMainView();">
               <option value="ALL">Todas las Promociones</option>
-              ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${p.nombre}</option>`).join('')}
+              ${store.promociones.map(p => `<option value="${p.id}" ${promFilter === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}
             </select>
             <select class="form-control" style="width:auto;" onchange="appState.filters.claseModalidad = this.value; renderMainView();">
               <option value="ALL">Todas las Modalidades de Periodo</option>
-              ${MODALIDADES_PERIODO.map(m => `<option value="${m.codigo}" ${modFilter === m.codigo ? 'selected' : ''}>${m.etiqueta}</option>`).join('')}
+              ${MODALIDADES_PERIODO.map(m => `<option value="${esc(m.codigo)}" ${modFilter === m.codigo ? 'selected' : ''}>${esc(m.etiqueta)}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -860,10 +860,10 @@ function renderAsistenciaView() {
 
     return `
       <tr>
-        <td><strong style="font-family:monospace;">${est.codigoAlumno}</strong></td>
+        <td><strong style="font-family:monospace;">${esc(est.codigoAlumno)}</strong></td>
         <td>
-          <strong>${est.apellidos}, ${est.nombres}</strong>
-          <small style="display:block; color:var(--stone);">${est.condicion === 'MILITAR' ? est.grado : 'Civil'}</small>
+          <strong>${esc(est.apellidos)}, ${esc(est.nombres)}</strong>
+          <small style="display:block; color:var(--stone);">${esc(est.condicion === 'MILITAR' ? est.grado : 'Civil')}</small>
         </td>
         <td>
           <div class="attendance-group">
@@ -878,7 +878,7 @@ function renderAsistenciaView() {
         </td>
         <td>
           <input type="text" class="form-control"
-            value="${reg.observacion || ''}"
+            value="${esc(reg.observacion)}"
             ${readOnly ? 'disabled' : ''}
             onchange="setObservacionAsistencia('${sesion.id}', '${est.id}', this.value)">
         </td>
@@ -894,7 +894,7 @@ function renderAsistenciaView() {
       <div class="panel-header">
         <div class="panel-title">
           <h2>Registro de asistencia</h2>
-          <p>Catedrático titular: <strong>${formatNombreConGrado(cat)}</strong> | ${prom.nombre}</p>
+          <p>Catedrático titular: <strong>${esc(formatNombreConGrado(cat))}</strong> | ${esc(prom.nombre)}</p>
         </div>
         ${appState.currentRole !== 'ESTUDIANTE' ? `
           <div style="display:flex; gap:8px;">
@@ -911,7 +911,7 @@ function renderAsistenciaView() {
               ${store.clases.map(cl => {
                 const m = getMateria(cl.materiaId);
                 const p = getPromocion(cl.promocionId);
-                return `<option value="${cl.id}" ${cl.id === claseActual.id ? 'selected' : ''}>${cl.codigoClase} - ${m.nombre} (${p.codigo})</option>`;
+                return `<option value="${cl.id}" ${cl.id === claseActual.id ? 'selected' : ''}>${esc(cl.codigoClase)} - ${esc(m.nombre)} (${esc(p.codigo)})</option>`;
               }).join('')}
             </select>
           </div>
@@ -922,7 +922,7 @@ function renderAsistenciaView() {
           </div>
           <div>
             <label class="form-label">Tema</label>
-            <input type="text" class="form-control" value="${sesion.tema || ''}"
+            <input type="text" class="form-control" value="${esc(sesion.tema)}"
               ${appState.currentRole === 'ESTUDIANTE' ? 'disabled' : ''}
               onchange="actualizarTemaAsistencia('${sesion.id}', this.value)">
           </div>
@@ -1014,25 +1014,25 @@ function renderCalificacionesView() {
 
     return `
       <tr>
-        <td><strong style="font-family:monospace;">${est.codigoAlumno}</strong></td>
+        <td><strong style="font-family:monospace;">${esc(est.codigoAlumno)}</strong></td>
         <td>
-          <strong>${est.apellidos}, ${est.nombres}</strong>
-          <small style="display:block; color:var(--stone);">${est.condicion === 'MILITAR' ? est.grado : 'Civil'}</small>
+          <strong>${esc(est.apellidos)}, ${esc(est.nombres)}</strong>
+          <small style="display:block; color:var(--stone);">${esc(est.condicion === 'MILITAR' ? est.grado : 'Civil')}</small>
         </td>
         <td>
-          <input type="number" min="0" max="100" class="grade-input" value="${cal.parcial1}"
+          <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial1)}"
             onchange="actualizarNota('${claseActual.id}', '${est.id}', 'parcial1', this.value)"> %
         </td>
         <td>
-          <input type="number" min="0" max="100" class="grade-input" value="${cal.parcial2}"
+          <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial2)}"
             onchange="actualizarNota('${claseActual.id}', '${est.id}', 'parcial2', this.value)"> %
         </td>
         <td>
-          <input type="number" min="0" max="100" class="grade-input" value="${cal.parcial3}"
+          <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial3)}"
             onchange="actualizarNota('${claseActual.id}', '${est.id}', 'parcial3', this.value)"> %
         </td>
         <td>
-          <input type="number" min="0" max="100" class="grade-input" value="${cal.acumulativo}"
+          <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.acumulativo)}"
             onchange="actualizarNota('${claseActual.id}', '${est.id}', 'acumulativo', this.value)"> %
         </td>
         <td>
@@ -1052,7 +1052,7 @@ function renderCalificacionesView() {
       <div class="panel-header">
         <div class="panel-title">
           <h2>Libro de notas</h2>
-          <p>Escala de 0% a 100% | Nota mínima aprobatoria: <strong>70%</strong> | Catedrático: <strong>${formatNombreConGrado(cat)}</strong></p>
+          <p>Escala de 0% a 100% | Nota mínima aprobatoria: <strong>70%</strong> | Catedrático: <strong>${esc(formatNombreConGrado(cat))}</strong></p>
         </div>
         <button class="btn btn-primary" onclick="saveStore(store); showToast('Calificaciones registradas en el acta oficial');">
           ${ICONS.check} Guardar
@@ -1066,7 +1066,7 @@ function renderCalificacionesView() {
               ${store.clases.map(cl => {
                 const m = getMateria(cl.materiaId);
                 const p = getPromocion(cl.promocionId);
-                return `<option value="${cl.id}" ${cl.id === claseActual.id ? 'selected' : ''}>${cl.codigoClase} — ${m.nombre} (${p.codigo})</option>`;
+                return `<option value="${cl.id}" ${cl.id === claseActual.id ? 'selected' : ''}>${esc(cl.codigoClase)} — ${esc(m.nombre)} (${esc(p.codigo)})</option>`;
               }).join('')}
             </select>
           </div>
@@ -1135,16 +1135,16 @@ function renderBoletinView() {
 
     return `
       <tr>
-        <td><strong>${mat.codigo}</strong></td>
+        <td><strong>${esc(mat.codigo)}</strong></td>
         <td>
-          <strong>${mat.nombre}</strong>
-          <small style="display:block; color:var(--stone);">${per.nombre} (${per.modalidad})</small>
+          <strong>${esc(mat.nombre)}</strong>
+          <small style="display:block; color:var(--stone);">${esc(per.nombre)} (${esc(per.modalidad)})</small>
         </td>
-        <td>${formatNombreConGrado(cat)}</td>
-        <td>${cal.parcial1}%</td>
-        <td>${cal.parcial2}%</td>
-        <td>${cal.parcial3}%</td>
-        <td>${cal.acumulativo}%</td>
+        <td>${esc(formatNombreConGrado(cat))}</td>
+        <td>${esc(cal.parcial1)}%</td>
+        <td>${esc(cal.parcial2)}%</td>
+        <td>${esc(cal.parcial3)}%</td>
+        <td>${esc(cal.acumulativo)}%</td>
         <td><strong style="font-size:14.5px;">${final}%</strong></td>
         <td>${pctAsis}%</td>
         <td>
@@ -1166,7 +1166,7 @@ function renderBoletinView() {
         <div class="toolbar-filters">
           <label class="form-label" style="margin-bottom:0;">Estudiante:</label>
           <select class="form-control" style="max-width:420px;" onchange="appState.filters.boletinEstudianteId = this.value; renderMainView();">
-            ${store.estudiantes.map(e => `<option value="${e.id}" ${e.id === est.id ? 'selected' : ''}>[${e.codigoAlumno}] ${e.apellidos}, ${e.nombres} (${e.grado})</option>`).join('')}
+            ${store.estudiantes.map(e => `<option value="${e.id}" ${e.id === est.id ? 'selected' : ''}>[${esc(e.codigoAlumno)}] ${esc(e.apellidos)}, ${esc(e.nombres)} (${esc(e.grado)})</option>`).join('')}
           </select>
         </div>
         <button class="btn btn-outline" onclick="window.print()">${ICONS.print} Imprimir</button>
@@ -1187,17 +1187,17 @@ function renderBoletinView() {
         <div class="form-grid-3" style="background:var(--sand-soft); padding:16px; border-radius:var(--radius); border:1px solid var(--line); margin-bottom:20px;">
           <div>
             <small style="color:var(--stone); text-transform:uppercase; font-weight:700; font-size:11px;">Nombre Completo y Grado</small>
-            <strong style="display:block; font-size:15px; color:var(--ink);">${formatNombreConGrado(est)}</strong>
-            <span style="font-size:12.5px; color:var(--stone);">Condición: ${est.condicion}</span>
+            <strong style="display:block; font-size:15px; color:var(--ink);">${esc(formatNombreConGrado(est))}</strong>
+            <span style="font-size:12.5px; color:var(--stone);">Condición: ${esc(est.condicion)}</span>
           </div>
           <div>
             <small style="color:var(--stone); text-transform:uppercase; font-weight:700; font-size:11px;">Identificación Oficial</small>
-            <strong style="display:block; font-size:14px; font-family:monospace;">Código: ${est.codigoAlumno}</strong>
-            <span style="font-size:12.5px; color:var(--stone);">DNI: ${est.dni} | Sangre: ${est.tipoSangre}</span>
+            <strong style="display:block; font-size:14px; font-family:monospace;">Código: ${esc(est.codigoAlumno)}</strong>
+            <span style="font-size:12.5px; color:var(--stone);">DNI: ${esc(est.dni)} | Sangre: ${esc(est.tipoSangre)}</span>
           </div>
           <div>
             <small style="color:var(--stone); text-transform:uppercase; font-weight:700; font-size:11px;">Ubicación Académica</small>
-            <strong style="display:block; font-size:14px; color:var(--ink);">${prom.nombre}</strong>
+            <strong style="display:block; font-size:14px; color:var(--ink);">${esc(prom.nombre)}</strong>
           </div>
         </div>
 
@@ -1246,52 +1246,52 @@ function verExpedienteEstudiante(id) {
   if (!est) return;
   const prom = getPromocion(est.promocionId);
 
-  openModal(`Expediente Institucional — Código: ${est.codigoAlumno}`, `
+  openModal(`Expediente Institucional — Código: ${esc(est.codigoAlumno)}`, `
     <div class="form-grid-2">
       <div class="form-group">
         <label class="form-label">Código del Alumno (Nivel FFAA)</label>
-        <input class="form-control" value="${est.codigoAlumno}" disabled>
+        <input class="form-control" value="${esc(est.codigoAlumno)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">DNI / Identidad</label>
-        <input class="form-control" value="${est.dni}" disabled>
+        <input class="form-control" value="${esc(est.dni)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Nombres</label>
-        <input class="form-control" value="${est.nombres}" disabled>
+        <input class="form-control" value="${esc(est.nombres)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Apellidos</label>
-        <input class="form-control" value="${est.apellidos}" disabled>
+        <input class="form-control" value="${esc(est.apellidos)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Condición y Grado Militar</label>
-        <input class="form-control" value="${est.condicion} — ${est.grado}" disabled>
+        <input class="form-control" value="${esc(est.condicion)} — ${esc(est.grado)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Promoción</label>
-        <input class="form-control" value="${prom.nombre}" disabled>
+        <input class="form-control" value="${esc(prom.nombre)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Fecha de Nacimiento y Tipo de Sangre</label>
-        <input class="form-control" value="${est.fechaNacimiento} | Grupo: ${est.tipoSangre}" disabled>
+        <input class="form-control" value="${esc(est.fechaNacimiento)} | Grupo: ${esc(est.tipoSangre)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Lugar de Procedencia</label>
-        <input class="form-control" value="${est.procedencia}" disabled>
+        <input class="form-control" value="${esc(est.procedencia)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Teléfono y Correo</label>
-        <input class="form-control" value="${est.telefono} | ${est.correo}" disabled>
+        <input class="form-control" value="${esc(est.telefono)} | ${esc(est.correo)}" disabled>
       </div>
       <div class="form-group">
         <label class="form-label">Contacto de Emergencia</label>
-        <input class="form-control" value="${est.contactoEmergencia}" disabled>
+        <input class="form-control" value="${esc(est.contactoEmergencia)}" disabled>
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">Dirección Domiciliaria</label>
-      <input class="form-control" value="${est.direccion}" disabled>
+      <input class="form-control" value="${esc(est.direccion)}" disabled>
     </div>
     <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
       <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
@@ -1335,7 +1335,7 @@ function openModalNuevoEstudiante() {
         <div class="form-group">
           <label class="form-label">Promoción *</label>
           <select id="est-promocion" class="form-control">
-            ${store.promociones.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')}
+            ${store.promociones.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -1493,7 +1493,7 @@ function openModalNuevoPeriodo() {
         <div class="form-group">
           <label class="form-label">Modalidad del Periodo (4 opciones) *</label>
           <select id="per-modalidad" class="form-control">
-            ${MODALIDADES_PERIODO.map(m => `<option value="${m.codigo}">${m.etiqueta}</option>`).join('')}
+            ${MODALIDADES_PERIODO.map(m => `<option value="${esc(m.codigo)}">${esc(m.etiqueta)}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -1634,25 +1634,25 @@ function openModalNuevaClase() {
         <div class="form-group">
           <label class="form-label">Periodo Lectivo *</label>
           <select id="cls-periodo" class="form-control">
-            ${store.periodos.map(p => `<option value="${p.id}">${p.nombre} (${p.modalidad})</option>`).join('')}
+            ${store.periodos.map(p => `<option value="${p.id}">${esc(p.nombre)} (${esc(p.modalidad)})</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Promoción *</label>
           <select id="cls-promocion" class="form-control">
-            ${store.promociones.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')}
+            ${store.promociones.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Materia a Impartir *</label>
           <select id="cls-materia" class="form-control">
-            ${store.materias.map(m => `<option value="${m.id}">${m.codigo} - ${m.nombre}</option>`).join('')}
+            ${store.materias.map(m => `<option value="${m.id}">${esc(m.codigo)} - ${esc(m.nombre)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Catedrático (1 por Clase) *</label>
           <select id="cls-catedratico" class="form-control">
-            ${store.catedraticos.map(c => `<option value="${c.id}">${formatNombreConGrado(c)}</option>`).join('')}
+            ${store.catedraticos.map(c => `<option value="${c.id}">${esc(formatNombreConGrado(c))}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">

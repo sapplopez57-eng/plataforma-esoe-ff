@@ -9,6 +9,18 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ## 2026-11-15 — Publicación del código
 
+### L-015 · La interfaz interpolaba datos de personas en `innerHTML` sin escapar
+
+- **Qué pasó:** una auditoría de seguridad encontró que `public/js/app.js` insertaba nombres, DNI, correos y
+  códigos directamente en las plantillas HTML. El ayudante `esc()` existía en `sesion.js`, pero `app.js` no lo usaba.
+- **Causa raíz:** el escape se aplicó solo a los módulos nuevos (`integraciones.js`); la interfaz original quedó sin migrar.
+  Con datos importados de Moodle o INFOP, un nombre con HTML se habría ejecutado en el navegador de otros usuarios.
+- **Corrección:** 89 interpolaciones de datos de usuario pasan por `esc()`. Se omiten los ids generados por la
+  aplicación, los filtros y los avisos que usan `textContent` (escaparlos duplicaría las entidades).
+  Verificado en un DOM real con un nombre malicioso: antes 14 elementos inyectados, después 0.
+- **Regla:** al agregar un ayudante de seguridad, se busca todo el código que debía usarlo antes de cerrar la vuelta.
+  Pendiente (SEC-04): migrar los manejadores `onclick` en línea para cerrar la CSP.
+
 ### L-013 · El repositorio de destino no acepta escrituras; el fork sí
 
 - **Qué pasó:** `git push` a `oacoello/plataforma-esoe` devolvía 403 en cada intento, con la rama y
