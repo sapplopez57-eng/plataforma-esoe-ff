@@ -7,6 +7,31 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Paleta azul y naranja
+
+### L-023 · Cambiar la etiqueta de un elemento lo expone a las reglas escritas para la etiqueta nueva
+
+- **Qué pasó:** para corregir el orden de títulos, el rótulo «PLATAFORMA ESOE» pasó de `<h1>` a `<p>`.
+  Desapareció de la pantalla: una regla antigua, `.brand-title-group p { display: none }`, estaba
+  escrita para ocultar un subtítulo y ahora alcanzaba también al rótulo.
+- **Causa raíz:** se revisaron las reglas que apuntaban a la etiqueta vieja (`h1`), no las que
+  apuntaban a la nueva (`p`) en el mismo contenedor.
+- **Corrección:** la regla oculta solo `p:not(.marca-nombre)`. Lo detectó la captura de pantalla, no
+  una prueba: ningún dato faltaba, solo algo visible.
+- **Regla:** al cambiar la etiqueta de un elemento se buscan las reglas que apuntan a la etiqueta
+  **nueva** dentro de su contenedor. Y todo cambio de interfaz se mira en una captura, además de
+  pasar las pruebas.
+
+### L-024 · Nombrar las variables por color obliga a renombrarlas cuando cambia la paleta
+
+- **Qué pasó:** la paleta cambió de olivo a azul y naranja un día después de aplicarse. Con nombres
+  como `--olivo-fuerte`, cada cambio de paleta es un renombrado por todo el repositorio, que es
+  justo lo que produjo L-021.
+- **Corrección:** las variables ahora se nombran por función (`--accion`, `--positivo`,
+  `--negativo`...). La paleta del README vive en `--marca-1` … `--marca-5`, numeradas como en la
+  muestra. Un próximo cambio solo toca valores.
+- **Regla:** se nombra por lo que algo hace, no por cómo se ve hoy.
+
 ## 2026-11-16 — Identidad visual
 
 ### L-021 · Renombrar una variable de CSS no avisa: el estilo desaparece en silencio
@@ -281,3 +306,6 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
     estimado a ojo.
 17. Al renombrar algo se busca en todo el repositorio. Una captura no prueba que un estilo esté
     aplicado.
+18. Las variables se nombran por función, no por color.
+19. Toda navegación tiene nombre, la aplicación tiene enlace para saltar al contenido, y hay un solo
+    `h1` visible por pantalla.

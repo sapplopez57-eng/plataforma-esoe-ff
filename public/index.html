@@ -20,13 +20,13 @@
           <div class="brand-crest">
             <div class="crest-shield">ESOE</div>
             <div class="brand-title-group">
-              <h1>PLATAFORMA ESOE</h1>
+              <p class="marca-nombre">PLATAFORMA ESOE</p>
               <p>Escuela de Suboficiales del Ejército</p>
             </div>
           </div>
 
           <div class="brand-description">
-            <h2>Gestión académica y administrativa.</h2>
+            <h1>Gestión académica y administrativa.</h1>
           </div>
         </div>
 
@@ -36,7 +36,7 @@
       <!-- Panel de Formulario Derecho -->
       <div class="login-form-panel">
         <div class="login-form-header">
-          <h3>Iniciar sesión</h3>
+          <h2>Iniciar sesión</h2>
         </div>
 
         <p id="login-aviso" class="login-aviso hidden" role="alert"></p>
@@ -81,6 +81,7 @@
        APLICACION PRINCIPAL (SHELL)
        ==================================================================== -->
   <div id="app-shell" class="app-shell hidden">
+    <a class="saltar-contenido" href="#content-area">Saltar al contenido</a>
     <!-- Overlay para menu movil -->
     <div id="sidebar-overlay" class="sidebar-overlay" data-on-click="closeMobileSidebar()"></div>
 
@@ -90,13 +91,13 @@
         <div class="sidebar-brand">
           <div class="sidebar-logo">ESOE</div>
           <div class="sidebar-brand-text">
-            <h2>PORTAL ESOE</h2>
+            <p class="marca-nombre">PORTAL ESOE</p>
             <span>Gestión Escolar (SMS)</span>
           </div>
         </div>
       </div>
 
-      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+      <nav id="sidebar-nav" class="sidebar-nav" aria-label="Navegación principal"></nav>
 
       <div class="sidebar-footer">
         <div class="user-mini-profile">
@@ -139,7 +140,7 @@
         </div>
       </header>
 
-      <main id="content-area" class="content-area"></main>
+      <main id="content-area" class="content-area" tabindex="-1"></main>
     </div>
   </div>
 

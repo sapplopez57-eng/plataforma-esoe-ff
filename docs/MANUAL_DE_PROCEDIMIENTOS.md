@@ -401,13 +401,22 @@ Todo color y todo tamaño de letra salen de las variables de `:root` en `public/
 de ahí no se escribe ninguno: ni en la hoja, ni en estilos en línea de `index.html` o de `public/js/`.
 `tests/identidad.test.js` lo comprueba y falla nombrando el archivo.
 
+Las variables se nombran por **función**, no por color: si la paleta cambia, cambian los valores y
+ningún otro archivo (así se hizo el paso de olivo a azul y naranja sin tocar `app.js`).
+
 | Variable | Valor | Uso |
 |---|---|---|
-| `--olivo`, `--chocolate`, `--beige`, `--oxido` | los del README | marca: bordes, adornos, menú lateral |
-| `--olivo-fuerte` / `--olivo-hondo` | `#4F6B41` / `#43593A` | botón primario, Aprobado, Presente, menú activo |
-| `--oxido-fuerte` / `--oxido-hondo` | `#9A4D27` / `#84411F` | Reprobado, Ausente, acciones de cierre |
-| `--texto`, `--titulo`, `--piedra` | chocolate, `#3E2A22`, `#6E5A4B` | texto, títulos, texto secundario |
-| `--papel`, `--beige-suave`, `--linea` | `#FBF8F3`, `#F4ECE0`, `#E3D5C0` | fondo, superficies, bordes |
+| `--marca-1` … `--marca-5` | los cinco del README | la paleta tal cual; la prueba los compara |
+| `--accion` / `--accion-hondo` | cielo / cian | botón primario, menú activo |
+| `--positivo` | cian | Aprobado, Presente |
+| `--negativo` / `--negativo-hondo` | naranja / ámbar | Reprobado, Ausente, acciones de cierre |
+| `--advertencia` | ámbar | Tardanza |
+| `--sobre-accion` | `#0F2A33` | texto encima de cualquier relleno de color: ninguno aguanta blanco |
+| `--enlace` | `#026F8A` | enlaces, botones de contorno y foco sobre fondo claro |
+| `--decoracion`, `--decoracion-viva` | azul profundo, cielo | bordes, cifras, iconos, adornos |
+| `--estructura`, `--sobre-estructura` | `#0A2A35`, `#E6F6FA` | menú lateral, panel de acceso |
+| `--texto`, `--titulo`, `--piedra` | `#0F2A33`, `#0A2029`, `#41606B` | texto, títulos, texto secundario |
+| `--papel`, `--superficie`, `--linea` | `#F6FAFB`, `#E6F3F6`, `#CFE4EA` | fondo, superficies, bordes |
 
 Escala de letra: `--fs-meta` 12 · `--fs-sm` 14 · `--fs-base` **16** · `--fs-md` 18 · `--fs-lg` 24 ·
 `--fs-xl` 28 · `--fs-2xl` 40 · `--fs-display` 56. Los 12 px se reservan a rótulos en mayúsculas con
@@ -428,3 +437,29 @@ escribir en uno más pequeño.
 Los íconos de `public/js/icons.js` dibujan con `currentColor` y marcan su relleno de acento con
 `class="acento"`. El color del acento lo decide la hoja (`.acento`), y sobre fondos de color pasa a
 beige para no perderse.
+
+### Accesibilidad mínima de la estructura
+
+Comparada con Harvard y Canvas (medición con REA y el navegador, 2026-11-16), la interfaz debe
+conservar: `<main>`, idioma declarado, **toda navegación con nombre** (`aria-label`), un enlace
+**"Saltar al contenido"** como primer elemento enfocable de la aplicación, y un solo `h1` visible por
+pantalla, con los títulos en orden.
+
+### Herramientas de referencia
+
+Instaladas fuera del proyecto, en `/home/user/herramientas/` (no se versionan):
+
+- **REA** (`rea-agents` 6.9.0, npm). Inspecciona un sitio ya cargado en un navegador con depuración
+  remota: estructura, regiones, títulos, scripts y recursos.
+  ```bash
+  chrome --headless=new --remote-debugging-port=9333 --proxy-server="$HTTPS_PROXY" https://www.harvard.edu/
+  /home/user/herramientas/rea/node_modules/.bin/rea list-browser-targets http://127.0.0.1:9333
+  /home/user/herramientas/rea/node_modules/.bin/rea inspect-web-page http://127.0.0.1:9333 <id> --format json
+  ```
+- **Craft Anything** (`craft-anything-cli`). Se compila desde su código con
+  `cargo build --release -p craft-anything-cli --locked` (Rust 1.97). Estudia un sitio como lo ve
+  un visitante (modo *clean room*: capturas, medidas, colores, tipografía) y puede reconstruirlo.
+  No tiene integración con REA: son dos herramientas independientes que se usan juntas.
+
+Los sitios de referencia que el entorno puede alcanzar están en su lista de hosts permitidos: Harvard,
+Moodle, Canvas (Instructure), TalentLMS, isEazy y las dos plataformas del INFOP.

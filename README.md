@@ -6,18 +6,22 @@ Plataforma web integral desarrollada para la **Escuela de Suboficiales del Ejér
 
 ## 1. Paleta de Colores Institucional Aplicada
 
-El sistema visual sigue estrictamente la paleta cromática definida:
+Paleta azul y naranja, en este orden:
 
-* **Olive (`#6B8E5A`):** Acciones primarias, estados activos, aprobaciones (`>= 70%`) y confirmaciones.
-* **Choco (`#5B3A2E`):** Navegación lateral, cabeceras estructurales, tipografía principal y jerarquía visual.
-* **Beige (`#EADCC8`):** Superficies secundarias, encabezados de tabla, bordes y fondos cálidos de lectura.
-* **Rust (`#B85E2E`):** Acentos secundarios, alertas de reprobación (`< 70%`), inasistencias y acciones de cierre.
+* **01 Azul profundo (`#0287A8`):** bordes estructurales, iconos, cifras y títulos grandes.
+* **02 Cian (`#00BFDC`):** estados positivos: aprobado (`>= 70%`) y presente.
+* **03 Cielo (`#10C5EA`):** acciones primarias, elemento activo del menú y acentos sobre fondo oscuro.
+* **04 Ámbar (`#F19F05`):** advertencias: tardanza.
+* **05 Naranja (`#F28805`):** alertas: reprobado (`< 70%`), inasistencia y acciones de cierre. También el galón.
 
-El olivo y el óxido de marca no alcanzan el contraste mínimo de 4.5:1 con texto blanco encima (3.72 y
-4.49). Para botones, etiquetas y estados que llevan texto se usa el mismo tono más oscuro: olivo
-`#4F6B41` (5.98:1) y óxido `#9A4D27` (6.06:1). Los colores de marca se conservan en bordes y adornos.
-Todo color de la interfaz sale de las variables de `:root` en `public/css/styles.css`, y
-`tests/identidad.test.js` falla si esta paleta y la hoja dejan de coincidir.
+Ninguno de los cinco alcanza el contraste mínimo de 4.5:1 con texto blanco encima (de 2.06 a 4.17),
+pero los cuatro brillantes sí lo alcanzan con texto oscuro (de 5.9 a 7.3). Por eso se usan tal cual,
+vivos, con texto `#0F2A33` encima. Los enlaces sobre fondo claro usan un azul más hondo (`#026F8A`),
+y el menú lateral y el panel de acceso, un fondo oscuro (`#0A2A35`).
+
+Todo color de la interfaz sale de las variables de `:root` en `public/css/styles.css`, nombradas por su
+función (`--accion`, `--positivo`, `--negativo`...) y no por su color, para que un cambio de paleta solo
+cambie valores. `tests/identidad.test.js` falla si esta paleta y la hoja dejan de coincidir.
 
 El único adorno es el **galón**, la insignia de rango del suboficial, en el panel de acceso.
 

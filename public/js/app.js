@@ -926,7 +926,7 @@ function renderAsistenciaView() {
         ` : ''}
       </div>
       <div class="panel-body">
-        <div class="form-grid-3" style="margin-bottom:18px; background:var(--beige-suave); padding:14px; border-radius:var(--radius); border:1px solid var(--linea);">
+        <div class="form-grid-3" style="margin-bottom:18px; background:var(--superficie); padding:14px; border-radius:var(--radius); border:1px solid var(--linea);">
           <div>
             <label class="form-label">Clase</label>
             <select class="form-control" data-on-change="actualizarFiltro('asistenciaClaseId', this.value)">
@@ -1206,7 +1206,7 @@ function renderBoletinView() {
         </span>
       </div>
       <div class="panel-body">
-        <div class="form-grid-3" style="background:var(--beige-suave); padding:16px; border-radius:var(--radius); border:1px solid var(--linea); margin-bottom:20px;">
+        <div class="form-grid-3" style="background:var(--superficie); padding:16px; border-radius:var(--radius); border:1px solid var(--linea); margin-bottom:20px;">
           <div>
             <small style="color:var(--piedra); text-transform:uppercase; font-weight:700; font-size:var(--fs-meta);">Nombre Completo y Grado</small>
             <strong style="display:block; font-size:var(--fs-base); color:var(--texto);">${esc(formatNombreConGrado(est))}</strong>

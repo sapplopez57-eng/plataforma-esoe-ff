@@ -118,15 +118,15 @@ const archivosDeInterfaz = [
 
 test('identidad: la paleta de marca coincide con la del README', () => {
   const readme = leer(path.join(RAIZ, 'README.md'));
-  const declarada = (nombre) => {
-    const m = new RegExp(`\\*\\*${nombre}\\s*\\(\`(#[0-9A-Fa-f]{6})\`\\)`).exec(readme);
-    assert.ok(m, `el README debe declarar el color ${nombre}`);
-    return m[1].toUpperCase();
-  };
-  assert.equal(resolver(definidas, 'var(--olivo)').toUpperCase(), declarada('Olive'));
-  assert.equal(resolver(definidas, 'var(--chocolate)').toUpperCase(), declarada('Choco'));
-  assert.equal(resolver(definidas, 'var(--beige)').toUpperCase(), declarada('Beige'));
-  assert.equal(resolver(definidas, 'var(--oxido)').toUpperCase(), declarada('Rust'));
+  const declaradas = [...readme.matchAll(/\*\*0([1-9]) [^(*]+\(`(#[0-9A-Fa-f]{6})`\)/g)]
+    .map(([, n, hex]) => [Number(n), hex.toUpperCase()]);
+  assert.ok(declaradas.length >= 2, 'el README debe declarar la paleta como **0N Nombre (`#RRGGBB`)**');
+  for (const [n, hex] of declaradas) {
+    assert.ok(definidas.has(`--marca-${n}`), `falta --marca-${n} en :root`);
+    assert.equal(resolver(definidas, `var(--marca-${n})`).toUpperCase(), hex, `--marca-${n} no coincide con el README`);
+  }
+  const enHoja = [...definidas.keys()].filter((k) => /^--marca-\d+$/.test(k)).length;
+  assert.equal(enHoja, declaradas.length, 'la hoja y el README declaran distinto numero de colores de marca');
 });
 
 test('identidad: toda variable usada en la interfaz existe en :root', () => {
@@ -166,17 +166,19 @@ test('identidad: los pares de texto y fondo cumplen 4.5:1', () => {
     ['--texto', '--papel', 'texto general'],
     ['--titulo', '--papel', 'titulos'],
     ['--piedra', '--papel', 'texto secundario'],
-    ['--piedra', '--beige-suave', 'texto secundario sobre superficie'],
-    ['--texto', '--beige-suave', 'encabezado de tabla'],
-    ['--sobre-acento', '--olivo-fuerte', 'boton primario, Aprobado, menu activo'],
-    ['--sobre-acento', '--olivo-hondo', 'boton primario al pasar'],
-    ['--sobre-acento', '--oxido-fuerte', 'Reprobado, Ausente'],
-    ['--sobre-acento', '--oxido-hondo', 'boton de cierre al pasar'],
-    ['--papel', '--chocolate', 'boton chocolate, panel de acceso'],
-    ['--beige', '--chocolate', 'menu lateral'],
-    ['--beige-tenue', '--chocolate', 'rotulos de seccion del menu'],
-    ['--chocolate', '--beige', 'Tardanza'],
-    ['--olivo-fuerte', '--papel', 'boton de contorno']
+    ['--piedra', '--superficie', 'texto secundario sobre superficie'],
+    ['--texto', '--superficie', 'encabezado de tabla'],
+    ['--enlace', '--papel', 'enlaces y botones de contorno'],
+    ['--sobre-accion', '--accion', 'boton primario, menu activo'],
+    ['--sobre-accion', '--accion-hondo', 'boton primario al pasar'],
+    ['--sobre-accion', '--positivo', 'Aprobado, Presente'],
+    ['--sobre-accion', '--negativo', 'Reprobado, Ausente, cierre'],
+    ['--sobre-accion', '--negativo-hondo', 'cierre al pasar'],
+    ['--sobre-accion', '--advertencia', 'Tardanza'],
+    ['--sobre-estructura', '--estructura', 'menu lateral, panel de acceso'],
+    ['--sobre-estructura-tenue', '--estructura', 'rotulos del menu, pie del acceso'],
+    ['--decoracion-viva', '--estructura', 'escudo del acceso, foco en el menu'],
+    ['--papel', '--estructura', 'nombre en el menu']
   ];
   const fallos = pares
     .map(([t, f, donde]) => ({ donde, t, f, r: contraste(resolver(definidas, `var(${t})`), resolver(definidas, `var(${f})`)) }))
@@ -195,10 +197,10 @@ test('identidad: las comprobaciones fallan cuando deben', () => {
   assert.deepEqual(tamanosFueraDeEscala(estilosEnLinea('<b style="font-size:12.5px; color:var(--texto)">')), ['12.5px']);
 
   // la regresion real de esta vuelta: nombres viejos tras renombrar la paleta
-  assert.deepEqual(variablesSinDefinir('style="color:var(--stone)"', definidas), ['--stone']);
+  assert.deepEqual(variablesSinDefinir('style="color:var(--olivo-fuerte)"', definidas), ['--olivo-fuerte']);
   assert.deepEqual(variablesSinDefinir('style="color:var(--piedra)"', definidas), []);
 
   // y el contraste distingue lo que pasa de lo que no
-  assert.ok(contraste('#FFFFFF', '#6B8E5A') < 4.5, 'el olivo de marca no sirve para texto blanco');
-  assert.ok(contraste('#FFFFFF', '#4F6B41') >= 4.5, 'el olivo fuerte si');
+  assert.ok(contraste('#FFFFFF', '#10C5EA') < 4.5, 'el cielo de marca no sirve para texto blanco');
+  assert.ok(contraste('#0F2A33', '#10C5EA') >= 4.5, 'con texto oscuro si');
 });
