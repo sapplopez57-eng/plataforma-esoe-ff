@@ -19,6 +19,8 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | SEC-03 | Escapar todo dato mostrado en la interfaz; guardián automático contra reintroducirlo | 4 |
 | SEC-04 | Sin manejadores en línea; CSP sin `unsafe-inline` para scripts; fuentes propias | 4 |
 | SEC-06 | Permisos por pertenencia: cada cuenta ligada a su expediente y cada consulta limitada a lo propio | 5 |
+| DIS-01 | Identidad visual unificada: paleta del README como única fuente en `:root`, con variantes accesibles | 6 |
+| DIS-03 | Escala tipográfica con base de 16 px; un solo acento de acción (olivo); jerarquía por tipografía | 6 |
 
 ## Fase 1 — Gestión escolar real
 
@@ -110,9 +112,7 @@ Cierre de fase: revisión completa por dominios y corrección de lo que aparezca
 
 | Id | Elemento | Aceptación resumida |
 |---|---|---|
-| DIS-01 | Unificar la identidad visual | El README describe una paleta oliva/marrón y la hoja de estilos usa azul. Decisión del dueño; después, una sola fuente de verdad en variables CSS |
 | DIS-02 | Accesibilidad WCAG 2.1 AA | Análisis automático sin fallos graves; todo operable con teclado; foco visible; contraste 4.5:1 |
-| DIS-03 | Rediseño tipográfico | Texto base de 16 px, un solo color de acento, jerarquía por tipografía |
 | CAL-02 | Pruebas de navegador dentro de la compuerta | El recorrido de acceso y de otras plataformas corre en `npm run verificar` y en CI |
 | DIS-04 | Vista de teléfono para el alumno | Boletín y asistencia legibles a 360 px sin desplazamiento horizontal |
 | SMS-06 | Reportes y exportación | Boletín y actas en PDF y CSV; solo para quien tiene permiso |

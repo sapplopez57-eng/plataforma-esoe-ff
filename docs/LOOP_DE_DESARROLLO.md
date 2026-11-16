@@ -113,3 +113,4 @@ Se anotan en el registro; importa la tendencia, no el número aislado.
 | 3 | 2026-11-14 | Conexión con Moodle e INFOP (INT-04) | Hecho | 57 pruebas, 97 % líneas; recorrido en navegador con 14 comprobaciones |
 | 4 | 2026-11-15 | Escapar la salida y cerrar la política de contenido (SEC-03, SEC-04) | Hecho | 67 pruebas, 97.61 % líneas; guardián de escape que falla con archivo y línea |
 | 5 | 2026-11-15 | Permisos por pertenencia (SEC-06) | Hecho | 77 pruebas, 96.88 % líneas; matriz rol × ruta y guardián de rutas sin sesión |
+| 6 | 2026-11-16 | Identidad visual y tipografía (DIS-01, DIS-03) | Hecho | 83 pruebas; 14 pares de contraste ≥ 4.5:1; 8 vistas sin desborde a 360 y 1280 px |

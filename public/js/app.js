@@ -481,7 +481,7 @@ function renderEstructuraView() {
             </div>
             <span class="badge badge-olive">${esc(prom.anioIngreso)} - ${esc(prom.anioEgreso)}</span>
           </div>
-          <p style="font-size:13px; color:var(--stone);">
+          <p style="font-size:var(--fs-sm); color:var(--piedra);">
             Estudiantes inscritos en la promoción: <strong>${totalAlumnos} alumnos</strong>
           </p>
         </div>
@@ -562,11 +562,11 @@ function renderEstudiantesView() {
 
     return `
       <tr>
-        <td><strong style="color:var(--ink); font-family:monospace; font-size:13.5px;">${esc(est.codigoAlumno)}</strong></td>
+        <td><strong style="color:var(--texto); font-family:monospace; font-size:var(--fs-sm);">${esc(est.codigoAlumno)}</strong></td>
         <td>${esc(est.dni)}</td>
         <td>
           <strong style="display:block;">${esc(est.apellidos)}, ${esc(est.nombres)}</strong>
-          <small style="color:var(--stone);">${esc(est.correo)}</small>
+          <small style="color:var(--piedra);">${esc(est.correo)}</small>
         </td>
         <td>${badgeCondicion}</td>
         <td><span class="badge badge-choco">${esc(prom.codigo)}</span></td>
@@ -682,14 +682,14 @@ function renderCatedraticosView() {
     const resumenClases = clasesImpartidas.map(cl => {
       const m = getMateria(cl.materiaId);
       const p = getPromocion(cl.promocionId);
-      return `<div style="font-size:12px; margin-bottom:3px;">• <strong>${esc(m.codigo)}</strong> (${esc(p.codigo)})</div>`;
-    }).join('') || '<span style="color:var(--stone); font-size:12px;">Sin clases asignadas</span>';
+      return `<div style="font-size:var(--fs-sm); margin-bottom:3px;">• <strong>${esc(m.codigo)}</strong> (${esc(p.codigo)})</div>`;
+    }).join('') || '<span style="color:var(--piedra); font-size:var(--fs-sm);">Sin clases asignadas</span>';
 
     return `
       <tr>
         <td>
-          <strong style="display:block; color:var(--ink);">${esc(cat.apellidos)}, ${esc(cat.nombres)}</strong>
-          <small style="color:var(--stone);">${esc(cat.correo)} | Tel: ${esc(cat.telefono)}</small>
+          <strong style="display:block; color:var(--texto);">${esc(cat.apellidos)}, ${esc(cat.nombres)}</strong>
+          <small style="color:var(--piedra);">${esc(cat.correo)} | Tel: ${esc(cat.telefono)}</small>
         </td>
         <td>${esc(cat.dni)}</td>
         <td>${gradoBadge}</td>
@@ -764,23 +764,23 @@ function renderClasesView() {
       <tr>
         <td><strong>${esc(cl.codigoClase)}</strong></td>
         <td>
-          <strong style="display:block; color:var(--ink);">${esc(mat.nombre)}</strong>
-          <small style="color:var(--stone);">Código: ${esc(mat.codigo)} | ${esc(mat.uv)} UV</small>
+          <strong style="display:block; color:var(--texto);">${esc(mat.nombre)}</strong>
+          <small style="color:var(--piedra);">Código: ${esc(mat.codigo)} | ${esc(mat.uv)} UV</small>
         </td>
         <td>
           <span class="badge badge-choco">${esc(prom.codigo)}</span>
         </td>
         <td>
           <span class="badge badge-olive">${esc(per.modalidad)}</span>
-          <small style="display:block; color:var(--stone); margin-top:2px;">${esc(per.nombre)}</small>
+          <small style="display:block; color:var(--piedra); margin-top:2px;">${esc(per.nombre)}</small>
         </td>
         <td>
           <strong style="display:block;">${esc(formatNombreConGrado(cat))}</strong>
-          <small style="color:var(--stone);">${esc(cat.titulo)}</small>
+          <small style="color:var(--piedra);">${esc(cat.titulo)}</small>
         </td>
         <td>
-          <span style="display:block; font-size:12.5px;">${esc(cl.horario)}</span>
-          <small style="color:var(--stone);">${esc(cl.aula)}</small>
+          <span style="display:block; font-size:var(--fs-sm);">${esc(cl.horario)}</span>
+          <small style="color:var(--piedra);">${esc(cl.aula)}</small>
         </td>
         <td>
           <button class="btn btn-outline btn-sm" data-on-click="irAAsistenciaDeClase('${esc(cl.id)}')">Asistencia</button>
@@ -885,7 +885,7 @@ function renderAsistenciaView() {
         <td><strong style="font-family:monospace;">${esc(est.codigoAlumno)}</strong></td>
         <td>
           <strong>${esc(est.apellidos)}, ${esc(est.nombres)}</strong>
-          <small style="display:block; color:var(--stone);">${esc(est.condicion === 'MILITAR' ? est.grado : 'Civil')}</small>
+          <small style="display:block; color:var(--piedra);">${esc(est.condicion === 'MILITAR' ? est.grado : 'Civil')}</small>
         </td>
         <td>
           <div class="attendance-group">
@@ -926,7 +926,7 @@ function renderAsistenciaView() {
         ` : ''}
       </div>
       <div class="panel-body">
-        <div class="form-grid-3" style="margin-bottom:18px; background:var(--sand-soft); padding:14px; border-radius:var(--radius); border:1px solid var(--line);">
+        <div class="form-grid-3" style="margin-bottom:18px; background:var(--beige-suave); padding:14px; border-radius:var(--radius); border:1px solid var(--linea);">
           <div>
             <label class="form-label">Clase</label>
             <select class="form-control" data-on-change="actualizarFiltro('asistenciaClaseId', this.value)">
@@ -1039,7 +1039,7 @@ function renderCalificacionesView() {
         <td><strong style="font-family:monospace;">${esc(est.codigoAlumno)}</strong></td>
         <td>
           <strong>${esc(est.apellidos)}, ${esc(est.nombres)}</strong>
-          <small style="display:block; color:var(--stone);">${esc(est.condicion === 'MILITAR' ? est.grado : 'Civil')}</small>
+          <small style="display:block; color:var(--piedra);">${esc(est.condicion === 'MILITAR' ? est.grado : 'Civil')}</small>
         </td>
         <td>
           <input type="number" min="0" max="100" class="grade-input" value="${esc(cal.parcial1)}"
@@ -1058,7 +1058,7 @@ function renderCalificacionesView() {
             data-on-change="actualizarNota('${esc(claseActual.id)}', '${esc(est.id)}', 'acumulativo', this.value)"> %
         </td>
         <td>
-          <strong style="font-size:15px; color:var(--ink);">${notaFinal}%</strong>
+          <strong style="font-size:var(--fs-base); color:var(--texto);">${notaFinal}%</strong>
         </td>
         <td>
           <span class="badge ${aprobado ? 'badge-olive' : 'badge-rust'}">
@@ -1160,14 +1160,14 @@ function renderBoletinView() {
         <td><strong>${esc(mat.codigo)}</strong></td>
         <td>
           <strong>${esc(mat.nombre)}</strong>
-          <small style="display:block; color:var(--stone);">${esc(per.nombre)} (${esc(per.modalidad)})</small>
+          <small style="display:block; color:var(--piedra);">${esc(per.nombre)} (${esc(per.modalidad)})</small>
         </td>
         <td>${esc(formatNombreConGrado(cat))}</td>
         <td>${esc(cal.parcial1)}%</td>
         <td>${esc(cal.parcial2)}%</td>
         <td>${esc(cal.parcial3)}%</td>
         <td>${esc(cal.acumulativo)}%</td>
-        <td><strong style="font-size:14.5px;">${final}%</strong></td>
+        <td><strong style="font-size:var(--fs-base);">${final}%</strong></td>
         <td>${pctAsis}%</td>
         <td>
           <span class="badge ${aprobado ? 'badge-olive' : 'badge-rust'}">
@@ -1184,7 +1184,7 @@ function renderBoletinView() {
 
   return `
     ${appState.currentRole !== 'ESTUDIANTE' ? `
-      <div class="toolbar" style="background:var(--paper); padding:14px 18px; border-radius:var(--radius); border:1px solid var(--line);">
+      <div class="toolbar" style="background:var(--papel); padding:14px 18px; border-radius:var(--radius); border:1px solid var(--linea);">
         <div class="toolbar-filters">
           <label class="form-label" style="margin-bottom:0;">Estudiante:</label>
           <select class="form-control" style="max-width:420px;" data-on-change="actualizarFiltro('boletinEstudianteId', this.value)">
@@ -1201,25 +1201,25 @@ function renderBoletinView() {
           <h2>Boletín</h2>
           <p>Escuela de Suboficiales del Ejército | Escala Oficial 0% a 100% (Aprobación mínima: 70%)</p>
         </div>
-        <span class="badge ${promedioGeneral >= 70 ? 'badge-olive' : 'badge-rust'}" style="font-size:13px; padding:6px 12px;">
+        <span class="badge ${promedioGeneral >= 70 ? 'badge-olive' : 'badge-rust'}" style="font-size:var(--fs-sm); padding:6px 12px;">
           Promedio General: ${promedioGeneral}%
         </span>
       </div>
       <div class="panel-body">
-        <div class="form-grid-3" style="background:var(--sand-soft); padding:16px; border-radius:var(--radius); border:1px solid var(--line); margin-bottom:20px;">
+        <div class="form-grid-3" style="background:var(--beige-suave); padding:16px; border-radius:var(--radius); border:1px solid var(--linea); margin-bottom:20px;">
           <div>
-            <small style="color:var(--stone); text-transform:uppercase; font-weight:700; font-size:11px;">Nombre Completo y Grado</small>
-            <strong style="display:block; font-size:15px; color:var(--ink);">${esc(formatNombreConGrado(est))}</strong>
-            <span style="font-size:12.5px; color:var(--stone);">Condición: ${esc(est.condicion)}</span>
+            <small style="color:var(--piedra); text-transform:uppercase; font-weight:700; font-size:var(--fs-meta);">Nombre Completo y Grado</small>
+            <strong style="display:block; font-size:var(--fs-base); color:var(--texto);">${esc(formatNombreConGrado(est))}</strong>
+            <span style="font-size:var(--fs-sm); color:var(--piedra);">Condición: ${esc(est.condicion)}</span>
           </div>
           <div>
-            <small style="color:var(--stone); text-transform:uppercase; font-weight:700; font-size:11px;">Identificación Oficial</small>
-            <strong style="display:block; font-size:14px; font-family:monospace;">Código: ${esc(est.codigoAlumno)}</strong>
-            <span style="font-size:12.5px; color:var(--stone);">DNI: ${esc(est.dni)} | Sangre: ${esc(est.tipoSangre)}</span>
+            <small style="color:var(--piedra); text-transform:uppercase; font-weight:700; font-size:var(--fs-meta);">Identificación Oficial</small>
+            <strong style="display:block; font-size:var(--fs-base); font-family:monospace;">Código: ${esc(est.codigoAlumno)}</strong>
+            <span style="font-size:var(--fs-sm); color:var(--piedra);">DNI: ${esc(est.dni)} | Sangre: ${esc(est.tipoSangre)}</span>
           </div>
           <div>
-            <small style="color:var(--stone); text-transform:uppercase; font-weight:700; font-size:11px;">Ubicación Académica</small>
-            <strong style="display:block; font-size:14px; color:var(--ink);">${esc(prom.nombre)}</strong>
+            <small style="color:var(--piedra); text-transform:uppercase; font-weight:700; font-size:var(--fs-meta);">Ubicación Académica</small>
+            <strong style="display:block; font-size:var(--fs-base); color:var(--texto);">${esc(prom.nombre)}</strong>
           </div>
         </div>
 

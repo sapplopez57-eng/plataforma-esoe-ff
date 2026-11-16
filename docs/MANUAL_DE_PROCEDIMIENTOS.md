@@ -394,3 +394,37 @@ recurso: de otro modo la respuesta diría qué clases o expedientes existen a qu
    ausente.
 3. Si la ruta debe ser pública, se agrega a `PUBLICAS` en `tests/permisos.test.js`. Es una decisión
    consciente que queda escrita.
+
+## 14. Identidad visual
+
+Todo color y todo tamaño de letra salen de las variables de `:root` en `public/css/styles.css`. Fuera
+de ahí no se escribe ninguno: ni en la hoja, ni en estilos en línea de `index.html` o de `public/js/`.
+`tests/identidad.test.js` lo comprueba y falla nombrando el archivo.
+
+| Variable | Valor | Uso |
+|---|---|---|
+| `--olivo`, `--chocolate`, `--beige`, `--oxido` | los del README | marca: bordes, adornos, menú lateral |
+| `--olivo-fuerte` / `--olivo-hondo` | `#4F6B41` / `#43593A` | botón primario, Aprobado, Presente, menú activo |
+| `--oxido-fuerte` / `--oxido-hondo` | `#9A4D27` / `#84411F` | Reprobado, Ausente, acciones de cierre |
+| `--texto`, `--titulo`, `--piedra` | chocolate, `#3E2A22`, `#6E5A4B` | texto, títulos, texto secundario |
+| `--papel`, `--beige-suave`, `--linea` | `#FBF8F3`, `#F4ECE0`, `#E3D5C0` | fondo, superficies, bordes |
+
+Escala de letra: `--fs-meta` 12 · `--fs-sm` 14 · `--fs-base` **16** · `--fs-md` 18 · `--fs-lg` 24 ·
+`--fs-xl` 28 · `--fs-2xl` 40 · `--fs-display` 56. Los 12 px se reservan a rótulos en mayúsculas con
+espaciado. Los campos de formulario van en 16 px también porque un teléfono amplía la página al
+escribir en uno más pequeño.
+
+### Al cambiar un color
+
+1. Se cambia la variable en `:root`, nunca el valor en el sitio donde se usa.
+2. Si el color lleva texto encima, se agrega el par a la lista de contraste de
+   `tests/identidad.test.js`. La prueba exige 4.5:1.
+3. Si se **renombra** una variable, se buscan sus usos también en `public/js/` y en `index.html`:
+   una variable que no existe no da ningún error, el estilo simplemente desaparece. La prueba lo
+   detecta, pero conviene no depender de ella.
+
+### Íconos
+
+Los íconos de `public/js/icons.js` dibujan con `currentColor` y marcan su relleno de acento con
+`class="acento"`. El color del acento lo decide la hoja (`.acento`), y sobre fondos de color pasa a
+beige para no perderse.

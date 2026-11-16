@@ -13,6 +13,14 @@ El sistema visual sigue estrictamente la paleta cromática definida:
 * **Beige (`#EADCC8`):** Superficies secundarias, encabezados de tabla, bordes y fondos cálidos de lectura.
 * **Rust (`#B85E2E`):** Acentos secundarios, alertas de reprobación (`< 70%`), inasistencias y acciones de cierre.
 
+El olivo y el óxido de marca no alcanzan el contraste mínimo de 4.5:1 con texto blanco encima (3.72 y
+4.49). Para botones, etiquetas y estados que llevan texto se usa el mismo tono más oscuro: olivo
+`#4F6B41` (5.98:1) y óxido `#9A4D27` (6.06:1). Los colores de marca se conservan en bordes y adornos.
+Todo color de la interfaz sale de las variables de `:root` en `public/css/styles.css`, y
+`tests/identidad.test.js` falla si esta paleta y la hoja dejan de coincidir.
+
+El único adorno es el **galón**, la insignia de rango del suboficial, en el panel de acceso.
+
 ---
 
 ## 2. Reglas de Negocio Implementadas

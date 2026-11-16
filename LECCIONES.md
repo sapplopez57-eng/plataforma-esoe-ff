@@ -7,6 +7,33 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Identidad visual
+
+### L-021 · Renombrar una variable de CSS no avisa: el estilo desaparece en silencio
+
+- **Qué pasó:** al pasar la paleta de azul a la del README se renombraron las variables (`--ink` →
+  `--texto`, `--sand-soft` → `--beige-suave`...). La hoja quedó bien, pero `app.js` tenía unos 30
+  estilos en línea con los nombres viejos. Una variable inexistente no produce ningún error: el color
+  cae en herencia y los fondos y bordes desaparecen. Las capturas parecían correctas.
+- **Causa raíz:** se buscaron los usos solo en el archivo que se estaba cambiando. Las variables de CSS
+  se consumen también desde JavaScript y HTML, y ninguna herramienta lo verifica por su cuenta.
+- **Corrección:** estilos en línea migrados a los nombres nuevos y a la escala. `tests/identidad.test.js`
+  comprueba que toda variable usada en la hoja, en `index.html` y en `public/js/` exista en `:root`;
+  se verificó restaurando el `app.js` viejo, y falló nombrando `--ink` y `--stone`.
+- **Regla:** al renombrar algo, se busca en todo el repositorio, no en el archivo abierto. Y una
+  captura de pantalla no demuestra que un estilo esté aplicado: un fondo ausente sobre papel claro no
+  se ve.
+
+### L-022 · El nombre decía una cosa y el valor otra
+
+- **Qué pasó:** `.badge-olive` (Aprobado) se pintaba azul, y `.badge-rust` (Reprobado) era texto negro
+  tachado. `.btn-rust`, la acción de cierre, también era azul. Los nombres eran los de la paleta del
+  README; los valores se habían cambiado por otros sin tocar los nombres.
+- **Causa raíz:** la paleta vivía en dos sitios —el README y la hoja— y nada los comparaba.
+- **Corrección:** una sola fuente, `:root`, y una prueba que compara la paleta de marca con la que
+  declara el README.
+- **Regla:** cuando un documento declara un valor que el código también usa, una prueba los compara.
+
 ## 2026-11-15 — Permisos por pertenencia
 
 ### L-019 · Un atrapatodo montado en el prefijo compartido se traga las rutas de los demás
@@ -250,3 +277,7 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
     las dos llega desde la interfaz, y un 403 por pertenencia no revela si el recurso existe.
 15. Lo que tiene que ser verificable desde fuera lleva nombre. Antes de aflojar una comprobación se
     cambia el código para que pueda comprobarse.
+16. Todo color y tamaño de letra sale de `:root`. Lo que lleva texto encima cumple 4.5:1, medido, no
+    estimado a ojo.
+17. Al renombrar algo se busca en todo el repositorio. Una captura no prueba que un estilo esté
+    aplicado.
