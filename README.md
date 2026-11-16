@@ -34,7 +34,11 @@ Todo color de la interfaz sale de las variables de `:root` en `public/css/styles
 función (`--accion`, `--positivo`, `--negativo`...) y no por su color, para que un cambio de paleta solo
 cambie valores. `tests/identidad.test.js` falla si esta paleta y la hoja dejan de coincidir.
 
-El único adorno es el **galón**, la insignia de rango del suboficial, en el panel de acceso.
+La pantalla de acceso tiene **ambiente**: un plano ilustrativo del campus con puntos numerados que se
+funde con el papel, nubes lentas, un reloj y una barra para mostrar u ocultar el plano, encender un
+sonido ambiental sintetizado, pasar a modo noche y agrandar el texto. Todo con esta misma paleta, en
+DM Serif Display y DM Sans, y con rótulos monoespaciados. El sonido nunca arranca solo y «reducir
+movimiento» apaga toda animación.
 
 El **escudo de la ESOE** (`public/img/escudo-esoe.svg`) aparece en el acceso, en el menú y como ícono
 de la pestaña. Es un redibujo vectorial del escudo institucional y conserva sus colores oficiales: la

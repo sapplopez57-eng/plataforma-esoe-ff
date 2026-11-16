@@ -203,13 +203,21 @@ test('identidad: los pares de texto y fondo cumplen 4.5:1 en cada ambito', () =>
     ['--sobre-estructura', '--estructura', 'menu lateral, panel de acceso'],
     ['--sobre-estructura-tenue', '--estructura', 'rotulos del menu, pie del acceso'],
     ['--decoracion-viva', '--estructura', 'escudo del acceso, foco en el menu'],
-    ['--papel', '--estructura', 'nombre en el menu'],
-    ['--sobre-accion', '--decoracion-viva', 'iniciales del usuario']
+    ['--sobre-accion', '--decoracion-viva', 'iniciales del usuario'],
+    ['--acento-titulo', '--papel', 'palabra destacada del titulo de acceso'],
+    ['--titulo', '--superficie', 'perfil elegido, boton de ambiente activo'],
+    ['--sobre-estructura-tenue', '--estructura', 'rotulo del boton de entrada']
   ];
+  const interno = redefinicionesDe(resto, '.app-shell');
+  const noche = redefinicionesDe(resto, 'html[data-noche]');
+  const nocheInterno = redefinicionesDe(resto, 'html[data-noche] .app-shell');
   const ambitos = {
     'acceso (:root)': definidas,
-    'paginas internas (.app-shell)': new Map([...definidas, ...redefinicionesDe(resto, '.app-shell')])
+    'paginas internas (.app-shell)': new Map([...definidas, ...interno]),
+    'acceso de noche': new Map([...definidas, ...noche]),
+    'paginas internas de noche': new Map([...definidas, ...noche, ...interno, ...nocheInterno])
   };
+  assert.ok(noche.size > 0 && nocheInterno.size > 0, 'el modo noche debe redefinir los dos ambitos');
   assert.ok(ambitos['paginas internas (.app-shell)'].get('--estructura') !== definidas.get('--estructura'),
     '.app-shell debe redefinir la paleta de las paginas internas');
   const fallos = [];

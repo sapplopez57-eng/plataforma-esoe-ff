@@ -119,3 +119,4 @@ Se anotan en el registro; importa la tendencia, no el número aislado.
 | 9 | 2026-11-16 | Escudo institucional y movimiento de entrada (DIS-01, DIS-02) | Hecho | 95 pruebas; animación desactivada con «reducir movimiento»; un solo `:root` comprobado |
 | 10 | 2026-11-16 | Paleta blanco, naranja e índigo para las páginas internas (DIS-01) | Hecho | 17 pares de contraste medidos en los dos ámbitos; modal y avisos incluidos |
 | 11 | 2026-11-16 | Mejoras medidas contra Harvard, Campus Virtual UNAH, INFOP y TecNM (DIS-07, DIS-02) | Hecho | 105 pruebas, 97.31 % líneas; REA: el acceso pasa de 0 a 2 regiones; texto a 125 % sin desborde a 390 y 1280 px; 0 errores de consola |
+| 12 | 2026-11-16 | Ambientación de rahulsmoothy.com con la paleta de la ESOE (DIS-08) | Hecho | 111 pruebas, 97.31 % líneas; contraste en 4 ámbitos (día y noche, acceso e internas); sin desborde a 390 y 1440 px; 0 errores de consola |

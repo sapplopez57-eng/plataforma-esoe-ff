@@ -42,7 +42,7 @@ test('estructura: el acceso tiene encabezado institucional y formulario como con
   const acceso = bloque('login-screen', 'id="app-shell"');
   assert.match(acceso, /<header class="login-brand-panel">/);
   assert.match(acceso, /<main id="acceso-principal"[^>]*aria-labelledby="titulo-acceso"/);
-  assert.match(acceso, /<h2 id="titulo-acceso">/);
+  assert.match(acceso, /<h2 id="titulo-acceso"[^>]*>/);
 });
 
 test('estructura: un <h1> por pantalla (INFOP Academias no tiene ninguno)', () => {
@@ -136,4 +136,105 @@ test('lectura: un valor guardado invalido o un almacenamiento bloqueado no rompe
   const { contexto, atributos } = entorno({ almacenamiento: bloqueado });
   assert.doesNotThrow(() => contexto.cambiarTamanoTexto('muy-grande'));
   assert.equal(atributos['data-texto'], 'muy-grande');
+});
+
+// --- Ambiente: escena, barra, reloj, noche y sonido ---------------------------
+
+const ambiente = fs.readFileSync(path.join(PUBLICO, 'js', 'ambiente.js'), 'utf8');
+
+test('ambiente: la escena es decorativa y la barra tiene nombre', () => {
+  assert.match(html, /<div class="escena" aria-hidden="true">/);
+  assert.match(html, /<img src="img\/campus-esoe\.svg" alt=""/);
+  assert.match(html, /<div class="barra-ambiente" role="toolbar" aria-label="Ambiente">/);
+  const botones = [...html.matchAll(/<button[^>]*class="ambiente-btn"[^>]*>(.*?)<\/button>/g)];
+  assert.ok(botones.length >= 5, 'plano, sonido y noche en el acceso; sonido y noche dentro');
+  for (const [boton, contenido] of botones) {
+    assert.match(boton, /aria-pressed="(true|false)"/);
+    assert.ok(contenido.replace(/<[^>]+>/g, '').replace(/[▦♪☾]/g, '').trim().length > 0, `sin nombre: ${boton}`);
+  }
+});
+
+function entornoAmbiente({ almacenamiento, Audio } = {}) {
+  const atributos = {};
+  const botones = { '[data-noche]': [], '[data-sonido]': [], '[data-atlas]': [], '[data-reloj]': [] };
+  const nuevo = () => { const b = { attrs: {}, hidden: false }; b.setAttribute = (k, v) => { b.attrs[k] = v; }; return b; };
+  for (const k of Object.keys(botones)) botones[k].push(nuevo(), nuevo());
+  const clases = new Set();
+  const documento = {
+    querySelectorAll: (sel) => botones[sel] || [],
+    getElementById: () => ({ classList: { toggle: (c) => (clases.has(c) ? (clases.delete(c), false) : (clases.add(c), true)) } }),
+    documentElement: {
+      setAttribute: (k, v) => { atributos[k] = v; },
+      removeAttribute: (k) => { delete atributos[k]; },
+      hasAttribute: (k) => k in atributos
+    }
+  };
+  const contexto = { document: documento, localStorage: almacenamiento, setInterval: () => 0, Date, Math };
+  if (Audio) contexto.AudioContext = Audio;
+  contexto.globalThis = contexto;
+  vm.createContext(contexto);
+  vm.runInContext(ambiente, contexto);
+  return { contexto, atributos, botones };
+}
+
+// Web Audio de mentira: registra lo que se programa sobre el volumen general.
+function audioFalso(registro) {
+  const parametro = () => ({ value: 0, setValueAtTime() {}, cancelScheduledValues() {}, linearRampToValueAtTime(v) { registro.push(v); } });
+  const nodo = () => ({ connect() {}, start() {}, gain: parametro(), frequency: parametro(), detune: parametro(), Q: parametro() });
+  return class {
+    constructor() { this.currentTime = 0; this.sampleRate = 8000; this.state = 'suspended'; this.destination = {}; }
+    createGain() { return nodo(); }
+    createOscillator() { return nodo(); }
+    createBiquadFilter() { return nodo(); }
+    createBufferSource() { return nodo(); }
+    createBuffer(c, n) { return { getChannelData: () => new Float32Array(n) }; }
+    resume() { this.state = 'running'; }
+  };
+}
+
+test('ambiente: el reloj muestra la hora local con dos cifras', () => {
+  const { contexto, botones } = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} } });
+  assert.equal(contexto.horaLocal(new Date(2026, 0, 1, 7, 5)), '07:05');
+  contexto.actualizarReloj(new Date(2026, 0, 1, 23, 40));
+  assert.equal(botones['[data-reloj]'][0].textContent, '23:40');
+});
+
+test('ambiente: el modo noche se aplica, se marca y se recuerda', () => {
+  const guardado = {};
+  const { contexto, atributos, botones } = entornoAmbiente({
+    almacenamiento: { getItem: (k) => guardado[k] ?? null, setItem: (k, v) => { guardado[k] = v; } }
+  });
+  assert.equal('data-noche' in atributos, false);
+  contexto.alternarNoche();
+  assert.equal('data-noche' in atributos, true);
+  assert.deepEqual(botones['[data-noche]'].map((b) => b.attrs['aria-pressed']), ['true', 'true']);
+  assert.equal(guardado['esoe.noche'], '1');
+  const otra = entornoAmbiente({ almacenamiento: { getItem: () => '1', setItem() {} } });
+  assert.equal('data-noche' in otra.atributos, true, 'la siguiente visita empieza de noche');
+});
+
+test('ambiente: sin almacenamiento el modo noche funciona igual', () => {
+  const bloqueado = { getItem() { throw new Error('bloqueado'); }, setItem() { throw new Error('bloqueado'); } };
+  const { contexto, atributos } = entornoAmbiente({ almacenamiento: bloqueado });
+  assert.doesNotThrow(() => contexto.alternarNoche());
+  assert.equal('data-noche' in atributos, true);
+});
+
+test('ambiente: el sonido solo arranca cuando se pide y se apaga con el mismo boton', () => {
+  const volumen = [];
+  const { contexto, botones } = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} }, Audio: audioFalso(volumen) });
+  // sonido es un const del script: vive en el contexto, no como propiedad global.
+  const estado = () => vm.runInContext('sonido', contexto);
+  assert.equal(estado().contexto, null, 'nada suena al cargar');
+  assert.equal(contexto.alternarSonido(), true);
+  assert.equal(estado().contexto.state, 'running');
+  assert.deepEqual(botones['[data-sonido]'].map((b) => b.attrs['aria-pressed']), ['true', 'true']);
+  assert.equal(contexto.alternarSonido(), false);
+  assert.deepEqual(volumen, [0.5, 0], 'sube suave y baja a cero');
+});
+
+test('ambiente: sin Web Audio el boton de sonido se oculta', () => {
+  const { contexto, botones } = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} } });
+  assert.equal(botones['[data-sonido]'].every((b) => b.hidden), true);
+  assert.equal(contexto.alternarSonido(), false);
 });

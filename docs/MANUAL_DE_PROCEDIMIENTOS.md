@@ -459,6 +459,27 @@ La escala `--fs-*` está en `rem`: sigue el tamaño de letra del navegador de ca
 el control funciona igual, solo que no se recuerda. Un tamaño nuevo necesita su regla
 `html[data-texto="..."]`; `tests/estructura.test.js` falla si falta.
 
+### Ambiente (vuelta 12)
+
+Tomado de rahulsmoothy.com (medido con REA y Craft): **la ambientación, no los colores**. Todo sale de
+la paleta de la ESOE.
+
+| Pieza | Dónde | Cómo se cambia |
+|---|---|---|
+| Plano ilustrativo del campus | `public/img/campus-esoe.svg` | Es un dibujo isométrico generado; se reemplaza el SVG. Los puntos numerados están en `index.html` (`.escena-puntos`), en porcentaje del plano |
+| Niebla | máscara de `.escena` en `styles.css` | Funde la escena con `--papel`; en modo noche funde con el papel oscuro sin tocar nada |
+| Nubes y puntos que flotan | `@keyframes deriva` y `flotar` | Se apagan con «reducir movimiento» |
+| Barra de ambiente | `.barra-ambiente` en el acceso; botones `.ambiente-btn` en la barra superior | Plano (muestra u oculta los puntos), Sonido, Noche y tamaño del texto |
+| Sonido | `public/js/ambiente.js` | Sintetizado con Web Audio: acorde lento y rumor de mar. No descarga nada y **no suena solo**; si el navegador no tiene Web Audio, el botón se oculta |
+| Modo noche | `html[data-noche]` y `html[data-noche] .app-shell` | Solo redefine variables (`--noche-*` en `:root`); se recuerda en el navegador |
+| Reloj | `[data-reloj]` | Hora local, cada 15 s |
+| Rótulos | clase `.rotulo` y `--font-mono` | Mayúsculas espaciadas, 12 px como mínimo |
+| Tipografía | `--font-display` DM Serif Display, `--font-sans` DM Sans | Servidas desde `public/fonts/` (OFL) |
+
+`tests/identidad.test.js` mide el contraste en cuatro ámbitos: acceso e internas, de día y de noche.
+`tests/estructura.test.js` comprueba que la escena es decorativa (`aria-hidden`), que la barra tiene
+nombre y que noche y sonido funcionan, también sin almacenamiento y sin Web Audio.
+
 ### Comparación con sitios de referencia (vuelta 11, 2026-11-16)
 
 Medida con REA (estructura) y Craft Anything (diseño), la misma vara

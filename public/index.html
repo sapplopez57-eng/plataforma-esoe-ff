@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ESOE — Plataforma de Gestión Académica y Administrativa (SMS)</title>
   <link rel="icon" type="image/svg+xml" href="img/escudo-esoe.svg">
-  <link rel="preload" href="fonts/roboto-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/dm-serif-display-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -14,35 +15,48 @@
        PANTALLA DE ACCESO INSTITUCIONAL (LOGIN)
        ==================================================================== -->
   <div id="login-screen" class="login-screen">
-    <div class="login-container">
-      <!-- Panel Institucional Izquierdo -->
-      <header class="login-brand-panel">
-        <div>
-          <div class="brand-crest">
-            <img class="escudo escudo-acceso" src="img/escudo-esoe.svg" alt="Escudo de la ESOE" width="88" height="92">
-            <div class="brand-title-group">
-              <p class="marca-nombre">PLATAFORMA ESOE</p>
-              <p>Escuela de Suboficiales del Ejército</p>
-            </div>
-          </div>
+    <!-- Escena: plano ilustrativo del campus. Es ambientacion: no lleva informacion
+         que no este tambien en el texto. -->
+    <div class="escena" aria-hidden="true">
+      <div class="escena-plano">
+        <img src="img/campus-esoe.svg" alt="" width="1200" height="900">
+        <ol class="escena-puntos">
+          <li class="punto" style="left:51%; top:43%"><span class="punto-n">01</span><span class="punto-nombre">Plaza de armas</span></li>
+          <li class="punto" style="left:59.5%; top:29.2%"><span class="punto-n">02</span><span class="punto-nombre">Dirección</span></li>
+          <li class="punto" style="left:64.9%; top:43%"><span class="punto-n">03</span><span class="punto-nombre">Aulas</span></li>
+          <li class="punto" style="left:39.9%; top:31.7%"><span class="punto-n">04</span><span class="punto-nombre">Biblioteca</span></li>
+          <li class="punto" style="left:35.7%; top:40.3%"><span class="punto-n">05</span><span class="punto-nombre">Alojamiento</span></li>
+          <li class="punto" style="left:53.6%; top:54.5%"><span class="punto-n">06</span><span class="punto-nombre">Comedor</span></li>
+          <li class="punto" style="left:41.6%; top:48.8%"><span class="punto-n">07</span><span class="punto-nombre">Enfermería</span></li>
+          <li class="punto" style="left:73.1%; top:47%"><span class="punto-n">08</span><span class="punto-nombre">Torre de guardia</span></li>
+        </ol>
+      </div>
+      <div class="escena-nube escena-nube-1"></div>
+      <div class="escena-nube escena-nube-2"></div>
+      <div class="escena-nube escena-nube-3"></div>
+      <p class="escena-pie"><span class="rotulo">Fig. 01 / Plano ilustrativo</span><em>Un campus, una sola plataforma.</em></p>
+      <p class="escena-margen rotulo">Escuela de Suboficiales · Estudio y servicio</p>
+    </div>
 
-          <div class="brand-description">
-            <h1>Gestión académica y administrativa.</h1>
+    <div class="login-container">
+      <header class="login-brand-panel">
+        <div class="brand-crest">
+          <img class="escudo escudo-acceso" src="img/escudo-esoe.svg" alt="Escudo de la ESOE" width="88" height="92">
+          <div class="brand-title-group">
+            <p class="marca-nombre">PLATAFORMA ESOE</p>
+            <p class="rotulo">Escuela de Suboficiales del Ejército</p>
           </div>
         </div>
-
-        <div class="login-footer-meta">Escuela de Suboficiales del Ejército</div>
+        <p class="reloj rotulo"><span class="solo-lectores">Hora local: </span><time data-reloj>--:--</time><span class="reloj-punto" aria-hidden="true"></span></p>
       </header>
 
-      <!-- Panel de Formulario Derecho -->
       <main id="acceso-principal" class="login-form-panel" aria-labelledby="titulo-acceso">
+        <p class="rotulo rotulo-guion">Sistema de gestión académica</p>
+        <h1 class="titulo-grande">Gestión académica <em>y administrativa.</em></h1>
+        <p class="lema">Clases, asistencia y calificaciones.<br>Todo en un solo lugar.</p>
+
         <div class="login-form-header">
-          <h2 id="titulo-acceso">Iniciar sesión</h2>
-          <div class="control-texto" role="group" aria-label="Tamaño del texto">
-            <button type="button" data-tamano-texto="normal" aria-pressed="true" data-on-click="cambiarTamanoTexto('normal')">A<span class="solo-lectores"> normal</span></button>
-            <button type="button" data-tamano-texto="grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('grande')">A+<span class="solo-lectores"> grande</span></button>
-            <button type="button" data-tamano-texto="muy-grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('muy-grande')">A++<span class="solo-lectores"> muy grande</span></button>
-          </div>
+          <h2 id="titulo-acceso" class="rotulo"><span aria-hidden="true">01 &nbsp;/&nbsp; </span>Iniciar sesión</h2>
         </div>
 
         <p id="login-aviso" class="login-aviso hidden" role="alert"></p>
@@ -51,15 +65,21 @@
 
         <div id="login-demo">
           <p class="login-aviso">Modo demostración: los datos se guardan solo en este navegador.</p>
-          <div class="role-selector-cards">
+          <div class="role-selector-cards" role="group" aria-label="Perfil">
             <button type="button" class="role-card-btn active" data-role="ADMIN" data-on-click="selectLoginRole('ADMIN')">
-              <span>Administrativo</span>
+              <span data-icon="structure" class="ico-wrap role-ico"></span>
+              <span class="role-nombre">Administrativo</span>
+              <span class="rotulo role-detalle">Estructura y clases</span>
             </button>
             <button type="button" class="role-card-btn" data-role="CATEDRATICO" data-on-click="selectLoginRole('CATEDRATICO')">
-              <span>Catedrático</span>
+              <span data-icon="teachers" class="ico-wrap role-ico"></span>
+              <span class="role-nombre">Catedrático</span>
+              <span class="rotulo role-detalle">Asistencia y notas</span>
             </button>
             <button type="button" class="role-card-btn" data-role="ESTUDIANTE" data-on-click="selectLoginRole('ESTUDIANTE')">
-              <span>Estudiante</span>
+              <span data-icon="students" class="ico-wrap role-ico"></span>
+              <span class="role-nombre">Estudiante</span>
+              <span class="rotulo role-detalle">Boletín y clases</span>
             </button>
           </div>
 
@@ -74,8 +94,9 @@
               <input type="password" id="login-password" class="form-control" required>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width:100%; padding:12px; font-size:var(--fs-base); margin-top:8px;">
-              Entrar
+            <button type="submit" class="btn btn-primary btn-entrar">
+              <span class="btn-entrar-texto">Entrar a la plataforma<span class="rotulo">Acceso institucional</span></span>
+              <span class="btn-entrar-flecha" aria-hidden="true">↗</span>
             </button>
           </form>
         </div>
@@ -95,6 +116,19 @@
             <p>Con la cuenta institucional, en el servidor de la ESOE. En el modo demostración, solo en este navegador: si borra los datos de navegación, se pierden.</p>
           </details>
         </section>
+
+        <p class="login-footer-meta rotulo">ESOE &nbsp;/&nbsp; Plataforma de gestión académica</p>
+
+        <div class="barra-ambiente" role="toolbar" aria-label="Ambiente">
+          <button type="button" class="ambiente-btn" data-atlas aria-pressed="true" data-on-click="alternarPlano()"><span class="ambiente-ico" aria-hidden="true">▦</span>Plano</button>
+          <button type="button" class="ambiente-btn" data-sonido aria-pressed="false" data-on-click="alternarSonido()"><span class="ambiente-ico" aria-hidden="true">♪</span>Sonido</button>
+          <button type="button" class="ambiente-btn" data-noche aria-pressed="false" data-on-click="alternarNoche()"><span class="ambiente-ico" aria-hidden="true">☾</span>Noche</button>
+          <div class="control-texto" role="group" aria-label="Tamaño del texto">
+            <button type="button" data-tamano-texto="normal" aria-pressed="true" data-on-click="cambiarTamanoTexto('normal')">A<span class="solo-lectores"> normal</span></button>
+            <button type="button" data-tamano-texto="grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('grande')">A+<span class="solo-lectores"> grande</span></button>
+            <button type="button" data-tamano-texto="muy-grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('muy-grande')">A++<span class="solo-lectores"> muy grande</span></button>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -150,6 +184,9 @@
         </div>
 
         <div class="topbar-right">
+          <p class="reloj rotulo"><span class="solo-lectores">Hora local: </span><time data-reloj>--:--</time><span class="reloj-punto" aria-hidden="true"></span></p>
+          <button type="button" class="ambiente-btn" data-sonido aria-pressed="false" data-on-click="alternarSonido()"><span class="ambiente-ico" aria-hidden="true">♪</span><span class="ambiente-etiqueta">Sonido</span></button>
+          <button type="button" class="ambiente-btn" data-noche aria-pressed="false" data-on-click="alternarNoche()"><span class="ambiente-ico" aria-hidden="true">☾</span><span class="ambiente-etiqueta">Noche</span></button>
           <div class="control-texto" role="group" aria-label="Tamaño del texto">
             <button type="button" data-tamano-texto="normal" aria-pressed="true" data-on-click="cambiarTamanoTexto('normal')">A<span class="solo-lectores"> normal</span></button>
             <button type="button" data-tamano-texto="grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('grande')">A+<span class="solo-lectores"> grande</span></button>
@@ -193,6 +230,7 @@
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
   <script src="js/lectura.js"></script>
+  <script src="js/ambiente.js"></script>
   <script src="js/clerk-es.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/integraciones.js"></script>

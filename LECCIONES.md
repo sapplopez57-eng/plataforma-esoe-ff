@@ -7,6 +7,39 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Ambientación de la plataforma
+
+### L-033 · Una escena de fondo en `absolute` crece con la página, no con la ventana
+
+- **Qué pasó:** el plano del campus se dibujó con `position: absolute; inset: 0` sobre la pantalla de
+  acceso. Como la columna de texto es larga, la escena midió 1700 px de alto y el plano salió
+  ampliado tres veces: se veían tres edificios en vez de la isla.
+- **Causa raíz:** `inset: 0` toma el alto del contenedor, y el contenedor crece con el contenido.
+- **Corrección:** la escena es `position: fixed` (alto de la ventana) y la columna se desplaza por
+  delante. La niebla pasó de la imagen a la escena, medida desde su propio borde.
+- **Regla:** un fondo que debe llenar la pantalla se mide contra la ventana, no contra el documento.
+  Se revisa en captura con una página larga, no solo con la primera vista.
+
+### L-032 · Dos clases con la misma prioridad: gana la que aparece después en la hoja
+
+- **Qué pasó:** el botón «Entrar a la plataforma» lleva `btn btn-primary btn-entrar`. Su fondo oscuro
+  no se aplicaba: salía cian, con el rótulo claro casi ilegible encima.
+- **Causa raíz:** `.btn-entrar` está en la sección del acceso, antes que `.btn-primary`; con la misma
+  especificidad manda el orden.
+- **Corrección:** `.btn.btn-entrar`. El par de contraste del rótulo quedó en la prueba.
+- **Regla:** una variante que debe ganar a otra clase se escribe más específica, no se confía al
+  orden de la hoja.
+
+### L-031 · Lo que un script declara con `const` no es una propiedad global
+
+- **Qué pasó:** la prueba del sonido leía `contexto.sonido` y daba `undefined`, aunque la página
+  funcionaba.
+- **Causa raíz:** `const` y `let` de nivel superior viven en el ámbito del script, no en el objeto
+  global; las `function` sí quedan en él.
+- **Corrección:** la prueba lee el estado con `vm.runInContext('sonido', contexto)`.
+- **Regla:** para probar un script de navegador en `vm`, las funciones se llaman desde el contexto y
+  el estado se lee evaluándolo dentro.
+
 ## 2026-11-16 — Comparación con Harvard, UNAH, INFOP y TecNM
 
 ### L-030 · Una escala tipográfica en píxeles no obedece al tamaño de letra que eligió la persona
@@ -385,3 +418,5 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 21. Lo que tenga que ser atómico usa un cliente de una conexión, nunca el pool.
 22. Toda pantalla tiene `banner` y un solo `main` visible, medido con una herramienta.
 23. Los tamaños de letra van en `rem`, para que sigan la preferencia de la persona.
+24. Un fondo de pantalla completa se mide contra la ventana (`fixed` o `vh`), nunca contra el documento.
+25. El ambiente (sonido, animación) nunca arranca solo: lo pide la persona, y «reducir movimiento» lo apaga.

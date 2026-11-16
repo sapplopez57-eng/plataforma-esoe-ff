@@ -23,6 +23,7 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | DIS-03 | Escala tipográfica con base de 16 px; un solo acento de acción; jerarquía por tipografía | 6 |
 | SMS-01 | Migraciones versionadas, aplicadas al arrancar; adopción de bases creadas antes | 8 |
 | DIS-07 | Mejoras medidas contra Harvard, UNAH, INFOP y TecNM: regiones en el acceso, tamaño de texto ajustable, preguntas frecuentes, escala en `rem` | 11 |
+| DIS-08 | Ambientación tomada de rahulsmoothy.com con la paleta de la ESOE: plano ilustrativo del campus con puntos numerados, barra de ambiente (plano, sonido sintetizado, noche, tamaño del texto), reloj, rótulos monoespaciados, DM Serif Display y DM Sans | 12 |
 
 ## Fase 1 — Gestión escolar real
 
@@ -105,7 +106,7 @@ Sustituir el almacenamiento en el navegador, vista por vista.
 
 ### SEC-04 · Retirar los manejadores en línea y cerrar la política de contenido — Hecho
 Los 71 atributos `onclick`/`onchange`/`oninput`/`onsubmit` pasaron a `data-on-*` con un despachador
-sin `eval` (`public/js/eventos.js`), y las fuentes Roboto se sirven desde `public/fonts/`.
+sin `eval` (`public/js/eventos.js`), y las fuentes (DM Sans y DM Serif Display, licencia OFL) se sirven desde `public/fonts/`.
 La CSP queda con `script-src-attr 'none'` y `font-src 'self'`.
 - **Aceptación:** la cabecera CSP no contiene `unsafe-inline` para scripts y la aplicación funciona
   sin errores en consola.
