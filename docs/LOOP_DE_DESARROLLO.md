@@ -122,3 +122,4 @@ Se anotan en el registro; importa la tendencia, no el número aislado.
 | 12 | 2026-11-16 | Ambientación de rahulsmoothy.com con la paleta de la ESOE (DIS-08) | Hecho | 111 pruebas, 97.31 % líneas; contraste en 4 ámbitos (día y noche, acceso e internas); sin desborde a 390 y 1440 px; 0 errores de consola |
 | 13 | 2026-11-16 | Presentación con el video del escudo y más animación (DIS-09) | Hecho | 115 pruebas, 97.31 % líneas; presentación saltable, una vez por sesión, ausente con «reducir movimiento»; 0 errores de consola |
 | 14 | 2026-11-16 | Campus 3D con Three.js (DIS-10) | Hecho | 121 pruebas, 97.31 % líneas; escena sin errores ni avisos a 1440 y 390 px, de día y de noche; archivo servido comprobado contra su fuente |
+| 15 | 2026-11-16 | Comentarios de la vista previa: arte legible, más vida, cuenta root y bienvenida (DIS-11, OPS-04) | Hecho | 125 pruebas; sin superposiciones a 1280 y 1440 px; cuenta root verificada contra Clerk (rol y contraseña) |

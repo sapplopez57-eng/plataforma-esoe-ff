@@ -321,6 +321,23 @@ El primer administrador se crea igual: registrarse y ejecutar el comando con `AD
 | Expedientes, notas, asistencia | Base de datos propia (hoy, aún en el navegador) |
 | Llaves de plataformas externas | Base de datos propia, cifradas |
 
+### Cuenta root
+
+La cuenta de mayor rango (rol ADMIN, marcada `root`) se crea o actualiza con:
+
+```bash
+npm run crear-root
+```
+
+Lee de `.env`, que no se versiona: `ESOE_ROOT_USUARIO`, `ESOE_ROOT_NOMBRE`, `ESOE_ROOT_CORREO` y
+`ESOE_ROOT_CLAVE`. La contraseña nunca va en la línea de comandos, el código ni los mensajes; el
+script tampoco la imprime. Si la cuenta ya existe, renueva su contraseña y su rol. La instancia de
+Clerk exige correo en cada cuenta; en la instancia de desarrollo sirve una dirección de prueba
+`+clerk_test`. Detrás de un proxy, Node necesita `NODE_USE_ENV_PROXY=1` para salir a Clerk.
+
+Se recomienda cambiar la contraseña root por una larga y única antes de pasar a producción, y
+activar la verificación en dos pasos en Clerk para esa cuenta.
+
 ## 12. Conexión con otras plataformas (Moodle, INFOP)
 
 ### Registrar una plataforma (administración)
@@ -504,6 +521,14 @@ dibujo SVG. Nada más cambia: los puntos numerados, la barra de ambiente y el mo
 Para las pruebas visuales locales, la escena expone `window.scene` y `window.__renderer__` **solo en
 `localhost`**. El arnés de capturas (Deno y Playwright) vive en la máquina de desarrollo y no se
 versiona: está listado en `.git/info/exclude`.
+
+### Bienvenida del panel (vuelta 15)
+
+Tomada del Campus Virtual de la UNAH: el panel abre con un saludo, accesos directos según el rol y
+las clases del periodo como tarjetas con banda de color (`--banda-0` a `--banda-3`, letra
+`--sobre-banda`; la prueba de identidad mide cada color de cada banda). En el campus 3D se sumaron
+cadetes que marchan en la plaza, espuma en la orilla, luz cinematográfica (ACES) y etiquetas que,
+si chocan en pantalla, se quedan solo con su número.
 
 ### Comparación con sitios de referencia (vuelta 11, 2026-11-16)
 

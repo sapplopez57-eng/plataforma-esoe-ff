@@ -110,6 +110,7 @@ function residuo(expresion) {
   s = quitarLlamada(s, 'esc');                  // ya escapado
   s = quitarLlamada(s, 'encodeURIComponent');   // ya codificado para una URL
   s = quitarLlamada(s, 'emptyState');           // texto fijo de la interfaz
+  s = quitarLlamada(s, 'renderBienvenida');     // HTML de la interfaz; sus plantillas se revisan aparte
   s = s.replace(/`[\s\S]*?`/g, '``');           // plantilla anidada: sus hojas
   s = s.replace(/'(?:[^'\\]|\\.)*'/g, "''");    //   se revisan por separado
   s = s.replace(/"(?:[^"\\]|\\.)*"/g, '""');

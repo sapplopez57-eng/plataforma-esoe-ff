@@ -18,7 +18,8 @@
     "secretos": "node scripts/buscar-secretos.js",
     "verificar": "bash scripts/verificar.sh",
     "localizacion": "node scripts/generar-localizacion.js",
-    "construir:campus": "esbuild interfaz/campus3d/entrada.js --bundle --format=esm --minify --target=es2020 --legal-comments=eof --outfile=public/vendor/campus3d.js"
+    "construir:campus": "esbuild interfaz/campus3d/entrada.js --bundle --format=esm --minify --target=es2020 --legal-comments=eof --outfile=public/vendor/campus3d.js",
+    "crear-root": "node scripts/crear-root.js"
   },
   "dependencies": {
     "@clerk/express": "^2.1.90",

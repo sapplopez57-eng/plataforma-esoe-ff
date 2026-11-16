@@ -134,6 +134,22 @@
   --campus-ventana-luz: #F19F05;
   --campus-arbol: #026F8A;
   --campus-arbol-claro: #0287A8;
+  --campus-mar-claro: #00BFDC;
+  --campus-sol: #FFE9C7;
+  --campus-espuma: #F6FAFB;
+  --campus-cadete: #0A2A35;
+  --campus-cadete-gorra: #F28805;
+  /* Etiquetas de los puntos: papel traslucido, sin borde, para no tapar el arte. */
+  --punto-fondo: rgba(246, 250, 251, 0.88);
+  --noche-punto-fondo: rgba(13, 39, 48, 0.86);
+  /* Ancho de la columna de texto del acceso: la escena empieza despues. */
+  --columna-acceso: 600px;
+  /* Bandas de las tarjetas de clase (bienvenida): la paleta de marca en degradado. */
+  --banda-0: linear-gradient(135deg, #261A66 0%, #4E4685 100%);
+  --banda-1: linear-gradient(135deg, #A33C0A 0%, #B8440C 100%);
+  --banda-2: linear-gradient(135deg, #015E75 0%, #026F8A 100%);
+  --banda-3: linear-gradient(135deg, #0A2A35 0%, #026F8A 100%);
+  --sobre-banda: #FFFFFF;
   /* Paralaje de la escena (lo mueve ambiente.js) y orden de llegada de los puntos. */
   --paralaje-x: 0px;
   --paralaje-y: 0px;
@@ -186,7 +202,7 @@ svg { flex-shrink: 0; }
 /* Fija a la altura de la ventana: la columna de texto se desplaza por delante.
    La niebla es una mascara sobre toda la escena, medida desde su propio borde. */
 .escena {
-  position: fixed; inset: 0 0 0 34%; overflow: hidden; z-index: -1;
+  position: fixed; inset: 0 0 0 max(34%, calc(var(--columna-acceso) - 40px)); overflow: hidden; z-index: -1;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, black 30%), linear-gradient(180deg, transparent 0, black 12%, black 100%);
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, transparent 0, black 30%), linear-gradient(180deg, transparent 0, black 12%, black 100%);
@@ -205,11 +221,13 @@ svg { flex-shrink: 0; }
   position: absolute;
   transform: translate(-50%, calc(-100% - 30px));
   display: flex; align-items: center; gap: 8px;
-  padding: 4px 10px 4px 4px;
-  background: var(--papel);
-  border: 1px solid var(--linea);
-  border-radius: 6px;
+  padding: 4px 11px 4px 4px;
+  background: var(--punto-fondo);
+  border: none;
+  border-radius: 999px;
   box-shadow: var(--sombra-suave);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   font-size: var(--fs-sm); font-weight: 700; color: var(--titulo);
   white-space: nowrap;
   animation: flotar 4s ease-in-out infinite alternate;
@@ -224,8 +242,8 @@ svg { flex-shrink: 0; }
 }
 .punto-n {
   font-family: var(--font-mono); font-size: var(--fs-meta); font-weight: 400;
-  padding: 1px 5px; border: 1px solid var(--linea); border-radius: 4px;
-  background: var(--superficie); color: var(--piedra);
+  min-width: 26px; padding: 2px 6px; border-radius: 999px; text-align: center;
+  background: var(--estructura); color: var(--sobre-estructura);
 }
 @keyframes flotar { from { translate: 0 0; } to { translate: 0 -4px; } }
 
@@ -241,11 +259,16 @@ svg { flex-shrink: 0; }
 .escena-nube-3 { top: 68%; width: 300px; animation-duration: 80s; animation-delay: -30s; }
 @keyframes deriva { from { transform: translateX(-40%); } to { transform: translateX(110vw); } }
 
-.escena-pie { position: absolute; left: 52%; bottom: 104px; transform: translateX(-50%); text-align: center; }
-/* Sobre el mar: letra clara, la de la estructura. */
-.escena-pie .rotulo, .escena-margen { color: var(--sobre-estructura-tenue); }
-.escena-pie em { display: block; font-family: var(--font-display); font-style: italic; font-size: var(--fs-lg); color: var(--sobre-estructura); }
-.escena-margen { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; }
+.escena-pie {
+  position: absolute; left: 52%; bottom: 104px; transform: translateX(-50%); text-align: center;
+  padding: 10px 22px; border-radius: 16px; background: var(--punto-fondo);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); box-shadow: var(--sombra-suave);
+}
+/* Sobre el mar cambia el fondo: la leyenda lleva su propio papel traslucido. */
+.escena-pie .rotulo { color: var(--piedra); }
+.escena-margen { color: var(--piedra); }
+.escena-pie em { display: block; font-family: var(--font-display); font-style: italic; font-size: var(--fs-lg); color: var(--titulo); }
+.escena-margen { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; opacity: 0.7; }
 
 /* ---------- Acceso: columna ---------- */
 .login-brand-panel {
@@ -257,7 +280,7 @@ svg { flex-shrink: 0; }
 .brand-title-group .marca-nombre { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.14em; color: var(--titulo); }
 .brand-title-group .rotulo { margin-top: 2px; }
 
-.login-form-panel { max-width: 600px; padding: 48px 56px 120px; }
+.login-form-panel { max-width: var(--columna-acceso); padding: 48px 56px 120px; }
 
 .rotulo {
   font-family: var(--font-mono);
@@ -326,7 +349,7 @@ svg { flex-shrink: 0; }
 
 /* ---------- Ambiente: barra flotante, reloj ---------- */
 .barra-ambiente {
-  position: fixed; left: 67%; bottom: 28px; translate: -50% 0; z-index: 5;
+  position: fixed; left: calc(50% + max(34vw, calc(var(--columna-acceso) - 40px)) / 2); bottom: 28px; translate: -50% 0; z-index: 5;
   display: flex; align-items: center; gap: 2px; padding: 6px;
   background: var(--papel);
   border: 1px solid var(--linea);
@@ -963,4 +986,51 @@ body, .login-screen, .sidebar, .topbar, .app-shell, .barra-ambiente, .punto, .ro
 .escena-3d .escena-plano img { display: none; }
 .campus-3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .escena-puntos { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+
+/* Puntos que chocan en pantalla: se quedan solo con su numero. */
+.punto.punto-compacto { gap: 0; padding: 3px; }
+.punto.punto-compacto .punto-nombre { display: none; }
+html[data-noche] { --punto-fondo: var(--noche-punto-fondo); }
+
+/* ---------- Bienvenida (como el Campus Virtual de la UNAH) ---------- */
+.bienvenida {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  margin-bottom: 28px; padding: 32px 36px;
+  border-radius: var(--radio-tarjeta);
+  background: var(--estructura); color: var(--sobre-estructura);
+  box-shadow: var(--sombra-flotante);
+}
+.bienvenida .rotulo { color: var(--sobre-estructura-tenue); }
+.bienvenida h2 { margin: 10px 0 8px; font-family: var(--font-display); font-weight: 400; font-size: var(--fs-2xl); line-height: 1.05; color: var(--sobre-estructura); }
+.bienvenida h2 em { color: var(--decoracion-viva); }
+.bienvenida p { color: var(--sobre-estructura); max-width: 52ch; }
+.bienvenida-accesos { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.bienvenida .btn-outline { color: var(--sobre-estructura); border-color: var(--sobre-estructura-tenue); }
+.bienvenida .btn-outline:hover { background: var(--resalte-claro); }
+.bienvenida-escudo { width: 120px; height: auto; flex-shrink: 0; animation: flotar 5s ease-in-out infinite alternate; }
+
+.clases-recientes { margin-bottom: 36px; }
+.clases-recientes h2 { margin-bottom: 12px; }
+.clases-recientes-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 14px; }
+.clase-tarjeta {
+  display: flex; flex-direction: column; overflow: hidden; padding: 0; text-align: left;
+  background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio-tarjeta);
+  box-shadow: var(--sombra-suave); cursor: pointer;
+  transition: transform 0.25s var(--curva-entrada), box-shadow 0.25s ease;
+}
+.clase-tarjeta:hover { transform: translateY(-3px); box-shadow: var(--sombra-flotante); }
+.clase-tarjeta:focus-visible { outline: 2px solid var(--enlace); outline-offset: 2px; }
+.clase-tarjeta-banda { display: flex; flex-direction: column; gap: 6px; min-height: 104px; padding: 16px; color: var(--sobre-banda); }
+.clase-tarjeta-banda .rotulo { color: var(--sobre-banda); opacity: 0.85; }
+.clase-tarjeta-banda strong { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; }
+.banda-0 { background: var(--banda-0); }
+.banda-1 { background: var(--banda-1); }
+.banda-2 { background: var(--banda-2); }
+.banda-3 { background: var(--banda-3); }
+.clase-tarjeta-pie { padding: 12px 16px; font-size: var(--fs-sm); color: var(--piedra); }
+@media (max-width: 540px) {
+  .bienvenida { padding: 24px 20px; }
+  .bienvenida-escudo { display: none; }
+}
 

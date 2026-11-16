@@ -8,7 +8,7 @@ import {
   BoxGeometry, CylinderGeometry, ConeGeometry, IcosahedronGeometry, PlaneGeometry, RingGeometry, SphereGeometry,
   BufferGeometry, Float32BufferAttribute, MeshStandardMaterial, MeshBasicMaterial, Mesh, Group, InstancedMesh,
   Object3D, HemisphereLight, DirectionalLight, PointLight, CatmullRomCurve3, PCFShadowMap, AdditiveBlending,
-  DoubleSide, SRGBColorSpace, MathUtils
+  DoubleSide, SRGBColorSpace, MathUtils, ACESFilmicToneMapping, CapsuleGeometry
 } from 'three';
 import { contorno, EDIFICIOS, PLAZA, TORRE, ASTA, MUELLE, ISLA, ANILLO, anclas, arboles } from './plano.js';
 
@@ -23,6 +23,11 @@ function materiales(raiz) {
   return {
     papel: () => leerColor(getComputedStyle(raiz), '--papel', '#F6FAFB'),
     mar: c('--campus-mar', '#0287A8'),
+    marClaro: c('--campus-mar-claro', '#00BFDC'),
+    sol: c('--campus-sol', '#FFE9C7'),
+    espuma: c('--campus-espuma', '#F6FAFB'),
+    cadete: new MeshStandardMaterial({ color: c('--campus-cadete', '#0A2A35'), roughness: 0.8 }),
+    gorra: new MeshStandardMaterial({ color: c('--campus-cadete-gorra', '#F28805'), roughness: 0.7 }),
     marHondo: c('--campus-mar-hondo', '#0A2A35'),
     marNoche: c('--campus-mar-noche', '#06222B'),
     arena: new MeshStandardMaterial({ color: c('--campus-arena', '#F6E7C8'), roughness: 0.95 }),
@@ -316,7 +321,8 @@ function construirMar(grupo, mat) {
   const c = new Color();
   for (let i = 0; i < pos.count; i += 1) {
     const d = Math.hypot(pos.getX(i) / 1.1, pos.getZ(i));
-    c.copy(mat.mar).lerp(mat.marHondo, MathUtils.smoothstep(d, 18, 70));
+    const cerca = MathUtils.smoothstep(d, 15, 30);
+    c.copy(mat.marClaro).lerp(mat.mar, cerca).lerp(mat.marHondo, MathUtils.smoothstep(d, 30, 80));
     c.toArray(colores, i * 3);
   }
   g.setAttribute('color', new Float32BufferAttribute(colores, 3));
@@ -328,10 +334,80 @@ function construirMar(grupo, mat) {
   return { mar, base: Float32Array.from(pos.array), material };
 }
 
+// Espuma en la orilla: un anillo blanco que late con las olas.
+function construirEspuma(grupo, mat) {
+  const borde = contorno(ISLA.rx, ISLA.ry);
+  const exterior = forma(borde.map(([x, y]) => [x * 1.07, y * 1.07]));
+  exterior.holes.push(forma(borde.map(([x, y]) => [x * 1.005, y * 1.005]).reverse()));
+  const g = new ShapeGeometry(exterior);
+  g.rotateX(Math.PI / 2);
+  const espuma = new Mesh(g, new MeshBasicMaterial({ color: mat.espuma, transparent: true, opacity: 0.55, side: DoubleSide, depthWrite: false }));
+  espuma.position.y = -0.38;
+  grupo.add(espuma);
+  return espuma;
+}
+
+// Cadetes en formacion: tres filas que marchan de un lado a otro de la plaza.
+function construirCadetes(grupo, mat) {
+  const filas = 3;
+  const columnas = 6;
+  const cuerpos = new InstancedMesh(new CapsuleGeometry(0.11, 0.32, 3, 8), mat.cadete, filas * columnas);
+  const gorras = new InstancedMesh(new CylinderGeometry(0.1, 0.1, 0.07, 10), mat.gorra, filas * columnas);
+  cuerpos.castShadow = true;
+  grupo.add(cuerpos, gorras);
+  return { cuerpos, gorras, filas, columnas };
+}
+
+function moverCadetes({ cuerpos, gorras, filas, columnas }, t) {
+  const o = new Object3D();
+  // Ida y vuelta a lo largo de la plaza, con media vuelta en cada extremo.
+  const ciclo = (t / 9) % 2;
+  const avance = ciclo < 1 ? ciclo : 2 - ciclo;
+  const suave = avance * avance * (3 - 2 * avance);
+  const x0 = PLAZA.x + 1.2 + suave * (PLAZA.w - 4.4);
+  const sentido = ciclo < 1 ? 0 : Math.PI;
+  let i = 0;
+  for (let f = 0; f < filas; f += 1) {
+    for (let c = 0; c < columnas; c += 1) {
+      const paso = Math.abs(Math.sin(t * 6 + c * 0.4)) * 0.05;
+      const x = x0 + c * 0.42;
+      const y = PLAZA.y + 1.4 + f * 0.75;
+      o.position.copy(enMundo(x, y, 0.27 + paso));
+      o.rotation.set(0, sentido, 0);
+      o.updateMatrix();
+      cuerpos.setMatrixAt(i, o.matrix);
+      o.position.copy(enMundo(x, y, 0.55 + paso));
+      o.updateMatrix();
+      gorras.setMatrixAt(i, o.matrix);
+      i += 1;
+    }
+  }
+  cuerpos.instanceMatrix.needsUpdate = true;
+  gorras.instanceMatrix.needsUpdate = true;
+}
+
+// Etiquetas que chocan en pantalla se quedan con su numero.
+function ordenarEtiquetas(marcas) {
+  const ocupados = [];
+  const visibles = [...marcas].sort((a, b) => a.y - b.y);
+  for (const m of visibles) {
+    const ancho = m.anchoCompleto || 120;
+    const caja = { x1: m.x - ancho / 2, x2: m.x + ancho / 2, y1: m.y - 30 - 30, y2: m.y - 30 };
+    const choca = ocupados.some((o) => caja.x1 < o.x2 + 6 && caja.x2 > o.x1 - 6 && caja.y1 < o.y2 + 4 && caja.y2 > o.y1 - 4);
+    if (choca !== m.compacto) {
+      m.compacto = choca;
+      m.el.classList.toggle('punto-compacto', choca);
+    }
+    ocupados.push(choca ? { x1: m.x - 16, x2: m.x + 16, y1: caja.y1, y2: caja.y2 } : caja);
+  }
+}
+
 export function iniciarCampus3D(contenedor, { raiz = document.documentElement, puntos = [] } = {}) {
   const renderer = new WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = SRGBColorSpace;
+  renderer.toneMapping = ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
   renderer.setClearColor(0x000000, 0);
@@ -345,7 +421,7 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
 
   const camara = new PerspectiveCamera(26, 1, 1, 400);
   const cielo = new HemisphereLight(0xffffff, mat.acantilado.color, 1.3);
-  const sol = new DirectionalLight(0xffffff, 2.4);
+  const sol = new DirectionalLight(mat.sol, 2.6);
   sol.position.set(-22, 38, 14);
   sol.castShadow = true;
   sol.shadow.mapSize.set(2048, 2048);
@@ -374,6 +450,8 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
   const barco = construirMuelleYBarco(mundo, mat);
   const vehiculos = construirVehiculos(mundo, mat);
   const aves = construirAves(mundo, mat);
+  const espuma = construirEspuma(mundo, mat);
+  const cadetes = construirCadetes(mundo, mat);
 
   const anclaje = anclas();
   // anclas() da [x del plano, altura, y del plano].
@@ -381,7 +459,7 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     .filter((el) => anclaje[el.dataset.punto])
     .map((el) => {
       const [x, altura, y] = anclaje[el.dataset.punto];
-      return { el, ancla: enMundo(x, y, altura) };
+      return { el, ancla: enMundo(x, y, altura), anchoCompleto: el.offsetWidth, compacto: false, x: 0, y: 0 };
     });
 
   // Camara: vista isometrica, se acerca al llegar, respira y sigue al puntero.
@@ -429,8 +507,8 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
 
     noche += (nocheObjetivo - noche) * 0.05;
     cielo.intensity = MathUtils.lerp(1.3, 0.25, noche);
-    sol.intensity = MathUtils.lerp(2.4, 0.35, noche);
-    sol.color.setRGB(1, 1, 1).lerp(mat.arbolClaro, noche * 0.6);
+    sol.intensity = MathUtils.lerp(2.6, 0.35, noche);
+    sol.color.copy(mat.sol).lerp(mat.arbolClaro, noche * 0.7);
     mat.ventana.emissiveIntensity = MathUtils.lerp(0, 1.8, noche);
     torre.cono.material.opacity = MathUtils.lerp(0.05, 0.22, noche);
     torre.luz.intensity = MathUtils.lerp(0, 40, noche);
@@ -470,7 +548,11 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     }
     bp.needsUpdate = true;
 
-    torre.haz.rotation.y = t * 0.6;
+    // El haz barre el mar por detras de la isla: nunca apunta a la camara.
+    torre.haz.rotation.y = 1.4 + Math.sin(t * 0.35) * 1.2;
+    espuma.material.opacity = 0.35 + Math.sin(t * 1.1) * 0.2;
+    espuma.scale.setScalar(1 + Math.sin(t * 1.1) * 0.006);
+    moverCadetes(cadetes, t);
 
     vehiculos.forEach(({ v, desfase }) => {
       const u = (((t / 30 + desfase) % 1) + 1) % 1;
@@ -497,9 +579,12 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     // Puntos numerados: siguen a su edificio en pantalla.
     for (const m of marcas) {
       ancla2d.copy(m.ancla).project(camara);
-      m.el.style.left = `${((ancla2d.x + 1) / 2) * ancho}px`;
-      m.el.style.top = `${((1 - ancla2d.y) / 2) * alto}px`;
+      m.x = ((ancla2d.x + 1) / 2) * ancho;
+      m.y = ((1 - ancla2d.y) / 2) * alto;
+      m.el.style.left = `${m.x}px`;
+      m.el.style.top = `${m.y}px`;
     }
+    ordenarEtiquetas(marcas);
   }
   requestAnimationFrame(cuadro);
 

@@ -7,6 +7,32 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Arte legible, cuenta root y bienvenida
+
+### L-039 · El arte se tapa a sí mismo: etiquetas que chocan y texto encima de la escena
+
+- **Qué pasó:** en la vista previa, con la ventana a unos 1280 px, la columna de texto quedaba sobre
+  la escena y varias etiquetas del plano se montaban unas sobre otras. El comentario fue: «hay
+  bordes y letras que pegan entre sí y no permiten apreciar el arte».
+- **Causa raíz:** la escena empezaba en un porcentaje fijo (34 %) y la columna mide 600 px: por debajo
+  de ~1760 px se pisaban. Las etiquetas se ubicaban cada una por su lado, sin mirar a las demás, y
+  todas llevaban borde.
+- **Corrección:** la escena empieza en `max(34%, columna − 40px)`; cada cuadro, las etiquetas que
+  chocan se quedan solo con su número; sin bordes, con papel traslúcido; la leyenda lleva su propio
+  fondo.
+- **Regla:** lo que se superpone a una ilustración se mide contra el ancho real de lo que tiene al
+  lado y contra las demás piezas superpuestas, en varios anchos, no solo en el de la captura.
+
+### L-038 · `fetch` de Node no usa el proxy del entorno por su cuenta
+
+- **Qué pasó:** `scripts/crear-root.js` falló con `fetch failed`; `curl` sí llegaba a Clerk.
+- **Causa raíz:** el `fetch` de Node 22 ignora `HTTPS_PROXY` salvo que se pida con
+  `NODE_USE_ENV_PROXY=1`. Después, la instancia de Clerk rechazó la cuenta sin correo.
+- **Corrección:** en este entorno el script corre con `NODE_USE_ENV_PROXY=1` y el certificado del
+  proxy; la cuenta root lleva correo (`ESOE_ROOT_CORREO`).
+- **Regla:** ante un fallo de red, comparar con `curl` antes de culpar al servicio. Los datos que
+  exige el proveedor de identidad se leen en su respuesta, no se suponen.
+
 ## 2026-11-16 — Campus 3D
 
 ### L-037 · El primer cuadro de animación puede llegar con una hora anterior al arranque

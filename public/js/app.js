@@ -330,6 +330,53 @@ function renderMainView() {
 // VISTA 1: PANEL DE CONTROL (DASHBOARD)
 // ==========================================================================
 
+// Bienvenida, tomada del Campus Virtual de la UNAH: saludo, accesos directos por
+// rol y las clases como tarjetas con su banda de color.
+const ACCESOS_POR_ROL = {
+  ADMIN: [['Ver clases', 'clases'], ['Control de asistencia', 'asistencia'], ['Otras plataformas', 'integraciones']],
+  CATEDRATICO: [['Ir a mis clases', 'clases'], ['Tomar asistencia', 'asistencia'], ['Calificar', 'calificaciones']],
+  ESTUDIANTE: [['Ir a mis clases', 'clases'], ['Ver mi boletín', 'boletin'], ['Otras plataformas', 'integraciones']]
+};
+
+function renderBienvenida() {
+  // En la demostracion un estudiante puede no tener expediente elegido: se saluda por su perfil.
+  const visible = (document.getElementById('sidebar-user-name').textContent || '').trim();
+  const perfiles = { ADMIN: 'Administración', CATEDRATICO: 'Catedrático', ESTUDIANTE: 'Estudiante' };
+  const nombre = visible && !/^no asignado$/i.test(visible) ? visible : (perfiles[appState.currentRole] || 'Usuario');
+  const accesos = (ACCESOS_POR_ROL[appState.currentRole] || []).map(([texto, vista], i) => `
+    <button type="button" class="btn ${i === 0 ? 'btn-primary' : 'btn-outline'}" data-on-click="navigateTo('${esc(vista)}')">${esc(texto)}</button>
+  `).join('');
+  const destino = appState.currentRole === 'ESTUDIANTE' ? 'boletin' : 'clases';
+  const tarjetas = store.clases.slice(0, 4).map((cls, i) => {
+    const mat = getMateria(cls.materiaId);
+    const cat = getCatedratico(cls.catedraticoId);
+    return `
+      <button type="button" class="clase-tarjeta" data-on-click="navigateTo('${esc(destino)}')">
+        <span class="clase-tarjeta-banda banda-${esc(i % 4)}">
+          <span class="rotulo">${esc(cls.codigoClase)}</span>
+          <strong>${esc(mat.nombre)}</strong>
+        </span>
+        <span class="clase-tarjeta-pie">${esc(formatNombreConGrado(cat))}</span>
+      </button>`;
+  }).join('');
+  return `
+    <section class="bienvenida" aria-labelledby="bienvenida-titulo">
+      <div class="bienvenida-texto">
+        <p class="rotulo rotulo-guion">Portal ESOE</p>
+        <h2 id="bienvenida-titulo">Hola, <em>${esc(nombre)}</em>.</h2>
+        <p>Aquí tiene sus clases, la asistencia y las calificaciones del periodo.</p>
+        <div class="bienvenida-accesos">${accesos}</div>
+      </div>
+      <img class="bienvenida-escudo" src="img/escudo-esoe.svg" alt="" width="120" height="126">
+    </section>
+    ${store.clases.length ? `
+    <section class="clases-recientes" aria-labelledby="clases-recientes-titulo">
+      <h2 id="clases-recientes-titulo" class="rotulo">Clases del periodo</h2>
+      <div class="clases-recientes-lista">${tarjetas}</div>
+    </section>` : ''}
+  `;
+}
+
 function renderDashboardView() {
   const totalEstudiantes = store.estudiantes.length;
   const totalPromociones = store.promociones.length;
@@ -368,6 +415,7 @@ function renderDashboardView() {
   }).join('');
 
   return `
+    ${renderBienvenida()}
     <div class="stats-grid">
       <div class="stat-card accent-olive">
         <div class="stat-card-info">

@@ -250,3 +250,17 @@ test('identidad: las comprobaciones fallan cuando deben', () => {
   assert.ok(contraste('#FFFFFF', '#10C5EA') < 4.5, 'el cielo de marca no sirve para texto blanco');
   assert.ok(contraste('#0F2A33', '#10C5EA') >= 4.5, 'con texto oscuro si');
 });
+
+test('identidad: la letra de las tarjetas de clase se lee sobre toda su banda de color', () => {
+  const bandas = [...definidas.keys()].filter((k) => /^--banda-\d+$/.test(k));
+  assert.ok(bandas.length >= 4, 'faltan las bandas de las tarjetas');
+  const letra = resolver(definidas, 'var(--sobre-banda)');
+  const fallos = [];
+  for (const banda of bandas) {
+    for (const color of definidas.get(banda).match(/#[0-9a-f]{6}/gi) || []) {
+      const r = contraste(letra, color);
+      if (r < 4.5) fallos.push(`${banda} ${color}: ${r.toFixed(2)}:1`);
+    }
+  }
+  assert.deepEqual(fallos, []);
+});
