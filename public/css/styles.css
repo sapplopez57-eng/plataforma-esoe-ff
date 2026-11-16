@@ -114,11 +114,26 @@
   --noche-interno-enlace: #F27A3D;
   --noche-interno-velo: rgba(8, 5, 26, 0.7);
 
-  /* Movimiento (reglas de movimiento): entradas con easeOut, ~0.8 s,
+  /* Movimiento: entradas con easeOut, ~0.8 s,
      escalonadas ~0.2 s. */
   --curva-entrada: cubic-bezier(0.16, 1, 0.3, 1);
   --duracion-entrada: 0.8s;
   --escalon: 0.2s;
+  /* Campus 3D: los colores del plano los lee interfaz/campus3d desde aqui. */
+  --campus-mar: #0287A8;
+  --campus-mar-hondo: #0A2A35;
+  --campus-mar-noche: #06222B;
+  --campus-arena: #F6E7C8;
+  --campus-tierra: #DDF0F4;
+  --campus-pasto: #BFE3EA;
+  --campus-acantilado: #8FC3D1;
+  --campus-camino: #2C4A55;
+  --campus-raya: #E6F6FA;
+  --campus-muro: #F6FAFB;
+  --campus-ventana: #0A2A35;
+  --campus-ventana-luz: #F19F05;
+  --campus-arbol: #026F8A;
+  --campus-arbol-claro: #0287A8;
   /* Paralaje de la escena (lo mueve ambiente.js) y orden de llegada de los puntos. */
   --paralaje-x: 0px;
   --paralaje-y: 0px;
@@ -939,3 +954,13 @@ body, .login-screen, .sidebar, .topbar, .app-shell, .barra-ambiente, .punto, .ro
 .content-area.vista-nueva .stat-card:nth-child(3) { animation-delay: 0.16s; }
 .content-area.vista-nueva .stat-card:nth-child(4) { animation-delay: 0.24s; }
 .nav-item { transition: background 0.2s ease, color 0.2s ease; }
+
+/* ---------- Campus 3D ---------- */
+/* Con WebGL el plano pasa a ser una escena Three.js: el lienzo ocupa toda la
+   escena y los puntos se colocan en pixeles sobre sus edificios. Sin WebGL, o
+   con "reducir movimiento", queda el dibujo SVG. */
+.escena-3d .escena-plano { inset: 0; top: 0; left: 0; width: 100%; height: 100%; aspect-ratio: auto; transform: none; translate: none; }
+.escena-3d .escena-plano img { display: none; }
+.campus-3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.escena-puntos { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+

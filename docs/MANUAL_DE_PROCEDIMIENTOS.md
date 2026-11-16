@@ -485,6 +485,26 @@ la paleta de la ESOE.
 `tests/estructura.test.js` comprueba que la escena es decorativa (`aria-hidden`), que la barra tiene
 nombre y que noche y sonido funcionan, también sin almacenamiento y sin Web Audio.
 
+### Campus 3D (vuelta 14)
+
+Con WebGL, el plano del acceso es una escena Three.js; sin WebGL, o con «reducir movimiento», queda el
+dibujo SVG. Nada más cambia: los puntos numerados, la barra de ambiente y el modo noche son los mismos.
+
+| Pieza | Dónde |
+|---|---|
+| Fuente | `interfaz/campus3d/entrada.js` (escena) y `plano.js` (isla, edificios, camino, árboles y anclas; puro, se prueba en Node) |
+| Archivo servido | `public/vendor/campus3d.js`, compilado con `npm run construir:campus` (esbuild, solo las piezas de Three.js que se usan, con su licencia MIT al final) |
+| Colores | variables `--campus-*` y `--marca-*` de `:root`; la escena las lee al iniciar |
+| Carga | `prepararCampus3D()` en `ambiente.js`: comprueba WebGL y movimiento, y descarga el archivo solo en el acceso |
+| Noche | la escena observa `data-noche` en `<html>` y cambia la luz poco a poco: ventanas encendidas, haz de la torre, mar más oscuro |
+
+**Después de cambiar algo en `interfaz/campus3d/`** hay que ejecutar `npm run construir:campus`;
+`tests/campus3d.test.js` compila en memoria y falla si el archivo servido quedó viejo.
+
+Para las pruebas visuales locales, la escena expone `window.scene` y `window.__renderer__` **solo en
+`localhost`**. El arnés de capturas (Deno y Playwright) vive en la máquina de desarrollo y no se
+versiona: está listado en `.git/info/exclude`.
+
 ### Comparación con sitios de referencia (vuelta 11, 2026-11-16)
 
 Medida con REA (estructura) y Craft Anything (diseño), la misma vara

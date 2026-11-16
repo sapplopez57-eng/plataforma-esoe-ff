@@ -7,6 +7,28 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Campus 3D
+
+### L-037 · El primer cuadro de animación puede llegar con una hora anterior al arranque
+
+- **Qué pasó:** la escena 3D se cayó en el primer cuadro con `Cannot read properties of undefined
+  (reading 'distanceToSquared')` dentro de `CatmullRomCurve3.getPoint`.
+- **Causa raíz:** la marca de tiempo que `requestAnimationFrame` entrega puede ser algo anterior a
+  `performance.now()` tomado al iniciar. El tiempo salió negativo, la posición de los vehículos sobre
+  el camino también, y la curva no tiene puntos antes de cero.
+- **Corrección:** `t = Math.max(0, …)` y la posición sobre la curva se normaliza a `[0, 1)` también
+  para valores negativos. El error se encontró compilando sin minificar para ver la traza real.
+- **Regla:** todo tiempo de animación se acota antes de usarse como índice o fracción. Ante un error
+  en código minificado, se compila sin minificar antes de suponer la causa.
+
+### L-036 · Una biblioteca nueva cambia de nombres: se lee su aviso, no se ignora
+
+- **Qué pasó:** Three.js 0.187 avisó en la consola que `PCFSoftShadowMap` fue retirado y que usaba
+  `PCFShadowMap` en su lugar.
+- **Causa raíz:** el código se escribió con el nombre de versiones anteriores.
+- **Corrección:** `PCFShadowMap` explícito. La consola queda sin avisos ni errores.
+- **Regla:** la verificación en navegador revisa también los avisos (`warning`), no solo los errores.
+
 ## 2026-11-16 — Presentación con el escudo y más movimiento
 
 ### L-035 · Un `let` de otro script no cuelga de `globalThis`
@@ -444,3 +466,5 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 25. El ambiente (sonido, animación) nunca arranca solo: lo pide la persona, y «reducir movimiento» lo apaga.
 26. Una presentación se puede saltar (botón y Escape), se ve una vez por sesión y no aparece con
     «reducir movimiento».
+27. Lo que se compila (el campus 3D) tiene una prueba que falla si el archivo servido no coincide con
+    su fuente. Lo pesado se carga solo donde se usa y siempre tiene una alternativa sin él.

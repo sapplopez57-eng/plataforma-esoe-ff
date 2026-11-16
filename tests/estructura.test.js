@@ -321,3 +321,14 @@ test('presentacion: no aparece con "reducir movimiento" ni insiste si el navegad
   assert.equal(bloqueado.intro.hidden, true, 'pasa directo al acceso');
 });
 
+
+test('campus3d: la pagina no lo carga sin escena, con "reducir movimiento" ni sin WebGL', () => {
+  const sinEscena = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} } });
+  assert.equal(sinEscena.contexto.prepararCampus3D(), false);
+  const quieto = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} }, movimientoReducido: true });
+  assert.equal(quieto.contexto.prepararCampus3D(), false);
+  const e = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} } });
+  e.contexto.document.querySelector = () => ({ querySelectorAll: () => [] });
+  e.contexto.document.createElement = () => ({ getContext: () => null });
+  assert.equal(e.contexto.prepararCampus3D(), false, 'sin WebGL se queda el dibujo');
+});

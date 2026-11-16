@@ -25,6 +25,7 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | DIS-07 | Mejoras medidas contra Harvard, UNAH, INFOP y TecNM: regiones en el acceso, tamaño de texto ajustable, preguntas frecuentes, escala en `rem` | 11 |
 | DIS-08 | Ambientación tomada de rahulsmoothy.com con la paleta de la ESOE: plano ilustrativo del campus con puntos numerados, barra de ambiente (plano, sonido sintetizado, noche, tamaño del texto), reloj, rótulos monoespaciados, DM Serif Display y DM Sans | 12 |
 | DIS-09 | Presentación con el video del escudo (Remotion) y más movimiento: vehículos, barco, aves, haz de la torre, bandera, olas, título por líneas, puntos que caen, paralaje, vistas que llegan y cifras que cuentan | 13 |
+| DIS-10 | Campus 3D con Three.js: isla, mar con olas, edificios con sombras, ventanas que se encienden de noche, torre con haz, bandera, vehículos, barco, aves y cámara que respira; si no hay WebGL o se pide reducir movimiento, queda el plano SVG | 14 |
 
 ## Fase 1 — Gestión escolar real
 

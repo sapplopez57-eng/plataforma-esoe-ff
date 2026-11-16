@@ -40,7 +40,8 @@ sonido ambiental sintetizado, pasar a modo noche y agrandar el texto. Todo con e
 DM Serif Display y DM Sans, y con rótulos monoespaciados. El sonido nunca arranca solo y «reducir
 movimiento» apaga toda animación. Al abrir la plataforma, una **presentación** muestra el escudo animado
 (una vez por sesión, con «Saltar intro»); en el plano circulan vehículos y un barco, ondea la bandera
-y gira el haz de la torre.
+y gira el haz de la torre. En equipos con WebGL ese plano es un **campus en 3D** (Three.js) con sombras,
+olas, ventanas que se encienden de noche y una cámara que sigue al ratón; sin WebGL queda el dibujo.
 
 El **escudo de la ESOE** (`public/img/escudo-esoe.svg`) aparece en el acceso, en el menú y como ícono
 de la pestaña. Es un redibujo vectorial del escudo institucional y conserva sus colores oficiales: la

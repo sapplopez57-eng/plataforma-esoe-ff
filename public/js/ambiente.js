@@ -263,6 +263,26 @@ function prepararVistas() {
   }).observe(area, { childList: true });
 }
 
+// ---------- Campus 3D ----------
+
+// Si el equipo tiene WebGL, el plano se vuelve una escena Three.js (se descarga
+// solo aqui, en el acceso). Si algo falla, queda el dibujo SVG tal cual.
+function prepararCampus3D() {
+  if (!document.querySelector || sinMovimiento()) return false;
+  const plano = document.querySelector('.escena-plano');
+  if (!plano) return false;
+  const prueba = document.createElement('canvas');
+  const gl = prueba.getContext && (prueba.getContext('webgl2') || prueba.getContext('webgl'));
+  if (!gl) return false;
+  import('../vendor/campus3d.js')
+    .then((modulo) => {
+      modulo.iniciarCampus3D(plano, { puntos: [...plano.querySelectorAll('.punto')] });
+      plano.closest('.escena').classList.add('escena-3d');
+    })
+    .catch(() => { /* sin 3D: se queda el plano dibujado */ });
+  return true;
+}
+
 // ---------- Inicio ----------
 
 (function iniciarAmbiente() {
@@ -277,4 +297,5 @@ function prepararVistas() {
   prepararIntro();
   prepararParalaje();
   prepararVistas();
+  prepararCampus3D();
 })();
