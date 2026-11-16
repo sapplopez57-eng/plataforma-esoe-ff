@@ -473,6 +473,11 @@ la paleta de la ESOE.
 | Sonido | `public/js/ambiente.js` | Sintetizado con Web Audio: acorde lento y rumor de mar. No descarga nada y **no suena solo**; si el navegador no tiene Web Audio, el botón se oculta |
 | Modo noche | `html[data-noche]` y `html[data-noche] .app-shell` | Solo redefine variables (`--noche-*` en `:root`); se recuerda en el navegador |
 | Reloj | `[data-reloj]` | Hora local, cada 15 s |
+| Presentación | `#intro` en `index.html`; `public/video/escudo-esoe.{webm,mp4,jpg}` | El video del escudo hecho con Remotion (composición `EscudoESOE`), recodificado a 720 px y 30 fps sin audio (92 KB en WebM, 220 KB en MP4). Se ve una vez por sesión, se salta con el botón o Escape, «▶ Ver presentación» la repite y no aparece con «reducir movimiento» |
+| Vida del plano | `<style>` dentro de `campus-esoe.svg` | Vehículos por el anillo y barco (`offset-path`), bandera, haz de la torre, olas, aves y destellos. Solo con `prefers-reduced-motion: no-preference` |
+| Llegada del acceso | `.titulo-grande .linea`, `@keyframes caer`, `acercar` | El título sube por líneas, los puntos caen uno a uno y el plano se acerca. Esperan a que termine la presentación (`.esperando-intro`) |
+| Paralaje | `prepararParalaje()` en `ambiente.js` | La escena se desplaza unos píxeles con el ratón (no con el tacto) |
+| Vistas internas | `prepararVistas()` y `.vista-nueva` | Al cambiar de vista, su contenido llega escalonado y las cifras cuentan desde cero; volver a dibujar la misma vista no anima nada |
 | Rótulos | clase `.rotulo` y `--font-mono` | Mayúsculas espaciadas, 12 px como mínimo |
 | Tipografía | `--font-display` DM Serif Display, `--font-sans` DM Sans | Servidas desde `public/fonts/` (OFL) |
 

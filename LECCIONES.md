@@ -7,6 +7,28 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Presentación con el escudo y más movimiento
+
+### L-035 · Un `let` de otro script no cuelga de `globalThis`
+
+- **Qué pasó:** para animar solo al cambiar de vista, `ambiente.js` leía `globalThis.appState`, que
+  siempre daba `undefined`: la vista nunca se daba por nueva.
+- **Causa raíz:** `appState` es un `let` de nivel superior en `app.js`. Se comparte entre scripts por
+  su nombre, pero no es una propiedad del objeto global (la misma raíz que L-031, del otro lado).
+- **Corrección:** `typeof appState !== 'undefined' ? appState.currentView : null`.
+- **Regla:** entre scripts clásicos, el estado compartido se lee por su nombre con `typeof`; nunca
+  como `window.x` ni `globalThis.x` si se declaró con `let` o `const`.
+
+### L-034 · Una variable que pone el JavaScript o un `:nth-child` también se declara en `:root`
+
+- **Qué pasó:** la prueba de identidad falló al agregar el paralaje y el orden de los puntos:
+  `--paralaje-x`, `--paralaje-y` y `--orden` se usaban sin estar en `:root`.
+- **Causa raíz:** las pone `ambiente.js` o una regla `:nth-child`; antes de eso no existen, y el
+  navegador no avisa.
+- **Corrección:** sus valores iniciales viven en `:root`.
+- **Regla:** toda variable de la interfaz tiene su valor inicial en `:root`, aunque luego la cambie
+  un script o una regla más específica.
+
 ## 2026-11-16 — Ambientación de la plataforma
 
 ### L-033 · Una escena de fondo en `absolute` crece con la página, no con la ventana
@@ -420,3 +442,5 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 23. Los tamaños de letra van en `rem`, para que sigan la preferencia de la persona.
 24. Un fondo de pantalla completa se mide contra la ventana (`fixed` o `vh`), nunca contra el documento.
 25. El ambiente (sonido, animación) nunca arranca solo: lo pide la persona, y «reducir movimiento» lo apaga.
+26. Una presentación se puede saltar (botón y Escape), se ve una vez por sesión y no aparece con
+    «reducir movimiento».

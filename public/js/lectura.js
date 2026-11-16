@@ -9,6 +9,8 @@ function mostrarPantalla(cual) {
   document.getElementById('app-shell').classList.toggle('hidden', !enApp);
   document.getElementById('acceso-principal').hidden = enApp;
   document.getElementById('content-area').hidden = !enApp;
+  // Si la sesion se abre durante la presentacion, la presentacion termina.
+  if (enApp && typeof cerrarIntro === 'function') cerrarIntro();
 }
 
 const TAMANOS_TEXTO = ['normal', 'grande', 'muy-grande'];

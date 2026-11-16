@@ -119,6 +119,10 @@
   --curva-entrada: cubic-bezier(0.16, 1, 0.3, 1);
   --duracion-entrada: 0.8s;
   --escalon: 0.2s;
+  /* Paralaje de la escena (lo mueve ambiente.js) y orden de llegada de los puntos. */
+  --paralaje-x: 0px;
+  --paralaje-y: 0px;
+  --orden: 0;
 
   --sidebar-width: 256px;
   --topbar-height: 64px;
@@ -858,3 +862,80 @@ html[data-noche] .app-shell, html[data-noche] .modal-backdrop, html[data-noche] 
 }
 html[data-noche] .escena-plano img { filter: var(--filtro-noche); }
 html[data-noche] .btn.btn-entrar { border-color: var(--decoracion-viva); }
+
+/* ---------- Presentacion: el escudo animado ---------- */
+/* El fondo del video es el mismo azul de la estructura: la presentacion se funde
+   con la pantalla sin marco. */
+.intro {
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  background: var(--estructura);
+  transition: opacity 0.6s ease, visibility 0.6s;
+}
+.intro[hidden] { display: none; }
+.intro-saliendo { opacity: 0; visibility: hidden; }
+.intro-video { width: min(72vmin, 620px); height: auto; aspect-ratio: 1 / 1; }
+.intro-rotulo { color: var(--sobre-estructura-tenue); text-align: center; padding: 0 20px; }
+.intro-progreso { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--trazo-claro); }
+.intro-progreso span { display: block; width: 0; height: 100%; background: var(--decoracion-viva); transition: width 0.25s linear; }
+.intro-saltar {
+  position: absolute; right: 28px; bottom: 28px;
+  min-height: 40px; padding: 0 16px;
+  background: transparent; color: var(--sobre-estructura);
+  border: 1px solid var(--sobre-estructura-tenue); border-radius: 999px;
+  cursor: pointer;
+}
+.intro-saltar:hover { background: var(--resalte-claro); }
+.intro-saltar:focus-visible { outline: 2px solid var(--decoracion-viva); outline-offset: 3px; }
+.ver-presentacion {
+  margin-left: 12px; padding: 0; border: none; background: transparent;
+  color: var(--titulo); text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.ver-presentacion:focus-visible { outline: 2px solid var(--enlace); outline-offset: 2px; }
+
+/* Mientras corre la presentacion, la llegada del acceso espera. */
+.esperando-intro, .esperando-intro * { animation-play-state: paused !important; }
+
+/* ---------- Mas movimiento ---------- */
+/* Titulo: cada linea sube desde su propio recorte. */
+.titulo-grande .linea { display: block; overflow: hidden; padding: 0 0.12em 0.1em 0; margin-bottom: -0.1em; }
+.titulo-grande .linea > span { display: inline-block; animation: subir 1s var(--curva-entrada) both; }
+.titulo-grande em.linea > span { animation-delay: 0.15s; }
+@keyframes subir { from { transform: translateY(105%); } to { transform: none; } }
+
+/* El plano se acerca al llegar y sigue al puntero (variables puestas por ambiente.js). */
+.escena-plano { translate: var(--paralaje-x, 0) var(--paralaje-y, 0); transition: translate 0.6s var(--curva-entrada); }
+.escena-plano img { animation: acercar 2.6s var(--curva-entrada) both; }
+@keyframes acercar { from { scale: 1.1; } to { scale: 1; } }
+
+/* Los puntos caen uno a uno y despues flotan. */
+/* :nth-child(n) para ganar a los retrasos anteriores de .punto:nth-child(2n) y (3n). */
+.punto:nth-child(n) { animation: caer 0.8s var(--curva-entrada) both, flotar 4s ease-in-out infinite alternate; animation-delay: calc(0.6s + var(--orden, 0) * 0.12s), calc(var(--orden, 0) * -0.7s); }
+.punto:nth-child(1) { --orden: 0; } .punto:nth-child(2) { --orden: 1; } .punto:nth-child(3) { --orden: 2; }
+.punto:nth-child(4) { --orden: 3; } .punto:nth-child(5) { --orden: 4; } .punto:nth-child(6) { --orden: 5; }
+.punto:nth-child(7) { --orden: 6; } .punto:nth-child(8) { --orden: 7; }
+@keyframes caer { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
+
+/* Tarjetas, boton y barra responden al puntero. */
+.role-card-btn { transition: border-color 0.2s ease, background 0.2s ease, transform 0.25s var(--curva-entrada), box-shadow 0.25s ease; }
+.role-card-btn:hover { transform: translateY(-2px); box-shadow: var(--sombra-suave); }
+.btn-entrar-flecha { transition: transform 0.3s var(--curva-entrada); }
+.btn.btn-entrar:hover .btn-entrar-flecha { transform: translate(3px, -3px); }
+.ambiente-btn { transition: background 0.2s ease, box-shadow 0.2s ease; }
+
+/* El cambio a noche se funde en lugar de saltar. */
+body, .login-screen, .sidebar, .topbar, .app-shell, .barra-ambiente, .punto, .role-card-btn, .form-control {
+  transition-property: background-color, color, border-color, transform, box-shadow;
+  transition-duration: 0.5s;
+}
+
+/* Dentro de la plataforma: cada vista nueva llega escalonada. */
+.content-area.vista-nueva > * { animation: llegar 0.6s var(--curva-entrada) both; }
+.content-area.vista-nueva > :nth-child(2) { animation-delay: 0.08s; }
+.content-area.vista-nueva > :nth-child(3) { animation-delay: 0.16s; }
+.content-area.vista-nueva > :nth-child(n+4) { animation-delay: 0.24s; }
+.content-area.vista-nueva .stat-card { animation: llegar 0.6s var(--curva-entrada) both; }
+.content-area.vista-nueva .stat-card:nth-child(2) { animation-delay: 0.08s; }
+.content-area.vista-nueva .stat-card:nth-child(3) { animation-delay: 0.16s; }
+.content-area.vista-nueva .stat-card:nth-child(4) { animation-delay: 0.24s; }
+.nav-item { transition: background 0.2s ease, color 0.2s ease; }

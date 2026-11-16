@@ -138,6 +138,131 @@ function alternarSonido() {
   return sonido.activo;
 }
 
+// ---------- Movimiento ----------
+
+// Quien pidio a su sistema reducir el movimiento no ve la presentacion, ni la
+// escena siguiendo el puntero, ni cifras contando.
+function sinMovimiento() {
+  return Boolean(globalThis.matchMedia && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+// ---------- Presentacion (video del escudo) ----------
+
+const CLAVE_INTRO = 'esoe.intro';
+
+function teclaIntro(evento) {
+  if (evento.key === 'Escape') cerrarIntro();
+}
+
+function cerrarIntro() {
+  const intro = document.getElementById('intro');
+  if (!intro || intro.hidden) return;
+  try { sessionStorage.setItem(CLAVE_INTRO, '1'); } catch { /* sin almacenamiento */ }
+  document.removeEventListener('keydown', teclaIntro);
+  intro.classList.add('intro-saliendo');
+  setTimeout(() => {
+    intro.hidden = true;
+    intro.classList.remove('intro-saliendo');
+    const video = intro.querySelector('video');
+    if (video) video.pause();
+    const pantalla = document.getElementById('login-screen');
+    if (pantalla) pantalla.classList.remove('esperando-intro');
+  }, 650);
+}
+
+function verIntro() {
+  const intro = document.getElementById('intro');
+  if (!intro) return false;
+  const video = intro.querySelector('video');
+  intro.hidden = false;
+  document.addEventListener('keydown', teclaIntro);
+  const saltar = intro.querySelector('.intro-saltar');
+  if (saltar) saltar.focus();
+  if (!video || typeof video.play !== 'function') { cerrarIntro(); return false; }
+  video.currentTime = 0;
+  const reproduccion = video.play();
+  // Si el navegador no deja reproducir, no se insiste: se pasa al acceso.
+  if (reproduccion && typeof reproduccion.catch === 'function') reproduccion.catch(cerrarIntro);
+  return true;
+}
+
+function prepararIntro() {
+  const intro = document.getElementById('intro');
+  if (!intro) return;
+  const video = intro.querySelector('video');
+  const barra = intro.querySelector('.intro-progreso span');
+  if (video) {
+    video.addEventListener('ended', () => setTimeout(cerrarIntro, 500));
+    video.addEventListener('error', cerrarIntro);
+    if (barra) {
+      video.addEventListener('timeupdate', () => {
+        if (video.duration) barra.style.width = `${(video.currentTime / video.duration) * 100}%`;
+      });
+    }
+  }
+  let vista = null;
+  try { vista = sessionStorage.getItem(CLAVE_INTRO); } catch { /* sin almacenamiento */ }
+  if (vista || sinMovimiento()) return;
+  const pantalla = document.getElementById('login-screen');
+  if (pantalla) pantalla.classList.add('esperando-intro');
+  verIntro();
+}
+
+// ---------- Escena que sigue al puntero ----------
+
+function prepararParalaje() {
+  const pantalla = document.getElementById('login-screen');
+  const plano = document.querySelector('.escena-plano');
+  if (!pantalla || !plano || sinMovimiento()) return;
+  let pendiente = false;
+  pantalla.addEventListener('pointermove', (evento) => {
+    if (evento.pointerType !== 'mouse' || pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(() => {
+      const x = (evento.clientX / globalThis.innerWidth - 0.5) * -18;
+      const y = (evento.clientY / globalThis.innerHeight - 0.5) * -12;
+      plano.style.setProperty('--paralaje-x', `${x.toFixed(1)}px`);
+      plano.style.setProperty('--paralaje-y', `${y.toFixed(1)}px`);
+      pendiente = false;
+    });
+  });
+}
+
+// ---------- Cifras que cuentan y vistas que llegan ----------
+
+function contarHasta(elemento, duracion = 900) {
+  const texto = elemento.textContent.trim();
+  const partes = /^(\d+)(%?)$/.exec(texto);
+  if (!partes) return false;
+  const final = Number(partes[1]);
+  const inicio = performance.now();
+  const paso = (ahora) => {
+    const t = Math.min(1, (ahora - inicio) / duracion);
+    const suave = 1 - (1 - t) ** 3;
+    elemento.textContent = `${Math.round(final * suave)}${partes[2]}`;
+    if (t < 1) requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
+  return true;
+}
+
+function prepararVistas() {
+  const area = document.getElementById('content-area');
+  if (!area || typeof MutationObserver === 'undefined') return;
+  let ultima = null;
+  new MutationObserver(() => {
+    // appState es un let de app.js: se ve por su nombre, no como globalThis.appState.
+    const actual = typeof appState !== 'undefined' ? appState.currentView : null;
+    if (actual === ultima) return;
+    ultima = actual;
+    if (sinMovimiento()) return;
+    area.classList.remove('vista-nueva');
+    void area.offsetWidth;
+    area.classList.add('vista-nueva');
+    area.querySelectorAll('.stat-card-info h3').forEach((cifra) => contarHasta(cifra));
+  }).observe(area, { childList: true });
+}
+
 // ---------- Inicio ----------
 
 (function iniciarAmbiente() {
@@ -149,4 +274,7 @@ function alternarSonido() {
   }
   actualizarReloj();
   setInterval(actualizarReloj, 15000);
+  prepararIntro();
+  prepararParalaje();
+  prepararVistas();
 })();

@@ -14,6 +14,18 @@
   <!-- ====================================================================
        PANTALLA DE ACCESO INSTITUCIONAL (LOGIN)
        ==================================================================== -->
+  <!-- Presentacion: el escudo animado (video). Se ve una vez por sesion,
+       se puede saltar y no aparece con "reducir movimiento". -->
+  <div id="intro" class="intro" role="dialog" aria-modal="true" aria-label="Presentación de la ESOE" hidden>
+    <video class="intro-video" muted playsinline preload="auto" poster="video/escudo-esoe.jpg" aria-hidden="true">
+      <source src="video/escudo-esoe.webm" type="video/webm">
+      <source src="video/escudo-esoe.mp4" type="video/mp4">
+    </video>
+    <p class="intro-rotulo rotulo">Escuela de Suboficiales del Ejército &nbsp;/&nbsp; Plataforma ESOE</p>
+    <div class="intro-progreso" aria-hidden="true"><span></span></div>
+    <button type="button" class="intro-saltar rotulo" data-on-click="cerrarIntro()">Saltar intro ↗</button>
+  </div>
+
   <div id="login-screen" class="login-screen">
     <!-- Escena: plano ilustrativo del campus. Es ambientacion: no lleva informacion
          que no este tambien en el texto. -->
@@ -52,7 +64,7 @@
 
       <main id="acceso-principal" class="login-form-panel" aria-labelledby="titulo-acceso">
         <p class="rotulo rotulo-guion">Sistema de gestión académica</p>
-        <h1 class="titulo-grande">Gestión académica <em>y administrativa.</em></h1>
+        <h1 class="titulo-grande"><span class="linea"><span>Gestión académica</span></span> <em class="linea"><span>y administrativa.</span></em></h1>
         <p class="lema">Clases, asistencia y calificaciones.<br>Todo en un solo lugar.</p>
 
         <div class="login-form-header">
@@ -117,7 +129,8 @@
           </details>
         </section>
 
-        <p class="login-footer-meta rotulo">ESOE &nbsp;/&nbsp; Plataforma de gestión académica</p>
+        <p class="login-footer-meta rotulo">ESOE &nbsp;/&nbsp; Plataforma de gestión académica
+          <button type="button" class="ver-presentacion rotulo" data-on-click="verIntro()">▶ Ver presentación</button></p>
 
         <div class="barra-ambiente" role="toolbar" aria-label="Ambiente">
           <button type="button" class="ambiente-btn" data-atlas aria-pressed="true" data-on-click="alternarPlano()"><span class="ambiente-ico" aria-hidden="true">▦</span>Plano</button>

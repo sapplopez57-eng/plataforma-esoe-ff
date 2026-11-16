@@ -38,7 +38,9 @@ La pantalla de acceso tiene **ambiente**: un plano ilustrativo del campus con pu
 funde con el papel, nubes lentas, un reloj y una barra para mostrar u ocultar el plano, encender un
 sonido ambiental sintetizado, pasar a modo noche y agrandar el texto. Todo con esta misma paleta, en
 DM Serif Display y DM Sans, y con rótulos monoespaciados. El sonido nunca arranca solo y «reducir
-movimiento» apaga toda animación.
+movimiento» apaga toda animación. Al abrir la plataforma, una **presentación** muestra el escudo animado
+(una vez por sesión, con «Saltar intro»); en el plano circulan vehículos y un barco, ondea la bandera
+y gira el haz de la torre.
 
 El **escudo de la ESOE** (`public/img/escudo-esoe.svg`) aparece en el acceso, en el menú y como ícono
 de la pestaña. Es un redibujo vectorial del escudo institucional y conserva sus colores oficiales: la

@@ -24,6 +24,7 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | SMS-01 | Migraciones versionadas, aplicadas al arrancar; adopción de bases creadas antes | 8 |
 | DIS-07 | Mejoras medidas contra Harvard, UNAH, INFOP y TecNM: regiones en el acceso, tamaño de texto ajustable, preguntas frecuentes, escala en `rem` | 11 |
 | DIS-08 | Ambientación tomada de rahulsmoothy.com con la paleta de la ESOE: plano ilustrativo del campus con puntos numerados, barra de ambiente (plano, sonido sintetizado, noche, tamaño del texto), reloj, rótulos monoespaciados, DM Serif Display y DM Sans | 12 |
+| DIS-09 | Presentación con el video del escudo (Remotion) y más movimiento: vehículos, barco, aves, haz de la torre, bandera, olas, título por líneas, puntos que caen, paralaje, vistas que llegan y cifras que cuentan | 13 |
 
 ## Fase 1 — Gestión escolar real
 

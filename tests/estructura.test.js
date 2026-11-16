@@ -154,27 +154,62 @@ test('ambiente: la escena es decorativa y la barra tiene nombre', () => {
   }
 });
 
-function entornoAmbiente({ almacenamiento, Audio } = {}) {
+// Presentacion de mentira: un video que registra si se pidio reproducir.
+function introFalsa({ reproduce = true } = {}) {
+  const oyentes = {};
+  const video = {
+    currentTime: 3, duration: 8.5, reproducido: 0, pausado: 0,
+    play() { this.reproducido += 1; return reproduce ? Promise.resolve() : Promise.reject(new Error('bloqueado')); },
+    pause() { this.pausado += 1; },
+    addEventListener(tipo, f) { oyentes[tipo] = f; }
+  };
+  const clases = new Set();
+  const intro = {
+    hidden: true, video, oyentes,
+    classList: { add: (c) => clases.add(c), remove: (c) => clases.delete(c), contains: (c) => clases.has(c) },
+    querySelector: (sel) => (sel === 'video' ? video : sel === '.intro-saltar' ? { focus() { intro.enfocado = true; } } : { style: {} })
+  };
+  return intro;
+}
+
+function entornoAmbiente({ almacenamiento, Audio, sesion, movimientoReducido = false, intro = introFalsa() } = {}) {
   const atributos = {};
   const botones = { '[data-noche]': [], '[data-sonido]': [], '[data-atlas]': [], '[data-reloj]': [] };
   const nuevo = () => { const b = { attrs: {}, hidden: false }; b.setAttribute = (k, v) => { b.attrs[k] = v; }; return b; };
   for (const k of Object.keys(botones)) botones[k].push(nuevo(), nuevo());
   const clases = new Set();
+  const pantalla = {
+    classList: {
+      toggle: (c) => (clases.has(c) ? (clases.delete(c), false) : (clases.add(c), true)),
+      add: (c) => clases.add(c), remove: (c) => clases.delete(c), contains: (c) => clases.has(c)
+    },
+    addEventListener() {}
+  };
+  const teclas = {};
   const documento = {
     querySelectorAll: (sel) => botones[sel] || [],
-    getElementById: () => ({ classList: { toggle: (c) => (clases.has(c) ? (clases.delete(c), false) : (clases.add(c), true)) } }),
+    querySelector: () => null,
+    addEventListener: (tipo, f) => { teclas[tipo] = f; },
+    removeEventListener: (tipo) => { delete teclas[tipo]; },
+    getElementById: (id) => ({ intro, 'login-screen': pantalla })[id] || null,
     documentElement: {
       setAttribute: (k, v) => { atributos[k] = v; },
       removeAttribute: (k) => { delete atributos[k]; },
       hasAttribute: (k) => k in atributos
     }
   };
-  const contexto = { document: documento, localStorage: almacenamiento, setInterval: () => 0, Date, Math };
+  const pendientes = [];
+  const contexto = {
+    document: documento, localStorage: almacenamiento, sessionStorage: sesion || { getItem: () => null, setItem() {} },
+    setInterval: () => 0, setTimeout: (f) => pendientes.push(f), Date, Math,
+    matchMedia: () => ({ matches: movimientoReducido })
+  };
   if (Audio) contexto.AudioContext = Audio;
   contexto.globalThis = contexto;
   vm.createContext(contexto);
   vm.runInContext(ambiente, contexto);
-  return { contexto, atributos, botones };
+  const avanzar = () => { while (pendientes.length) pendientes.shift()(); };
+  return { contexto, atributos, botones, intro, pantalla, teclas, avanzar };
 }
 
 // Web Audio de mentira: registra lo que se programa sobre el volumen general.
@@ -238,3 +273,51 @@ test('ambiente: sin Web Audio el boton de sonido se oculta', () => {
   assert.equal(botones['[data-sonido]'].every((b) => b.hidden), true);
   assert.equal(contexto.alternarSonido(), false);
 });
+
+test('presentacion: el video del escudo esta en la pagina, en dos formatos, y se puede saltar', () => {
+  assert.match(html, /<div id="intro" class="intro" role="dialog" aria-modal="true" aria-label="[^"]+" hidden>/);
+  for (const archivo of ['escudo-esoe.webm', 'escudo-esoe.mp4', 'escudo-esoe.jpg']) {
+    assert.ok(fs.existsSync(path.join(PUBLICO, 'video', archivo)), `falta video/${archivo}`);
+  }
+  assert.match(html, /<video class="intro-video" muted playsinline/);
+  assert.match(html, /class="intro-saltar[^"]*" data-on-click="cerrarIntro\(\)">Saltar intro/);
+  assert.match(html, /data-on-click="verIntro\(\)">[^<]*Ver presentación/);
+});
+
+test('presentacion: se ve una vez por sesion y al terminar deja el acceso', () => {
+  const guardado = {};
+  const sesion = { getItem: (k) => guardado[k] ?? null, setItem: (k, v) => { guardado[k] = v; } };
+  const e = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} }, sesion });
+  assert.equal(e.intro.hidden, false, 'la primera visita la muestra');
+  assert.equal(e.intro.video.reproducido, 1);
+  assert.equal(e.intro.enfocado, true, 'el foco va a "Saltar intro"');
+  assert.equal(e.pantalla.classList.contains('esperando-intro'), true);
+  e.intro.oyentes.ended();
+  e.avanzar();
+  assert.equal(e.intro.hidden, true);
+  assert.equal(e.pantalla.classList.contains('esperando-intro'), false);
+  assert.equal(guardado['esoe.intro'], '1');
+  const otra = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} }, sesion });
+  assert.equal(otra.intro.hidden, true, 'en la misma sesion no se repite');
+});
+
+test('presentacion: Escape la salta y "Ver presentacion" la repite', () => {
+  const e = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} } });
+  e.teclas.keydown({ key: 'Escape' });
+  e.avanzar();
+  assert.equal(e.intro.hidden, true);
+  assert.equal(e.contexto.verIntro(), true);
+  assert.equal(e.intro.hidden, false);
+  assert.equal(e.intro.video.currentTime, 0, 'empieza desde el principio');
+});
+
+test('presentacion: no aparece con "reducir movimiento" ni insiste si el navegador no deja reproducir', async () => {
+  const quieto = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} }, movimientoReducido: true });
+  assert.equal(quieto.intro.hidden, true);
+  assert.equal(quieto.intro.video.reproducido, 0);
+  const bloqueado = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} }, intro: introFalsa({ reproduce: false }) });
+  await new Promise((r) => setImmediate(r));
+  bloqueado.avanzar();
+  assert.equal(bloqueado.intro.hidden, true, 'pasa directo al acceso');
+});
+
