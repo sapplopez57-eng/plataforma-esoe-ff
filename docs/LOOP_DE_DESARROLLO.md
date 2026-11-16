@@ -117,3 +117,4 @@ Se anotan en el registro; importa la tendencia, no el número aislado.
 | 7 | 2026-11-16 | Paleta azul y naranja; tres arreglos de accesibilidad de la comparación con Harvard y Canvas (DIS-01, DIS-02) | Hecho | 83 pruebas; 16 pares de contraste ≥ 4.5:1; 8 vistas sin desborde; recorrido con teclado |
 | 8 | 2026-11-16 | Migraciones versionadas (SMS-01) | Hecho | 94 pruebas, 97.31 % líneas; migrador al 100 %; arranque del contenedor probado |
 | 9 | 2026-11-16 | Escudo institucional y movimiento de entrada (DIS-01, DIS-02) | Hecho | 95 pruebas; animación desactivada con «reducir movimiento»; un solo `:root` comprobado |
+| 10 | 2026-11-16 | Paleta blanco, naranja e índigo para las páginas internas (DIS-01) | Hecho | 17 pares de contraste medidos en los dos ámbitos; modal y avisos incluidos |

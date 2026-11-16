@@ -14,6 +14,17 @@ Paleta azul y naranja, en este orden:
 * **04 Ámbar (`#F19F05`):** advertencias: tardanza.
 * **05 Naranja (`#F28805`):** alertas: reprobado (`< 70%`), inasistencia y acciones de cierre. También el galón.
 
+Las **páginas internas** (todo lo que se ve después de entrar) usan una segunda paleta. La pantalla de
+acceso conserva la primera.
+
+* **06 Blanco (`#FFFFFF`):** fondo de las páginas y letra del menú lateral.
+* **07 Naranja (`#EF5F18`):** acción principal, elemento activo del menú, reprobado e inasistencia, bordes de acento.
+* **08 Índigo (`#261A66`):** menú lateral, texto y títulos, y letra sobre el naranja.
+
+El naranja 07 da 4.44:1 con letra índigo encima, a 0.06 del mínimo. En los rellenos se usa uno un 4 %
+más claro (`#F06521`, 4.63:1), que a la vista no se distingue. Como texto sobre blanco, el naranja se
+oscurece a `#B8440C` (5.43:1).
+
 Ninguno de los cinco alcanza el contraste mínimo de 4.5:1 con texto blanco encima (de 2.06 a 4.17),
 pero los cuatro brillantes sí lo alcanzan con texto oscuro (de 5.9 a 7.3). Por eso se usan tal cual,
 vivos, con texto `#0F2A33` encima. Los enlaces sobre fondo claro usan un azul más hondo (`#026F8A`),

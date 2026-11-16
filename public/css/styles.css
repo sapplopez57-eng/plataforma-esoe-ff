@@ -17,6 +17,25 @@
   --marca-4: #F19F05;  /* ambar */
   --marca-5: #F28805;  /* naranja */
 
+  /* Paleta de las paginas internas (README, 06 a 08): blanco, naranja e
+     indigo. La pantalla de acceso usa la paleta 01 a 05. */
+  --marca-6: #FFFFFF;  /* blanco */
+  --marca-7: #EF5F18;  /* naranja */
+  --marca-8: #261A66;  /* indigo (Scarlet Bikini) */
+  /* El naranja de marca da 4.44:1 con texto indigo encima: le faltan 0.06. Un
+     4 % mas claro llega a 4.63 sin que se note la diferencia. */
+  --interno-naranja: #F06521;
+  --interno-naranja-claro: #F27A3D;
+  --interno-naranja-texto: #B8440C;
+  --interno-tenue: #B8B2E0;
+  --interno-secundario: #4E4685;
+  --interno-superficie: #F3F1FA;
+  --interno-linea: #DEDAF0;
+  --interno-trazo-claro: rgba(255, 255, 255, 0.14);
+  --interno-velo: rgba(38, 26, 102, 0.6);
+  --interno-velo-suave: rgba(38, 26, 102, 0.5);
+  --interno-resalte-claro: rgba(255, 255, 255, 0.08);
+
   /* Papeles. Las variables se nombran por funcion, no por color: si la paleta
      vuelve a cambiar, cambian estos valores y nada mas (leccion L-021).
      Ninguna muestra aguanta texto blanco encima (de 2.06 a 4.17), pero las
@@ -595,3 +614,36 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Paginas internas ---------- */
+/* Dentro de la aplicacion los mismos papeles toman la paleta blanco, naranja
+   e indigo. Solo se redefinen valores: ninguna regla cambia. La ventana modal y
+   los avisos cuelgan fuera del armazon pero solo aparecen con la sesion
+   abierta, asi que llevan la misma paleta. */
+.app-shell, .modal-backdrop, .toast-container {
+  --estructura: var(--marca-8);
+  --sobre-estructura: var(--marca-6);
+  --sobre-estructura-tenue: var(--interno-tenue);
+  --accion: var(--interno-naranja);
+  --accion-hondo: var(--interno-naranja-claro);
+  --sobre-accion: var(--marca-8);
+  --negativo: var(--interno-naranja);
+  --negativo-hondo: var(--interno-naranja-claro);
+  --enlace: var(--interno-naranja-texto);
+  --decoracion: var(--marca-7);
+  /* El acento vivo tambien lleva letra (las iniciales del usuario): va con el
+     naranja que alcanza 4.5 con indigo. */
+  --decoracion-viva: var(--interno-naranja);
+  --texto: var(--marca-8);
+  --titulo: var(--marca-8);
+  --piedra: var(--interno-secundario);
+  --papel: var(--marca-6);
+  --superficie: var(--interno-superficie);
+  --linea: var(--interno-linea);
+  --trazo-claro: var(--interno-trazo-claro);
+  --resalte-claro: var(--interno-resalte-claro);
+  --velo: var(--interno-velo);
+  --velo-suave: var(--interno-velo-suave);
+}
+/* El fondo solo en el armazon: en .modal-backdrop taparia el velo. */
+.app-shell { background: var(--papel); color: var(--texto); }

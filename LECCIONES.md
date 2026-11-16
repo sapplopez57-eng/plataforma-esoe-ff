@@ -7,6 +7,27 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Paleta de las páginas internas
+
+### L-027 · Una prueba que lee el primer bloque que encuentra puede medir el ámbito equivocado y pasar
+
+- **Qué pasó:** al medir el contraste de la paleta interna, la prueba buscó `.app-shell {` y encontró
+  primero la regla de maquetación (`display: flex`), que no redefine ningún color. Sin una comprobación
+  extra habría medido dos veces la paleta del acceso y aprobado una paleta que nunca miró.
+- **Corrección:** la prueba junta las variables de todas las reglas cuya lista de selectores incluye
+  `.app-shell`, y antes exige que el ámbito interno sea de verdad distinto del de `:root`. Esa exigencia
+  fue lo que atrapó el error.
+- **Regla:** una prueba que compara dos cosas comprueba primero que son dos cosas distintas.
+
+### L-028 · Un par de colores que nadie anotó no lo mide ninguna prueba
+
+- **Qué pasó:** las iniciales del usuario en el menú son texto índigo sobre el acento vivo. Con el
+  naranja de marca daban 4.44:1. El par no estaba en la lista de contraste, así que la prueba pasaba.
+  Lo encontró la revisión manual de dónde se usaba cada variable.
+- **Corrección:** el acento vivo interno usa el naranja que llega a 4.63:1, y el par quedó en la lista.
+- **Regla:** al introducir una paleta, se recorre cada uso de cada variable de color y se anota todo
+  par que lleve texto. La lista de la prueba es tan buena como ese recorrido.
+
 ## 2026-11-16 — Migraciones
 
 ### L-025 · Un esquema que solo se aplica al crear el volumen nunca llega a una base existente

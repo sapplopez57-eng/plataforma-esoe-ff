@@ -170,8 +170,23 @@ test('identidad: ningun tamano de letra sale de la escala', () => {
   assert.equal(resolver(definidas, 'var(--fs-base)'), '16px', 'el texto base es de 16 px (DIS-03)');
 });
 
-test('identidad: los pares de texto y fondo cumplen 4.5:1', () => {
-  // [texto, fondo, donde aparece]
+// Variables que un selector redefine (p. ej. .app-shell): se mezclan sobre :root
+// para medir los mismos pares en ese ambito.
+function redefinicionesDe(css, selector) {
+  // Junta las variables de TODAS las reglas cuya lista de selectores incluye
+  // ese selector exacto: puede aparecer en varias (una para la maquetacion,
+  // otra para la paleta) y compartida con otros (".app-shell, .toast-container").
+  const mapa = new Map();
+  const re = /([^{}]+)\{([^}]*)\}/g;
+  let m;
+  while ((m = re.exec(quitarComentarios(css))) !== null) {
+    const selectores = m[1].split(',').map((x) => x.trim());
+    if (selectores.includes(selector)) for (const [k, v] of variables(m[2])) mapa.set(k, v);
+  }
+  return mapa;
+}
+
+test('identidad: los pares de texto y fondo cumplen 4.5:1 en cada ambito', () => {
   const pares = [
     ['--texto', '--papel', 'texto general'],
     ['--titulo', '--papel', 'titulos'],
@@ -188,12 +203,22 @@ test('identidad: los pares de texto y fondo cumplen 4.5:1', () => {
     ['--sobre-estructura', '--estructura', 'menu lateral, panel de acceso'],
     ['--sobre-estructura-tenue', '--estructura', 'rotulos del menu, pie del acceso'],
     ['--decoracion-viva', '--estructura', 'escudo del acceso, foco en el menu'],
-    ['--papel', '--estructura', 'nombre en el menu']
+    ['--papel', '--estructura', 'nombre en el menu'],
+    ['--sobre-accion', '--decoracion-viva', 'iniciales del usuario']
   ];
-  const fallos = pares
-    .map(([t, f, donde]) => ({ donde, t, f, r: contraste(resolver(definidas, `var(${t})`), resolver(definidas, `var(${f})`)) }))
-    .filter(({ r }) => r < 4.5)
-    .map(({ donde, t, f, r }) => `${donde}: ${t} sobre ${f} = ${r.toFixed(2)}:1`);
+  const ambitos = {
+    'acceso (:root)': definidas,
+    'paginas internas (.app-shell)': new Map([...definidas, ...redefinicionesDe(resto, '.app-shell')])
+  };
+  assert.ok(ambitos['paginas internas (.app-shell)'].get('--estructura') !== definidas.get('--estructura'),
+    '.app-shell debe redefinir la paleta de las paginas internas');
+  const fallos = [];
+  for (const [ambito, mapa] of Object.entries(ambitos)) {
+    for (const [t, f, donde] of pares) {
+      const r = contraste(resolver(mapa, `var(${t})`), resolver(mapa, `var(${f})`));
+      if (r < 4.5) fallos.push(`${ambito} - ${donde}: ${t} sobre ${f} = ${r.toFixed(2)}:1`);
+    }
+  }
   assert.deepEqual(fallos, []);
 });
 
