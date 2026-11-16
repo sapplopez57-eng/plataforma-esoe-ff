@@ -20,7 +20,8 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | SEC-04 | Sin manejadores en línea; CSP sin `unsafe-inline` para scripts; fuentes propias | 4 |
 | SEC-06 | Permisos por pertenencia: cada cuenta ligada a su expediente y cada consulta limitada a lo propio | 5 |
 | DIS-01 | Identidad visual unificada: paleta del README como única fuente en `:root`; desde la vuelta 7, azul y naranja con variables por función | 6, 7 |
-| DIS-03 | Escala tipográfica con base de 16 px; un solo acento de acción (olivo); jerarquía por tipografía | 6 |
+| DIS-03 | Escala tipográfica con base de 16 px; un solo acento de acción; jerarquía por tipografía | 6 |
+| SMS-01 | Migraciones versionadas, aplicadas al arrancar; adopción de bases creadas antes | 8 |
 
 ## Fase 1 — Gestión escolar real
 
@@ -34,11 +35,15 @@ identificadores interpolados en atributos, y dos textos del menú.
   recorre las plantillas que producen HTML fallando con archivo y línea si alguna interpola un dato
   sin escapar. Incluye el caso que demuestra que el guardián falla cuando debe.
 
-### SMS-01 · Migraciones versionadas — Pendiente
-Sustituir el `schema.sql` único por migraciones numeradas con registro de cuáles se aplicaron.
+### SMS-01 · Migraciones versionadas — Hecho
+`database/migraciones/NNNN_descripcion.sql`, aplicadas en orden por `src/migraciones.js` con registro
+y huella en `migraciones_aplicadas`. El contenedor migra antes de arrancar el servidor.
 - **Aceptación:** cuando se ejecuta `npm run migrar` sobre una base vacía o ya migrada, queda en la
   última versión sin errores ni cambios duplicados.
-- **Verificación:** `npm test` (la prueba del esquema usa las migraciones).
+- **Verificación:** `tests/migraciones.test.js` (11 casos): base vacía, repetición, migración que
+  falla y se deshace entera, migración editada, base más nueva, dos instancias a la vez, adopción de
+  una base creada con el antiguo `schema.sql` y esquema a medias. Todas las pruebas crean su base
+  con las migraciones.
 
 ### OPS-03 · Primer usuario y recorrido de acceso completo — Pendiente · prioridad alta
 Las llaves reales ya están en `.env` y la instancia responde: ClerkJS carga desde su dominio, el

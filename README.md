@@ -80,7 +80,8 @@ cp .env.example .env    # completar según las instrucciones del propio archivo
 docker compose up -d --build
 ```
 
-La plataforma queda en el puerto `8080` con PostgreSQL inicializado desde `database/schema.sql`.
+La plataforma queda en el puerto `8080`. Al arrancar, el contenedor lleva la base a la última versión
+del esquema con las migraciones de `database/migraciones/` (`npm run migrar` hace lo mismo a mano).
 Debe publicarse siempre detrás de un proxy con HTTPS. Procedimiento completo, respaldos y reversión
 en el [manual](docs/MANUAL_DE_PROCEDIMIENTOS.md).
 

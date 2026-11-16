@@ -1,13 +1,12 @@
 'use strict';
 
 const crypto = require('node:crypto');
-const fs = require('node:fs');
 const http = require('node:http');
-const path = require('node:path');
 const { Client } = require('pg');
 const { crearApp } = require('../src/app');
 const { cargarConfig } = require('../src/config');
 const { crearBaseDeDatos } = require('../src/db');
+const { migrar } = require('../src/migraciones');
 
 // --- Sesiones de prueba -----------------------------------------------------
 // Se genera un par de llaves por ejecucion. El servidor verifica las sesiones
@@ -81,8 +80,16 @@ async function crearBaseDePrueba() {
   await admin.query(`CREATE DATABASE ${nombre}`);
   const url = new URL(URL_ADMIN);
   url.pathname = `/${nombre}`;
+  // El esquema se crea con las migraciones, igual que en produccion, y con un
+  // cliente de una sola conexion (ver src/migraciones.js).
+  const cliente = new Client({ connectionString: url.toString() });
+  await cliente.connect();
+  try {
+    await migrar({ cliente });
+  } finally {
+    await cliente.end();
+  }
   const db = crearBaseDeDatos(url.toString());
-  await db.consultar(fs.readFileSync(path.join(__dirname, '..', 'database', 'schema.sql'), 'utf8'));
   return {
     db,
     async cerrar() {

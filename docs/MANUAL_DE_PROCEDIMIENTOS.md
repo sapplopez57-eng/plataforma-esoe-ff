@@ -22,7 +22,8 @@ se avanza).
 | `public/js/clerk-es.js` | Traducción del formulario de acceso (generada, no se edita) |
 | `scripts/asignar-rol.js` | Asigna el rol de un usuario |
 | `src/server.js` | Arranque y apagado ordenado |
-| `database/schema.sql` | Esquema de PostgreSQL |
+| `database/migraciones/` | Esquema de PostgreSQL, en pasos numerados (`0001_...sql`, `0002_...sql`) |
+| `src/migraciones.js`, `scripts/migrar.js` | Aplican las migraciones pendientes (`npm run migrar`) |
 | `tests/` | Pruebas: servidor, configuración y esquema |
 | `scripts/verificar.sh` | Compuerta de calidad del ciclo |
 | `scripts/buscar-secretos.js` | Detector de secretos en archivos versionados |
@@ -182,9 +183,10 @@ git pull && docker compose up -d --build
 git checkout <commit-anterior> && docker compose up -d --build
 ```
 
-**Importante:** `database/schema.sql` solo se aplica la primera vez que se crea el volumen de datos.
-Hasta que existan migraciones (SMS-01), un cambio de esquema sobre una base con datos se aplica a
-mano y con respaldo previo.
+**Esquema:** el contenedor aplica las migraciones pendientes antes de arrancar el servidor; si una
+falla, el servidor no arranca sobre una base a medio actualizar. Antes de desplegar una versión con
+migraciones nuevas, haga el respaldo de abajo: una migración se puede deshacer restaurándolo, no
+volviendo a una versión anterior del código.
 
 ### Respaldo manual
 
@@ -266,7 +268,9 @@ vinculadas; expedientes, notas y asistencia todavía no salen del navegador.
 | Las pruebas del esquema aparecen omitidas | Falta `PRUEBAS_DATABASE_URL` | Sección 3 |
 | Todos los usuarios reciben 429 a la vez | `TRUST_PROXY` en 0 detrás de un proxy | Ajustarlo |
 | Un recurso de la interfaz no carga y la consola menciona CSP | La política de contenido lo bloquea | Servirlo desde `public/`; no relajar la política sin registrarlo en el backlog |
-| Cambié `schema.sql` y la base no cambió | Solo se aplica al crear el volumen | Sección 7 |
+| `npm run migrar` dice `MIGRACION_ALTERADA` | Se editó una migración ya aplicada | Deshacer la edición y escribir una migración nueva |
+| `npm run migrar` dice `ESQUEMA_PARCIAL` | La base tiene parte del esquema inicial | Revisarla a mano; no se adopta sola |
+| `npm run migrar` dice `BASE_MAS_NUEVA` | La base viene de un código más reciente | Actualizar el código antes de migrar |
 
 ## 11. Inicio de sesión con Clerk
 
@@ -463,3 +467,24 @@ Instaladas fuera del proyecto, en `/home/user/herramientas/` (no se versionan):
 
 Los sitios de referencia que el entorno puede alcanzar están en su lista de hosts permitidos: Harvard,
 Moodle, Canvas (Instructure), TalentLMS, isEazy y las dos plataformas del INFOP.
+
+## 15. Cambiar el esquema de la base de datos
+
+El esquema cambia **solo** con migraciones nuevas. Nunca se edita una que ya se aplicó.
+
+1. Crear el siguiente archivo en `database/migraciones/`, con el número que sigue y una descripción en
+   minúsculas: `0002_auditoria_de_notas.sql`. Los números van seguidos, sin saltos.
+2. Escribir el cambio en SQL. Toda la migración corre dentro de una transacción: si una línea falla,
+   no queda nada a medias.
+3. `npm run migrar` contra la base local, dos veces. La segunda debe decir "nada que aplicar".
+4. `npm run verificar`. Las pruebas crean cada base con las migraciones, igual que producción.
+
+Qué hace `npm run migrar` y por qué:
+
+| Comportamiento | Motivo |
+|---|---|
+| Registra cada migración con la huella de su contenido | Si alguien edita una ya aplicada, se detiene (`MIGRACION_ALTERADA`): esa edición nunca llegaría a las bases que ya la tienen |
+| Toma un candado de PostgreSQL antes de empezar | Dos contenedores que arrancan a la vez no aplican lo mismo dos veces |
+| Usa una conexión propia, no la de la aplicación | Una transacción tiene que ir entera por la misma conexión |
+| Adopta una base creada con el antiguo `schema.sql` | Tiene las tablas pero no el registro: se registra la 0001 sin volver a ejecutarla |
+| Se niega a migrar una base de un código más nuevo | Aplicar encima la dejaría en un estado imposible |

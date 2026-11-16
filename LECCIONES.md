@@ -7,6 +7,30 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Migraciones
+
+### L-025 · Un esquema que solo se aplica al crear el volumen nunca llega a una base existente
+
+- **Qué pasó:** `docker-compose.yml` montaba `schema.sql` en `docker-entrypoint-initdb.d`. PostgreSQL
+  solo ejecuta esa carpeta cuando el volumen está vacío. Las tablas `plataformas_externas` y
+  `cuentas_externas` (vuelta 3) nunca habrían llegado a una base creada antes: el manual ya lo
+  advertía, pero nada lo impedía.
+- **Causa raíz:** el esquema se trataba como un archivo que se carga una vez, no como una historia
+  de cambios con registro de qué tiene cada base.
+- **Corrección:** migraciones numeradas con registro y huella, aplicadas al arrancar el contenedor. Las
+  bases viejas se adoptan sin reaplicar.
+- **Regla:** todo cambio de esquema es una migración nueva. Una migración aplicada no se edita.
+
+### L-026 · Una transacción por el pool de conexiones puede quedar partida sin que nada falle
+
+- **Qué pasó:** al diseñar el migrador, lo natural era reutilizar la conexión de la aplicación
+  (`db.consultar`), que es un pool.
+- **Causa raíz:** con un pool, cada consulta puede salir por una conexión distinta: `BEGIN` por una,
+  el cambio por otra y `COMMIT` por una tercera. La "transacción" no protege nada y no avisa.
+- **Corrección:** el migrador exige un cliente de una sola conexión. La prueba de concurrencia se
+  verificó quitando el candado: sin él, falla.
+- **Regla:** lo que tenga que ser atómico usa un cliente dedicado, nunca el pool.
+
 ## 2026-11-16 — Paleta azul y naranja
 
 ### L-023 · Cambiar la etiqueta de un elemento lo expone a las reglas escritas para la etiqueta nueva
@@ -309,3 +333,5 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 18. Las variables se nombran por función, no por color.
 19. Toda navegación tiene nombre, la aplicación tiene enlace para saltar al contenido, y hay un solo
     `h1` visible por pantalla.
+20. El esquema cambia solo con migraciones nuevas; una aplicada no se edita.
+21. Lo que tenga que ser atómico usa un cliente de una conexión, nunca el pool.

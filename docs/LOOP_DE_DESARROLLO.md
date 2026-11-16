@@ -115,3 +115,4 @@ Se anotan en el registro; importa la tendencia, no el número aislado.
 | 5 | 2026-11-15 | Permisos por pertenencia (SEC-06) | Hecho | 77 pruebas, 96.88 % líneas; matriz rol × ruta y guardián de rutas sin sesión |
 | 6 | 2026-11-16 | Identidad visual y tipografía (DIS-01, DIS-03) | Hecho | 83 pruebas; 14 pares de contraste ≥ 4.5:1; 8 vistas sin desborde a 360 y 1280 px |
 | 7 | 2026-11-16 | Paleta azul y naranja; tres arreglos de accesibilidad de la comparación con Harvard y Canvas (DIS-01, DIS-02) | Hecho | 83 pruebas; 16 pares de contraste ≥ 4.5:1; 8 vistas sin desborde; recorrido con teclado |
+| 8 | 2026-11-16 | Migraciones versionadas (SMS-01) | Hecho | 94 pruebas, 97.31 % líneas; migrador al 100 %; arranque del contenedor probado |

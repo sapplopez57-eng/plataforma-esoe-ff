@@ -95,7 +95,9 @@ Versiones instaladas y verificadas en la vuelta 1 (`npm ls --depth=0`).
 
 ## 7. Modelo de datos
 
-Fuente de verdad: [`database/schema.sql`](../database/schema.sql). Doce tablas:
+Fuente de verdad: las migraciones de [`database/migraciones/`](../database/migraciones/), aplicadas en
+orden por `src/migraciones.js`. Doce tablas de datos, más `migraciones_aplicadas`, que registra qué
+versión tiene cada base:
 
 `usuarios` · `periodos_lectivos` · `promociones` · `estudiantes` · `catedraticos` · `materias` ·
 `clases` · `sesiones_asistencia` · `detalle_asistencia` · `calificaciones` ·
@@ -110,8 +112,8 @@ Reglas de negocio que la base de datos hace cumplir por sí sola (cada una tiene
 - Una sesión de asistencia por clase y fecha; estados: presente, ausente, tardanza, excusa.
 - Código de alumno y DNI únicos.
 
-Pendiente de diseño (fase 1): migraciones versionadas en lugar de un único `schema.sql`, y tabla de
-auditoría de cambios en notas y asistencia.
+Pendiente de diseño (fase 1): tabla de auditoría de cambios en notas y asistencia (SMS-04), que será
+la migración 0002.
 
 ## 8. Autenticación y permisos
 

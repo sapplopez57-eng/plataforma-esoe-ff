@@ -35,7 +35,7 @@ test('interfaz: una ruta inexistente responde 404 real', async () => {
 test('seguridad: no se expone codigo ni configuracion del servidor', async () => {
   const privados = [
     '/src/server.js', '/src/app.js', '/src/config.js', '/server.js',
-    '/package.json', '/package-lock.json', '/database/schema.sql',
+    '/package.json', '/package-lock.json', '/database/migraciones/0001_esquema_inicial.sql', '/src/migraciones.js', '/scripts/migrar.js',
     '/docker-compose.yml', '/Dockerfile', '/.env', '/.env.example',
     '/.git/config', '/.gitignore', '/README.md', '/tests/servidor.test.js'
   ];

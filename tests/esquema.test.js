@@ -6,14 +6,12 @@
 
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const crypto = require('node:crypto');
 const { Client } = require('pg');
+const { migrar } = require('../src/migraciones');
 
 const URL_ADMIN = process.env.PRUEBAS_DATABASE_URL;
 const omitir = URL_ADMIN ? false : 'PRUEBAS_DATABASE_URL no definida';
-const ESQUEMA = fs.readFileSync(path.join(__dirname, '..', 'database', 'schema.sql'), 'utf8');
 const NOMBRE_BD = `esoe_prueba_${crypto.randomBytes(6).toString('hex')}`;
 
 let admin;
@@ -34,7 +32,7 @@ before(async () => {
   url.pathname = `/${NOMBRE_BD}`;
   db = new Client({ connectionString: url.toString() });
   await db.connect();
-  await db.query(ESQUEMA);
+  await migrar({ cliente: db });
 
   ids.periodo = (await uno(
     `INSERT INTO periodos_lectivos (codigo, nombre, modalidad, fecha_inicio, fecha_fin)
@@ -73,7 +71,8 @@ test('esquema: se aplica completo sobre una base vacia', { skip: omitir }, async
   assert.deepEqual(rows.map((r) => r.table_name), [
     'calificaciones', 'catedraticos', 'clases',
     'cuentas_externas', 'detalle_asistencia', 'estudiantes',
-    'materias', 'periodos_lectivos', 'plataformas_externas', 'promociones', 'sesiones_asistencia', 'usuarios'
+    'materias', 'migraciones_aplicadas', 'periodos_lectivos', 'plataformas_externas', 'promociones',
+    'sesiones_asistencia', 'usuarios'
   ]);
 });
 
