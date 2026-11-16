@@ -25,6 +25,10 @@ cambie valores. `tests/identidad.test.js` falla si esta paleta y la hoja dejan d
 
 El único adorno es el **galón**, la insignia de rango del suboficial, en el panel de acceso.
 
+El **escudo de la ESOE** (`public/img/escudo-esoe.svg`) aparece en el acceso, en el menú y como ícono
+de la pestaña. Es un redibujo vectorial del escudo institucional y conserva sus colores oficiales: la
+paleta de la interfaz no lo recolorea. Si se dispone del archivo original, basta reemplazar ese SVG.
+
 ---
 
 ## 2. Reglas de Negocio Implementadas

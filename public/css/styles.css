@@ -68,6 +68,12 @@
   --fs-2xl: 40px;
   --fs-display: 56px;
 
+  /* Movimiento (reglas de movimiento): entradas con easeOut, ~0.8 s,
+     escalonadas ~0.2 s. */
+  --curva-entrada: cubic-bezier(0.16, 1, 0.3, 1);
+  --duracion-entrada: 0.8s;
+  --escalon: 0.2s;
+
   --sidebar-width: 256px;
   --topbar-height: 64px;
   --radius: 4px;
@@ -131,15 +137,6 @@ svg { flex-shrink: 0; }
 .brand-crest { display: flex; align-items: center; gap: 14px; }
 .brand-description { margin-top: 56px; }
 
-.crest-shield {
-  border: 1px solid var(--decoracion-viva);
-  color: var(--decoracion-viva);
-  padding: 6px 10px;
-  font-size: var(--fs-meta);
-  font-weight: 700;
-  letter-spacing: 2px;
-  border-radius: var(--radius);
-}
 
 .brand-title-group .marca-nombre { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--papel); }
 /* Se oculta el subtitulo largo, no el nombre de la marca (que tambien es un <p>). */
@@ -220,7 +217,6 @@ svg { flex-shrink: 0; }
 }
 
 .sidebar-brand { display: flex; align-items: center; gap: 10px; }
-.sidebar-logo { background: var(--accion); color: var(--sobre-accion); font-size: var(--fs-meta); font-weight: 700; letter-spacing: 1.5px; padding: 5px 8px; border-radius: var(--radius); }
 .sidebar-brand-text .marca-nombre { font-size: var(--fs-sm); font-weight: 700; letter-spacing: 1px; color: var(--papel); }
 .sidebar-brand-text span { display: none; }
 
@@ -564,3 +560,38 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 }
 .saltar-contenido:focus { top: 16px; outline: 2px solid var(--estructura); outline-offset: 2px; }
 .content-area:focus { outline: none; }
+
+/* ---------- Escudo ---------- */
+/* El escudo conserva sus colores oficiales: es un emblema, no un elemento de
+   la interfaz, y la paleta no lo recolorea. */
+.escudo { display: block; height: auto; }
+.escudo-acceso { width: 88px; }
+.escudo-menu { width: 36px; }
+
+/* ---------- Movimiento ---------- */
+/* Reglas de movimiento: las entradas usan la curva easeOut
+   bezier(0.16, 1, 0.3, 1), duran ~0.8 s y se escalonan ~0.2 s. Solo se anima la
+   llegada a la pantalla de acceso: dentro de la aplicacion, donde se trabaja,
+   nada se mueve sin motivo. */
+
+@keyframes llegar {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes llegar-escudo {
+  from { opacity: 0; transform: scale(0.86); }
+  to { opacity: 1; transform: none; }
+}
+
+.login-brand-panel .brand-crest,
+.login-brand-panel .brand-description,
+.login-form-panel { animation: llegar var(--duracion-entrada) var(--curva-entrada) both; }
+.login-brand-panel .escudo-acceso { animation: llegar-escudo var(--duracion-entrada) var(--curva-entrada) both; }
+.login-brand-panel .brand-description { animation-delay: var(--escalon); }
+.login-form-panel { animation-delay: calc(var(--escalon) * 2); }
+
+/* Quien pidio a su sistema reducir el movimiento no ve ninguna animacion
+   (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

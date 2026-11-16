@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" role="img" aria-labelledby="escudo-titulo">
+  <title id="escudo-titulo">Escudo de la Escuela de Suboficiales del Ejército (E.S.O.E.): Pro Patri Mori</title>
+  <!-- Redibujo vectorial del escudo institucional. Conserva sus colores
+       oficiales; la paleta de la interfaz no lo recolorea. Cada grupo lleva un
+       id para poder animarlo pieza por pieza. -->
+  <defs>
+    <linearGradient id="columna" x1="0" x2="1">
+      <stop offset="0" stop-color="#9C8560"/>
+      <stop offset="0.35" stop-color="#E2CFA8"/>
+      <stop offset="0.7" stop-color="#C9B28A"/>
+      <stop offset="1" stop-color="#8E7753"/>
+    </linearGradient>
+    <linearGradient id="llama" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#C8160E"/>
+      <stop offset="0.55" stop-color="#F0461B"/>
+      <stop offset="1" stop-color="#FFB22E"/>
+    </linearGradient>
+    <linearGradient id="copa" x1="0" x2="1">
+      <stop offset="0" stop-color="#8A6A12"/>
+      <stop offset="0.5" stop-color="#F2CF57"/>
+      <stop offset="1" stop-color="#8A6A12"/>
+    </linearGradient>
+    <path id="arco-lema" d="M 50 338 Q 200 448 350 338"/>
+  </defs>
+
+  <g id="campo">
+    <!-- Campo naranja: recto arriba, cerrado abajo por la cinta en arco -->
+    <path d="M 92 92 H 308 V 300 Q 200 372 92 300 Z" fill="#EE5A1F" stroke="#1A1A1A" stroke-width="3"/>
+  </g>
+
+  <g id="triangulo">
+    <path d="M 200 112 L 290 278 H 110 Z" fill="#F7E733" stroke="#1A1A1A" stroke-width="2"/>
+  </g>
+
+  <g id="columnas">
+    <g id="columna-izquierda">
+      <rect x="40" y="84" width="58" height="14" rx="2" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <rect x="46" y="98" width="46" height="10" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <rect x="52" y="108" width="34" height="168" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <path d="M 60 112 V 272 M 69 112 V 272 M 78 112 V 272" stroke="#7F6845" stroke-width="1.5" opacity="0.7"/>
+      <rect x="46" y="276" width="46" height="10" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <rect x="38" y="286" width="62" height="14" rx="2" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+    </g>
+    <g id="columna-derecha" transform="translate(400 0) scale(-1 1)">
+      <rect x="40" y="84" width="58" height="14" rx="2" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <rect x="46" y="98" width="46" height="10" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <rect x="52" y="108" width="34" height="168" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <path d="M 60 112 V 272 M 69 112 V 272 M 78 112 V 272" stroke="#7F6845" stroke-width="1.5" opacity="0.7"/>
+      <rect x="46" y="276" width="46" height="10" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+      <rect x="38" y="286" width="62" height="14" rx="2" fill="url(#columna)" stroke="#5E4A2C" stroke-width="2"/>
+    </g>
+  </g>
+
+  <g id="antorcha">
+    <path d="M 196 214 L 204 214 L 202 290 L 198 290 Z" fill="#1A1A1A"/>
+    <path d="M 178 186 H 222 L 214 214 H 186 Z" fill="url(#copa)" stroke="#1A1A1A" stroke-width="2"/>
+    <g id="llama-fuego">
+      <path d="M 200 128 C 186 146 176 160 182 176 C 186 186 196 188 200 188 C 212 188 222 180 220 166 C 218 154 210 150 208 140 C 204 152 200 156 198 150 C 196 144 199 136 200 128 Z"
+            fill="url(#llama)" stroke="#7A1208" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <g id="libro">
+    <path d="M 200 236 C 178 226 152 226 134 232 L 134 272 C 152 266 178 266 200 276 Z" fill="#F4EFE3" stroke="#1A1A1A" stroke-width="2.5"/>
+    <path d="M 200 236 C 222 226 248 226 266 232 L 266 272 C 248 266 222 266 200 276 Z" fill="#F4EFE3" stroke="#1A1A1A" stroke-width="2.5"/>
+    <path d="M 144 242 C 160 238 178 238 192 244 M 144 252 C 160 248 178 248 192 254 M 208 244 C 222 238 240 238 256 242 M 208 254 C 222 248 240 248 256 252"
+          stroke="#8C8577" stroke-width="1.5" fill="none"/>
+    <path d="M 200 236 V 276" stroke="#1A1A1A" stroke-width="2"/>
+  </g>
+
+  <g id="pluma-laurel">
+    <!-- Pluma: del borde izquierdo hacia el centro -->
+    <path d="M 130 296 C 160 300 186 306 206 318" stroke="#5A3A12" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 130 296 C 150 290 170 296 186 306" stroke="#E0B23A" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Laurel: hojas a lo largo de una rama hacia la derecha -->
+    <path d="M 206 318 C 232 312 256 300 278 282" stroke="#1F6B2E" stroke-width="3" fill="none"/>
+    <g fill="#2E8B3E" stroke="#174F22" stroke-width="1">
+      <ellipse cx="222" cy="308" rx="11" ry="4.5" transform="rotate(-35 222 308)"/>
+      <ellipse cx="236" cy="314" rx="11" ry="4.5" transform="rotate(10 236 314)"/>
+      <ellipse cx="244" cy="298" rx="11" ry="4.5" transform="rotate(-45 244 298)"/>
+      <ellipse cx="258" cy="302" rx="11" ry="4.5" transform="rotate(0 258 302)"/>
+      <ellipse cx="262" cy="286" rx="11" ry="4.5" transform="rotate(-55 262 286)"/>
+      <ellipse cx="276" cy="290" rx="10" ry="4" transform="rotate(-10 276 290)"/>
+    </g>
+  </g>
+
+  <g id="banda">
+    <rect x="44" y="36" width="312" height="50" fill="#1FA34A" stroke="#1A1A1A" stroke-width="3"/>
+    <text x="200" y="74" text-anchor="middle" font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+          font-weight="900" font-size="40" letter-spacing="4" fill="#111111">E.S.O.E.</text>
+  </g>
+
+  <g id="cinta">
+    <path d="M 34 300 Q 200 404 366 300 L 366 360 Q 200 466 34 360 Z" fill="#1FA34A" stroke="#1A1A1A" stroke-width="3"/>
+    <text font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="27" letter-spacing="2" fill="#111111">
+      <textPath href="#arco-lema" startOffset="50%" text-anchor="middle">PRO PATRI MORI</textPath>
+    </text>
+  </g>
+</svg>

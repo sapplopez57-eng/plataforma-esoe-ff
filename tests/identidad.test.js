@@ -32,6 +32,10 @@ function separarRaiz(css) {
   return { raiz: css.slice(abre + 1, fin), resto: css.slice(0, inicio) + css.slice(fin + 1) };
 }
 
+function contarRaices(texto) {
+  return (quitarComentarios(texto).match(/(^|[\s,}]):root\s*\{/g) || []).length;
+}
+
 function quitarComentarios(texto) {
   return texto.replace(/\/\*[\s\S]*?\*\//g, '');
 }
@@ -129,6 +133,12 @@ test('identidad: la paleta de marca coincide con la del README', () => {
   assert.equal(enHoja, declaradas.length, 'la hoja y el README declaran distinto numero de colores de marca');
 });
 
+test('identidad: hay un solo bloque :root', () => {
+  // Las variables viven en un unico :root. Un segundo bloque las repartiria y
+  // esta prueba, que lee el primero, daria por inexistentes las del segundo.
+  assert.equal(contarRaices(css), 1, 'declare todas las variables en el :root principal de styles.css');
+});
+
 test('identidad: toda variable usada en la interfaz existe en :root', () => {
   const faltan = {};
   for (const archivo of [HOJA, ...archivosDeInterfaz]) {
@@ -201,6 +211,9 @@ test('identidad: las comprobaciones fallan cuando deben', () => {
   assert.deepEqual(variablesSinDefinir('style="color:var(--piedra)"', definidas), []);
 
   // y el contraste distingue lo que pasa de lo que no
+  assert.equal(contarRaices(':root { --a: 1; }\n.x {}\n:root { --b: 2; }'), 2);
+  assert.equal(contarRaices('/* :root { } */ :root { --a: 1; }'), 1);
+
   assert.ok(contraste('#FFFFFF', '#10C5EA') < 4.5, 'el cielo de marca no sirve para texto blanco');
   assert.ok(contraste('#0F2A33', '#10C5EA') >= 4.5, 'con texto oscuro si');
 });
