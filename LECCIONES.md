@@ -308,8 +308,8 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
   no cubría ninguno de los dos. Durante tres vueltas nadie lo notó porque nunca hizo falta.
 - **Causa raíz:** la regla vivía en un documento que se lee, no en una comprobación que falla. Se
   habría cumplido solo mientras nadie dejara un `.bundle` en la carpeta del proyecto.
-- **Corrección:** `*.bundle` y las carpetas de herramientas locales, fuera del repositorio, y la comprobación incorporada al
-  preflight que corre antes de cada commit, donde falla sola.
+- **Corrección:** `*.bundle` y las carpetas de herramientas locales quedaron fuera del repositorio, y
+  la comprobación se incorporó al preflight que corre antes de cada commit, donde falla sola.
 - **Regla:** toda regla que se pueda comprobar con un comando se convierte en ese comando. Si solo
   existe como prosa, se cumple por suerte.
 

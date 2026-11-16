@@ -6,6 +6,8 @@ node_modules
 coverage
 tests
 scripts
+!scripts/migrar.js
+interfaz
 docs
 *.md
 docker-compose.yml
