@@ -13,10 +13,10 @@
   <!-- ====================================================================
        PANTALLA DE ACCESO INSTITUCIONAL (LOGIN)
        ==================================================================== -->
-  <section id="login-screen" class="login-screen">
+  <div id="login-screen" class="login-screen">
     <div class="login-container">
       <!-- Panel Institucional Izquierdo -->
-      <div class="login-brand-panel">
+      <header class="login-brand-panel">
         <div>
           <div class="brand-crest">
             <img class="escudo escudo-acceso" src="img/escudo-esoe.svg" alt="Escudo de la ESOE" width="88" height="92">
@@ -32,12 +32,17 @@
         </div>
 
         <div class="login-footer-meta">Escuela de Suboficiales del Ejército</div>
-      </div>
+      </header>
 
       <!-- Panel de Formulario Derecho -->
-      <div class="login-form-panel">
+      <main id="acceso-principal" class="login-form-panel" aria-labelledby="titulo-acceso">
         <div class="login-form-header">
-          <h2>Iniciar sesión</h2>
+          <h2 id="titulo-acceso">Iniciar sesión</h2>
+          <div class="control-texto" role="group" aria-label="Tamaño del texto">
+            <button type="button" data-tamano-texto="normal" aria-pressed="true" data-on-click="cambiarTamanoTexto('normal')">A<span class="solo-lectores"> normal</span></button>
+            <button type="button" data-tamano-texto="grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('grande')">A+<span class="solo-lectores"> grande</span></button>
+            <button type="button" data-tamano-texto="muy-grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('muy-grande')">A++<span class="solo-lectores"> muy grande</span></button>
+          </div>
         </div>
 
         <p id="login-aviso" class="login-aviso hidden" role="alert"></p>
@@ -74,9 +79,25 @@
             </button>
           </form>
         </div>
-      </div>
+
+        <section class="ayuda-acceso" aria-labelledby="ayuda-acceso-titulo">
+          <h3 id="ayuda-acceso-titulo">Preguntas frecuentes</h3>
+          <details>
+            <summary>¿Qué perfil debo elegir?</summary>
+            <p>Administrativo organiza periodos, promociones, catedráticos y clases. Catedrático registra la asistencia y las calificaciones de sus clases. Estudiante consulta sus clases, su asistencia y su boletín.</p>
+          </details>
+          <details>
+            <summary>¿Olvidó su contraseña?</summary>
+            <p>Con la cuenta institucional, use la opción de recuperación del formulario de acceso. Si no aparece, acuda a la administración de la ESOE.</p>
+          </details>
+          <details>
+            <summary>¿Dónde se guardan mis datos?</summary>
+            <p>Con la cuenta institucional, en el servidor de la ESOE. En el modo demostración, solo en este navegador: si borra los datos de navegación, se pierden.</p>
+          </details>
+        </section>
+      </main>
     </div>
-  </section>
+  </div>
 
   <!-- ====================================================================
        APLICACION PRINCIPAL (SHELL)
@@ -129,6 +150,12 @@
         </div>
 
         <div class="topbar-right">
+          <div class="control-texto" role="group" aria-label="Tamaño del texto">
+            <button type="button" data-tamano-texto="normal" aria-pressed="true" data-on-click="cambiarTamanoTexto('normal')">A<span class="solo-lectores"> normal</span></button>
+            <button type="button" data-tamano-texto="grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('grande')">A+<span class="solo-lectores"> grande</span></button>
+            <button type="button" data-tamano-texto="muy-grande" aria-pressed="false" data-on-click="cambiarTamanoTexto('muy-grande')">A++<span class="solo-lectores"> muy grande</span></button>
+          </div>
+
           <div class="period-pill">
             <span>Aprobación Mínima: 70%</span>
           </div>
@@ -141,7 +168,7 @@
         </div>
       </header>
 
-      <main id="content-area" class="content-area" tabindex="-1"></main>
+      <main id="content-area" class="content-area" tabindex="-1" hidden></main>
     </div>
   </div>
 
@@ -165,6 +192,7 @@
 
   <script src="js/icons.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/lectura.js"></script>
   <script src="js/clerk-es.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/integraciones.js"></script>

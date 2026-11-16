@@ -447,7 +447,35 @@ beige para no perderse.
 Comparada con Harvard y Canvas (medición con REA y el navegador, 2026-11-16), la interfaz debe
 conservar: `<main>`, idioma declarado, **toda navegación con nombre** (`aria-label`), un enlace
 **"Saltar al contenido"** como primer elemento enfocable de la aplicación, y un solo `h1` visible por
-pantalla, con los títulos en orden.
+pantalla, con los títulos en orden. Desde la vuelta 11 eso vale también para la pantalla de acceso:
+`<header>` institucional y `<main>` con nombre; `mostrarPantalla()` (en `public/js/lectura.js`) deja
+visible un solo `<main>` al pasar del acceso a la aplicación y de vuelta.
+
+### Tamaño del texto
+
+La escala `--fs-*` está en `rem`: sigue el tamaño de letra del navegador de cada persona. El control
+«Tamaño del texto» (en el acceso y en la barra superior) pone `data-texto="grande"` (112,5 %) o
+`"muy-grande"` (125 %) en `<html>` y lo recuerda en ese navegador. Si el navegador no deja guardar,
+el control funciona igual, solo que no se recuerda. Un tamaño nuevo necesita su regla
+`html[data-texto="..."]`; `tests/estructura.test.js` falla si falta.
+
+### Comparación con sitios de referencia (vuelta 11, 2026-11-16)
+
+Medida con REA (estructura) y Craft Anything (diseño), la misma vara
+para todos:
+
+| Sitio | Regiones | Navegaciones sin nombre | Títulos | Texto base | Lo que se adoptó |
+|---|---|---|---|---|---|
+| Harvard | 8 (banner, main, contentinfo, 5 nav) | 0 | 37 | 18 px | Regiones con nombre en cada pantalla |
+| Campus Virtual UNAH | 3 | 1 | 13 | 18 px | Preguntas frecuentes sobre el acceso, con `<details>` |
+| Portal UNAH | 3 | 1 | 27 | 14 px | Opciones de tamaño de texto |
+| INFOP E-Learning | 6 | 0 | 6 | 18 px | — (Moodle; ya conectado en INT-04) |
+| INFOP Academias | 6 | 0 | 4 (dos vacíos) | 12 px | Ejemplo a evitar: títulos vacíos |
+| TecNM | 3 | 3 | 0 | 11 px | Ejemplo a evitar: sin títulos ni nombres |
+| **ESOE antes** | **0** | 0 | 2 | 14 px en el aviso | — |
+| **ESOE después** | **2** (banner, main «Iniciar sesión») | 0 | 3 | 16 px, ajustable a 20 px | — |
+
+Las capturas y medidas completas quedan en `~/herramientas/salidas/` (no se versionan).
 
 ### Herramientas de referencia
 
@@ -466,7 +494,8 @@ Instaladas fuera del proyecto, en `/home/user/herramientas/` (no se versionan):
   No tiene integración con REA: son dos herramientas independientes que se usan juntas.
 
 Los sitios de referencia que el entorno puede alcanzar están en su lista de hosts permitidos: Harvard,
-Moodle, Canvas (Instructure), TalentLMS, isEazy y las dos plataformas del INFOP.
+Moodle, Canvas (Instructure), TalentLMS, isEazy, las dos plataformas del INFOP, el portal y el
+Campus Virtual de la UNAH y el TecNM.
 
 ## 15. Cambiar el esquema de la base de datos
 

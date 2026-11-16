@@ -7,6 +7,33 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
 
 ---
 
+## 2026-11-16 — Comparación con Harvard, UNAH, INFOP y TecNM
+
+### L-030 · Una escala tipográfica en píxeles no obedece al tamaño de letra que eligió la persona
+
+- **Qué pasó:** la escala `--fs-*` estaba en `px`. Quien sube el tamaño de letra en su navegador (o
+  quien necesita texto más grande, como ofrece la UNAH con sus «opciones de accesibilidad visual»)
+  veía la plataforma igual que siempre.
+- **Causa raíz:** el `px` es absoluto; solo el `rem` sigue al tamaño base del documento. La prueba
+  de identidad fijaba `16px` como valor esperado, así que también protegía el error.
+- **Corrección:** la escala pasó a `rem` (con la base del navegador da los mismos 12 a 56 px), se
+  agregó el control «Tamaño del texto» (100 %, 112,5 %, 125 %) y una prueba que exige `rem`.
+- **Regla:** los tamaños de letra van en `rem`. Una prueba que fija un valor fija también la unidad:
+  revisarla cuando cambia el criterio.
+
+### L-029 · La regla de regiones con nombre se comprobaba solo en la aplicación, no en el acceso
+
+- **Qué pasó:** REA midió la pantalla de acceso con la misma vara que a los sitios de referencia y
+  encontró **cero** regiones: ni `banner` ni `main`. Harvard tiene ocho, todas con nombre; el Campus
+  Virtual de la UNAH, tres. Un lector de pantalla no tenía a dónde saltar.
+- **Causa raíz:** la regla 19 se aplicó a la aplicación (vuelta 7) y nadie midió la otra pantalla.
+  El acceso era un `<section>` con dos `<div>`.
+- **Corrección:** el panel institucional es `<header>` y el formulario es `<main>` con nombre. Como
+  hay dos pantallas, `mostrarPantalla()` deja un solo `<main>` sin `hidden`. Lo comprueba
+  `tests/estructura.test.js`, que además ejecuta `lectura.js` de verdad.
+- **Regla:** una regla de estructura se mide en **todas** las pantallas, con una herramienta, no a
+  ojo. Toda pantalla tiene `banner` y un solo `main` visible.
+
 ## 2026-11-16 — Paleta de las páginas internas
 
 ### L-027 · Una prueba que lee el primer bloque que encuentra puede medir el ámbito equivocado y pasar
@@ -356,3 +383,5 @@ Formato: **Qué pasó** · **Causa raíz** · **Corrección** · **Regla**.
     `h1` visible por pantalla.
 20. El esquema cambia solo con migraciones nuevas; una aplicada no se edita.
 21. Lo que tenga que ser atómico usa un cliente de una conexión, nunca el pool.
+22. Toda pantalla tiene `banner` y un solo `main` visible, medido con una herramienta.
+23. Los tamaños de letra van en `rem`, para que sigan la preferencia de la persona.

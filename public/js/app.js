@@ -141,8 +141,7 @@ function handleLoginSubmit(e) {
   e.preventDefault();
   if (sesionReal.activa) return;
   appState.authenticated = true;
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app-shell').classList.remove('hidden');
+  mostrarPantalla('app');
 
   if (appState.currentRole === 'ESTUDIANTE') {
     appState.currentView = 'boletin';
@@ -161,8 +160,7 @@ function handleLogout() {
     return;
   }
   appState.authenticated = false;
-  document.getElementById('app-shell').classList.add('hidden');
-  document.getElementById('login-screen').classList.remove('hidden');
+  mostrarPantalla('acceso');
 }
 
 function switchActiveRole(role) {

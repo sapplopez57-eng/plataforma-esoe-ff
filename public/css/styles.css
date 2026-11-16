@@ -78,14 +78,17 @@
 
   /* Escala tipografica: base de 16 px y saltos claros. Ningun tamano fuera
      de esta lista (lo comprueba la misma prueba). */
-  --fs-meta: 12px;
-  --fs-sm: 14px;
-  --fs-base: 16px;
-  --fs-md: 18px;
-  --fs-lg: 24px;
-  --fs-xl: 28px;
-  --fs-2xl: 40px;
-  --fs-display: 56px;
+  /* En rem: siguen el tamano de letra que la persona eligio en su navegador y el control
+     "Tamano del texto" (WCAG 1.4.4). Con la base del navegador (16 px) equivalen a
+     12, 14, 16, 18, 24, 28, 40 y 56 px. */
+  --fs-meta: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.5rem;
+  --fs-xl: 1.75rem;
+  --fs-2xl: 2.5rem;
+  --fs-display: 3.5rem;
 
   /* Movimiento (reglas de movimiento): entradas con easeOut, ~0.8 s,
      escalonadas ~0.2 s. */
@@ -101,6 +104,10 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 100%; }
+html[data-texto="grande"] { font-size: 112.5%; }
+html[data-texto="muy-grande"] { font-size: 125%; }
 
 html, body {
   min-height: 100%;
@@ -557,7 +564,33 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .nav-item.active .ico .acento { fill: var(--sobre-accion); }
 
 /* ---------- Acceso y conexiones externas ---------- */
-.login-aviso { border-left: 3px solid var(--decoracion); background: var(--superficie); padding: 10px 12px; margin-bottom: 16px; font-size: var(--fs-sm); }
+.login-aviso { border-left: 3px solid var(--decoracion); background: var(--superficie); padding: 10px 12px; margin-bottom: 16px; font-size: var(--fs-base); }
+
+/* Solo para lectores de pantalla: completa el nombre de un control sin mostrarse. */
+.solo-lectores {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Tamano del texto: tres botones de alternancia. */
+.control-texto { display: inline-flex; border: 1px solid var(--linea); border-radius: var(--radius); overflow: hidden; }
+.control-texto button {
+  border: none; border-right: 1px solid var(--linea); background: transparent; color: var(--texto);
+  min-width: 40px; min-height: 36px; padding: 0 8px; font-size: var(--fs-sm); font-weight: 700; cursor: pointer;
+}
+.control-texto button:last-child { border-right: none; }
+.control-texto button[aria-pressed="true"] { background: var(--accion); color: var(--sobre-accion); }
+.control-texto button:focus-visible { outline: 2px solid var(--estructura); outline-offset: -2px; }
+.login-form-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.topbar-right .control-texto { margin-right: 12px; }
+
+/* Preguntas frecuentes del acceso. */
+.ayuda-acceso { margin-top: 32px; border-top: 1px solid var(--linea); padding-top: 20px; }
+.ayuda-acceso h3 { font-size: var(--fs-md); font-weight: 700; color: var(--titulo); margin-bottom: 8px; }
+.ayuda-acceso details { border-bottom: 1px solid var(--linea); }
+.ayuda-acceso summary { cursor: pointer; padding: 12px 0; font-weight: 600; color: var(--texto); }
+.ayuda-acceso summary:focus-visible { outline: 2px solid var(--estructura); outline-offset: 2px; }
+.ayuda-acceso details p { padding: 0 0 14px; color: var(--piedra); max-width: 65ch; }
 #login-clerk { display: flex; justify-content: center; }
 #login-salir { margin-top: 12px; }
 .section-title { font-family: var(--font-display); font-size: var(--fs-base); text-transform: uppercase; letter-spacing: .04em; margin: 24px 0 10px; color: var(--titulo); }

@@ -22,6 +22,7 @@ accesibilidad · `OPS` operación · `LMS` aula virtual · `INT` integraciones �
 | DIS-01 | Identidad visual unificada: paleta del README como única fuente en `:root`; desde la vuelta 7, azul y naranja con variables por función | 6, 7 |
 | DIS-03 | Escala tipográfica con base de 16 px; un solo acento de acción; jerarquía por tipografía | 6 |
 | SMS-01 | Migraciones versionadas, aplicadas al arrancar; adopción de bases creadas antes | 8 |
+| DIS-07 | Mejoras medidas contra Harvard, UNAH, INFOP y TecNM: regiones en el acceso, tamaño de texto ajustable, preguntas frecuentes, escala en `rem` | 11 |
 
 ## Fase 1 — Gestión escolar real
 
@@ -117,7 +118,7 @@ Cierre de fase: revisión completa por dominios y corrección de lo que aparezca
 
 | Id | Elemento | Aceptación resumida |
 |---|---|---|
-| DIS-02 | Accesibilidad WCAG 2.1 AA | Hecho en la vuelta 7: navegación con nombre, enlace para saltar al contenido y orden de títulos. Falta: análisis automático completo y recorrido solo con teclado de cada vista |
+| DIS-02 | Accesibilidad WCAG 2.1 AA | Hecho en la vuelta 7: navegación con nombre, enlace para saltar al contenido y orden de títulos. Vuelta 11: regiones en el acceso y texto ajustable (WCAG 1.4.4). Falta: análisis automático completo y recorrido solo con teclado de cada vista |
 | CAL-02 | Pruebas de navegador dentro de la compuerta | El recorrido de acceso y de otras plataformas corre en `npm run verificar` y en CI |
 | DIS-04 | Vista de teléfono para el alumno | Boletín y asistencia legibles a 360 px sin desplazamiento horizontal |
 | SMS-06 | Reportes y exportación | Boletín y actas en PDF y CSV; solo para quien tiene permiso |

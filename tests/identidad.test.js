@@ -167,7 +167,7 @@ test('identidad: ningun tamano de letra sale de la escala', () => {
     if (enLinea.length) fuera[path.basename(archivo)] = enLinea;
   }
   assert.deepEqual(fuera, {}, 'Usa var(--fs-...) de la escala tipografica.');
-  assert.equal(resolver(definidas, 'var(--fs-base)'), '16px', 'el texto base es de 16 px (DIS-03)');
+  assert.equal(resolver(definidas, 'var(--fs-base)'), '1rem', 'el texto base es 1rem: 16 px con la base del navegador (DIS-03)');
 });
 
 // Variables que un selector redefine (p. ej. .app-shell): se mezclan sobre :root

@@ -77,8 +77,7 @@ async function entrarConSesionReal() {
   appState.currentRole = identidad.rol;
   appState.currentView = identidad.rol === 'ESTUDIANTE' ? 'boletin' : 'dashboard';
 
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app-shell').classList.remove('hidden');
+  mostrarPantalla('app');
   renderSidebarAndHeader();
   renderMainView();
 }
