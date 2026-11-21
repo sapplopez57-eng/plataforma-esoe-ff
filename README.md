@@ -73,21 +73,23 @@ paleta de la interfaz no lo recolorea. Si se dispone del archivo original, basta
 
 ## 3. Puesta en Marcha
 
+Requisitos: Node 22 o superior. Para las pruebas del esquema, PostgreSQL 16.
+
 ```bash
 npm ci
 cp .env.example .env
 npm run dev
 ```
 
-La interfaz queda en `http://localhost:8080`. También puede abrirse `public/index.html` directamente
-en un navegador moderno, sin servidor.
+La plataforma queda disponible en `http://localhost:8080`. Las variables de `.env` se describen en
+el [manual de procedimientos](docs/manual.md#2-variables-de-entorno).
 
-Sin llaves de Clerk la interfaz arranca en **modo demostración**: datos en el navegador y acceso
-sin validar. Con las llaves en `.env`, el inicio de sesión es real, el rol lo decide el servidor y
-se habilita la conexión con otras plataformas (Moodle, INFOP). Con sesión real, los datos de gestión
-escolar viven en el servidor y no se guardan en el navegador.
+| Configuración | Comportamiento |
+| --- | --- |
+| Sin llaves de Clerk | **Modo demostración.** Los datos se guardan en el navegador y el acceso no se valida. |
+| Con llaves de Clerk | Inicio de sesión real, rol asignado por el servidor, datos en PostgreSQL y conexión con Moodle e INFOP. |
 
-Antes de entregar cualquier cambio:
+Todo cambio pasa por la compuerta de calidad antes de integrarse:
 
 ```bash
 npm run verificar
@@ -98,10 +100,18 @@ npm run verificar
 ## 4. Despliegue
 
 ```bash
-cp .env.example .env    # completar según las instrucciones del propio archivo
+cp .env.example .env
 docker compose up -d --build
 ```
 
-La plataforma queda en el puerto `8080`. Al arrancar, el contenedor lleva la base a la última versión
-del esquema con las migraciones de `database/migraciones/` (`npm run migrar` hace lo mismo a mano).
-Debe publicarse siempre detrás de un proxy con HTTPS.
+Al arrancar, el contenedor aplica las migraciones de `database/migraciones/` y después inicia el
+servidor en el puerto `8080`. En producción se publica detrás de un proxy inverso con HTTPS.
+
+La vista web estática se publica en GitHub Pages desde `public/`.
+
+---
+
+## 5. Documentación
+
+* [Manual de procedimientos](docs/manual.md): entorno, variables, verificación, estilo del código,
+  archivos derivados y despliegue.

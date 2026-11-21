@@ -6,6 +6,7 @@ const globals = require('globals');
 module.exports = [
   { ignores: ['node_modules/**', 'coverage/**', 'salida-vercel/**', 'public/js/clerk-es.js', 'public/vendor/**'] },
   js.configs.recommended,
+  { rules: { 'no-empty': ['error', { allowEmptyCatch: true }] } },
   {
     files: ['src/**/*.js', 'api/**/*.js', 'tests/**/*.js', 'scripts/**/*.js', 'eslint.config.js'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'commonjs', globals: globals.node },
@@ -20,13 +21,17 @@ module.exports = [
     }
   },
   {
-    // Fuente del campus 3D: modulos ES que esbuild empaqueta en public/vendor/.
+    files: ['tests/navegador.test.js'],
+    languageOptions: {
+      globals: { window: 'readonly', navigateTo: 'readonly', openModalNuevoPeriodo: 'readonly', store: 'readonly' }
+    }
+  },
+  {
     files: ['interfaz/**/*.js'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: globals.browser },
     rules: { 'no-unused-vars': 'error', eqeqeq: ['error', 'always'], 'prefer-const': 'error', 'no-var': 'error' }
   },
   {
-    // Interfaz heredada: tres scripts clasicos que comparten ambito global.
     files: ['public/js/**/*.js'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'script', globals: globals.browser },
     rules: {

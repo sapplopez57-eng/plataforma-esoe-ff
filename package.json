@@ -16,6 +16,8 @@
     "test:cobertura": "node --test --experimental-test-coverage --test-coverage-include=\"src/**\" --test-coverage-lines=80 --test-coverage-branches=70 \"tests/*.test.js\"",
     "auditar": "npm audit --audit-level=high",
     "secretos": "node scripts/buscar-secretos.js",
+    "estilo": "node scripts/estilo.js",
+    "estilo:corregir": "node scripts/estilo.js --corregir",
     "verificar": "bash scripts/verificar.sh",
     "localizacion": "node scripts/generar-localizacion.js",
     "construir:campus": "esbuild interfaz/campus3d/entrada.js --bundle --format=esm --minify --target=es2020 --legal-comments=eof --outfile=public/vendor/campus3d.js",
@@ -32,6 +34,7 @@
   "devDependencies": {
     "@clerk/localizations": "^4.24.8",
     "@eslint/js": "^10.0.1",
+    "acorn": "^8.19.0",
     "esbuild": "0.28.2",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",

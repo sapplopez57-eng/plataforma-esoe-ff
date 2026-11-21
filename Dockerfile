@@ -17,6 +17,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8080)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-# Primero lleva la base a la ultima version del esquema; si eso falla, el
-# servidor no arranca sobre una base desactualizada.
 CMD ["sh", "-c", "node scripts/migrar.js && exec node src/server.js"]
