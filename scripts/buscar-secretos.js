@@ -1,8 +1,5 @@
 'use strict';
 
-// Revisa los archivos versionados en busca de secretos antes de cada entrega.
-// Uso: node scripts/buscar-secretos.js   (sale con 1 si encuentra algo)
-
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 
@@ -21,7 +18,6 @@ const REGLAS = [
   { nombre: 'Valor por defecto para un secreto', patron: /\$\{(?:\w*(?:PASSWORD|SECRET|TOKEN|KEY)\w*):-[^}]+\}/ }
 ];
 
-// Archivos con credenciales ficticias de prueba, revisados a mano.
 const EXCLUIDOS = new Set(['package-lock.json', 'scripts/buscar-secretos.js', 'tests/config.test.js', 'src/config.js']);
 
 function archivosVersionados() {

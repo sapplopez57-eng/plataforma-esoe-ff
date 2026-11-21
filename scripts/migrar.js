@@ -1,9 +1,5 @@
 'use strict';
 
-// npm run migrar — lleva la base de DATABASE_URL a la ultima version del esquema.
-// Se puede ejecutar cuantas veces se quiera: lo ya aplicado no se repite.
-// En Docker lo ejecuta el contenedor antes de arrancar el servidor.
-
 const { Client } = require('pg');
 const { migrar, ErrorDeMigracion } = require('../src/migraciones');
 
@@ -27,9 +23,6 @@ async function principal() {
   }
 }
 
-// Los errores de migracion ya traen un mensaje para personas; los demas (sin
-// conexion, credenciales) se muestran sin la traza. Un fallo de red puede venir
-// sin mensaje y con el detalle en su codigo o en sus errores internos.
 function mensajeDeFallo(error) {
   if (error instanceof ErrorDeMigracion) return error.message;
   const internos = (error && error.errors) || [];

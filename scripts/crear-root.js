@@ -1,13 +1,5 @@
 'use strict';
 
-// Crea (o actualiza) la cuenta root de la plataforma en Clerk, con rol ADMIN.
-// Usuario, nombre, correo y contrasena salen de .env (ESOE_ROOT_USUARIO, ESOE_ROOT_NOMBRE,
-// ESOE_ROOT_CORREO, ESOE_ROOT_CLAVE): nunca de la linea de comandos ni del codigo, y la contrasena
-// no se imprime.
-//
-// Uso: node scripts/crear-root.js
-// Requiere CLERK_SECRET_KEY y que la instancia de Clerk admita usuario y contrasena.
-
 const fs = require('node:fs');
 const path = require('node:path');
 const { createClerkClient } = require('@clerk/express');
@@ -26,7 +18,6 @@ function datosRoot(env) {
   const usuario = String(env.ESOE_ROOT_USUARIO || '').trim().toLowerCase();
   const clave = String(env.ESOE_ROOT_CLAVE || '');
   const nombre = String(env.ESOE_ROOT_NOMBRE || usuario).trim();
-  // La instancia de Clerk exige correo en cada cuenta.
   const correo = String(env.ESOE_ROOT_CORREO || '').trim();
   const faltan = [];
   if (!/^[a-z0-9_-]{3,40}$/.test(usuario)) faltan.push('ESOE_ROOT_USUARIO (3 a 40: letras, numeros, - o _)');

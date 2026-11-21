@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Compuerta de calidad del ciclo de desarrollo. Ninguna vuelta se cierra si esto falla.
-# Uso: npm run verificar
 
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -65,6 +63,7 @@ paso "Estilo y errores estaticos (eslint)" npx --no-install eslint .
 paso "Pruebas con cobertura minima" npm run --silent test:cobertura
 paso "Dependencias sin vulnerabilidades altas" npm audit --audit-level=high
 paso "Sin secretos versionados" node scripts/buscar-secretos.js
+paso "Codigo sin comentarios ni terminos no permitidos" node scripts/estilo.js
 paso ".env fuera del control de versiones" env_fuera_de_git
 paso "docker-compose valido" compose_valido
 
@@ -74,7 +73,7 @@ fi
 
 printf '\n'
 if [ "$fallos" -gt 0 ]; then
-  printf 'RESULTADO: %d verificacion(es) fallaron. La vuelta NO se puede cerrar.\n' "$fallos"
+  printf 'RESULTADO: %d verificacion(es) fallaron. El cambio NO se puede entregar.\n' "$fallos"
   exit 1
 fi
 printf 'RESULTADO: todo en verde (%d aviso(s)).\n' "$avisos"

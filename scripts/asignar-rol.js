@@ -1,11 +1,5 @@
 'use strict';
 
-// Asigna el rol de un usuario en Clerk. El rol se guarda en sus metadatos publicos,
-// que solo el servidor puede modificar.
-//
-// Uso: node scripts/asignar-rol.js <correo> <ADMIN|CATEDRATICO|ESTUDIANTE>
-// Requiere CLERK_SECRET_KEY en el entorno o en .env.
-
 const fs = require('node:fs');
 const path = require('node:path');
 const { createClerkClient } = require('@clerk/express');
@@ -17,7 +11,6 @@ function leerEnv() {
   for (const linea of fs.readFileSync(archivo, 'utf8').split('\n')) {
     const partes = /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/.exec(linea);
     if (!partes || process.env[partes[1]] !== undefined) continue;
-    // Un valor con espacios (una llave PEM) viene entre comillas en el archivo.
     const valor = partes[2].replace(/^"(.*)"$/s, '$1').replace(/^'(.*)'$/s, '$1');
     process.env[partes[1]] = valor;
   }
