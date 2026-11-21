@@ -77,7 +77,7 @@ cada lunes y a demanda desde la pestaña Actions:
 1. Retira los comentarios que encuentre. Si cambió algo, corre `eslint` y las pruebas, y sube la
    corrección como `github-actions[bot]` con el mensaje «Retira comentarios del codigo».
 2. Revisa archivos, mensajes y autores de los commits nuevos, y el nombre de la rama. Si encuentra un
-   término no permitido o una rama con nombre generado automáticamente, la ejecución falla y señala
+   término no permitido, la ejecución falla y señala
    dónde está.
 
 En pull requests que vienen de otro repositorio solo revisa: no tiene permiso para subir cambios.
