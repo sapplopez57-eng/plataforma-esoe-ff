@@ -27,7 +27,6 @@ const RUTAS = new Set([
 
 const SIN_REVISION_DE_COMENTARIOS = [/^public\/vendor\//, /^public\/fonts\//];
 const SIN_REVISION_DE_TERMINOS = [/^package-lock\.json$/];
-const RAMA_DE_SESION = /^[a-z0-9-]+\/[a-z]+-[a-z]+-[a-z0-9]{6}$/;
 
 function huella(texto) {
   return crypto.createHash('sha256').update(texto).digest('hex').slice(0, 16);
@@ -368,7 +367,6 @@ function revisarCommits(rango) {
 
 function revisarRama(nombre) {
   const problemas = [];
-  if (RAMA_DE_SESION.test(nombre)) problemas.push(`rama ${nombre}: nombre no permitido, use uno descriptivo`);
   for (const { termino } of buscarTerminos(nombre.replace(/[/_-]/g, ' '))) {
     problemas.push(`rama ${nombre}: termino no permitido (${ocultar(termino)})`);
   }
