@@ -1,10 +1,5 @@
 name: Publicar vista web
 
-# Publica la interfaz (public/) en GitHub Pages. Sin servidor detras, la
-# interfaz arranca en modo demostracion: los datos quedan en el navegador.
-# Pages se activa una sola vez en Settings > Pages > Source: GitHub Actions;
-# mientras no este activo, el flujo termina sin publicar y lo avisa.
-
 on:
   push:
     branches: [main]
@@ -37,9 +32,6 @@ jobs:
             echo "::notice::GitHub Pages no esta activo. Activelo en Settings > Pages > Source: GitHub Actions."
           fi
 
-  # Subir y publicar van en trabajos separados: GitHub tarda un momento en
-  # registrar el paquete subido, y publicarlo en el mismo trabajo puede no
-  # encontrarlo.
   construir:
     needs: comprobar
     if: needs.comprobar.outputs.activo == 'true'

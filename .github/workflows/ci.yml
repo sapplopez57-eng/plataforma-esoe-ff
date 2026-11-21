@@ -39,14 +39,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Navegador para la prueba de dos sesiones (SMS-05).
       - run: npx playwright install --with-deps chromium
       - run: npm run verificar
 
   imagen:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # El contenedor migra la base antes de arrancar: necesita una de verdad.
     services:
       postgres:
         image: postgres:16-alpine
