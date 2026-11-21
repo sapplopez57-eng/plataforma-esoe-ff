@@ -1,10 +1,5 @@
 'use strict';
 
-/* SMS-01. Criterio de aceptacion: cuando se ejecuta la migracion sobre una base
-   vacia o ya migrada, queda en la ultima version sin errores ni cambios
-   duplicados. Ademas, cada forma conocida de romper una migracion tiene que
-   detenerse con un mensaje claro, no a medias. */
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
@@ -31,8 +26,6 @@ async function baseNueva() {
   return cliente;
 }
 
-// Un directorio de migraciones de mentira, para probar los fallos sin tocar
-// las migraciones reales del proyecto.
 function directorioCon(archivos) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'esoe-migraciones-'));
   for (const [nombre, contenido] of Object.entries(archivos)) fs.writeFileSync(path.join(dir, nombre), contenido);
@@ -54,8 +47,6 @@ after(async () => {
   for (const nombre of creadas) await admin.query(`DROP DATABASE IF EXISTS ${nombre} WITH (FORCE)`);
   await admin.end();
 });
-
-// --- El criterio de aceptacion ---------------------------------------------
 
 test('migraciones: una base vacia queda en la ultima version', sinBase, async () => {
   const c = await baseNueva();
@@ -91,8 +82,6 @@ test('migraciones: ejecutarla otra vez no aplica ni duplica nada', sinBase, asyn
   }
 });
 
-// --- Lo que tiene que detenerse ----------------------------------------------
-
 test('migraciones: una migracion que falla se deshace entera y no se registra', sinBase, async () => {
   const c = await baseNueva();
   const dir = directorioCon({
@@ -106,7 +95,6 @@ test('migraciones: una migracion que falla se deshace entera y no se registra', 
     assert.ok(!hay.includes('dos'), 'la 0002 no deja ni la tabla que alcanzo a crear');
     const versiones = (await c.query('SELECT version FROM migraciones_aplicadas')).rows.map((x) => x.version);
     assert.deepEqual(versiones, [1]);
-    // y la conexion queda usable: no se quedo dentro de una transaccion abortada
     assert.equal((await c.query('SELECT 1 AS ok')).rows[0].ok, 1);
   } finally {
     await c.end();
@@ -157,13 +145,9 @@ test('migraciones: dos instancias a la vez aplican cada migracion una sola vez',
   }
 });
 
-// --- Bases creadas antes de las migraciones ----------------------------------
-
 test('migraciones: una base creada con el antiguo schema.sql se adopta sin reaplicar', sinBase, async () => {
   const c = await baseNueva();
   try {
-    // Asi quedaba una base levantada con docker compose antes de SMS-01: el
-    // esquema completo y ningun registro de migraciones.
     await c.query(leerMigraciones()[0].contenido);
     const r = await migrar({ cliente: c });
     assert.equal(r.adoptada, true);
@@ -184,8 +168,6 @@ test('migraciones: una base con el esquema a medias no se adopta', sinBase, asyn
   }
 });
 
-// --- Validacion del directorio, sin base ------------------------------------
-
 test('migraciones: el directorio real es valido y empieza en 0001', () => {
   const lista = leerMigraciones(DIRECTORIO);
   assert.ok(lista.length >= 1);
@@ -198,7 +180,6 @@ test('migraciones: nombres invalidos y secuencias rotas se rechazan antes de toc
   assert.throws(() => leerMigraciones(directorioCon({ '1_inicial.sql': '' })), (e) => e.codigo === 'NOMBRE_INVALIDO');
   assert.throws(() => leerMigraciones(directorioCon({ '0001_a.sql': '', '0003_c.sql': '' })), (e) => e.codigo === 'SECUENCIA_ROTA');
   assert.throws(() => leerMigraciones(directorioCon({ '0002_b.sql': '' })), (e) => e.codigo === 'SECUENCIA_ROTA');
-  // lo que no es .sql se ignora (una nota, un README)
   assert.equal(leerMigraciones(directorioCon({ '0001_a.sql': '', 'LEEME.md': '' })).length, 1);
 });
 
@@ -208,8 +189,6 @@ test('migraciones: sin cliente no hace nada', async () => {
 });
 
 test('migrar: un fallo de red sin mensaje se informa con su codigo', () => {
-  // Un AggregateError de conexion (ECONNREFUSED en IPv4 e IPv6) llega con
-  // message vacio: el contenedor decia "No se pudo migrar: " y nada mas.
   const { mensajeDeFallo } = require('../scripts/migrar');
   const rechazo = Object.assign(new AggregateError([
     Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:5432'), { code: 'ECONNREFUSED' })

@@ -1,10 +1,5 @@
 'use strict';
 
-/* SMS-02. Estructura academica: periodos, promociones y materias.
-   Criterio: cuando se crea un periodo con modalidad no admitida o fechas
-   invertidas, responde 422 indicando el campo. Ademas: solo la administracion
-   escribe, un codigo repetido es 409 y la base sostiene las mismas reglas. */
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { levantar, como, crearBaseDePrueba, ENTORNO_CON_SESION, URL_ADMIN } = require('./ayuda');
@@ -20,7 +15,6 @@ const PERIODO = { codigo: 'p-2026-i', nombre: 'Primer semestre 2026', modalidad:
 before(async () => {
   if (!URL_ADMIN) return;
   base = await crearBaseDePrueba();
-  // Cada cuenta trabaja dentro de su institucion (la ESOE, la predeterminada).
   for (const [cuenta, rol] of [['user_admin', 'ADMIN'], ['user_est', 'ESTUDIANTE']]) {
     await base.db.consultar(
       `INSERT INTO usuarios (username, proveedor_id, rol, nombre_completo) VALUES ($1, $1, $2, $1)`,
@@ -32,8 +26,6 @@ after(async () => {
   await servidor?.cerrar();
   await base?.cerrar();
 });
-
-// --- El criterio de aceptacion ----------------------------------------------
 
 test('estructura: un periodo con modalidad no admitida responde 422 nombrando el campo', sinBase, async () => {
   const r = await servidor.enviar('/api/periodos', { ...PERIODO, modalidad: 'TRIMESTRAL' }, ADMIN);
@@ -50,8 +42,6 @@ test('estructura: un periodo con fechas invertidas responde 422 nombrando el cam
   const mismaFecha = await servidor.enviar('/api/periodos', { ...PERIODO, fecha_fin: PERIODO.fecha_inicio }, ADMIN);
   assert.equal(mismaFecha.status, 422, 'un periodo de cero dias tampoco sirve');
 });
-
-// --- Crear, consultar, editar -------------------------------------------------
 
 test('estructura: la administracion crea un periodo y cualquier sesion lo consulta', sinBase, async () => {
   const r = await servidor.enviar('/api/periodos', PERIODO, ADMIN);
@@ -73,7 +63,6 @@ test('estructura: un codigo repetido responde 409, no 500', sinBase, async () =>
 
 test('estructura: editar valida contra lo guardado, no solo contra lo enviado', sinBase, async () => {
   const { periodo } = await (await servidor.enviar('/api/periodos', { ...PERIODO, codigo: 'P-EDIT' }, ADMIN)).json();
-  // Mover solo el fin antes del inicio guardado debe fallar.
   const malo = await servidor.enviar(`/api/periodos/${periodo.id}`, { fecha_fin: '2025-12-31' }, ADMIN, 'PUT');
   assert.equal(malo.status, 422);
   assert.match((await malo.json()).campos.fecha_fin, /posterior/);
@@ -96,8 +85,6 @@ test('estructura: promociones y materias validan sus propias reglas', sinBase, a
   const ok = await servidor.enviar('/api/promociones', { codigo: 'PROM-3', nombre: 'Promocion XLII', anio_ingreso: 2026, anio_egreso: 2028 }, ADMIN);
   assert.equal(ok.status, 201);
 });
-
-// --- Permisos y entradas hostiles ---------------------------------------------
 
 test('estructura: solo la administracion escribe; sin sesion, 401', sinBase, async () => {
   for (const rol of ['CATEDRATICO', 'ESTUDIANTE']) {
@@ -132,8 +119,6 @@ test('estructura: la base sostiene las mismas reglas aunque se escriba sin la AP
   await assert.rejects(base.db.consultar(
     `INSERT INTO materias (codigo, nombre, horas_semanales) VALUES ('M-SQL', 'Directo', 0)`), /materia_horas_validas/);
 });
-
-// --- Las reglas, sin base -------------------------------------------------------
 
 test('estructura: las fechas imposibles no pasan por validas', () => {
   assert.equal(fechaValida('2026-02-30'), false);

@@ -1,8 +1,5 @@
 'use strict';
 
-// Conexion con otras plataformas, de punta a punta: API real, base de datos real
-// y un Moodle de imitacion. Requiere PRUEBAS_DATABASE_URL.
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const {

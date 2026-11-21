@@ -1,8 +1,5 @@
 'use strict';
 
-// La cuenta root se crea con datos de .env, nunca de la linea de comandos ni del
-// codigo. Aqui se prueba la validacion, sin red.
-
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { datosRoot } = require('../scripts/crear-root');

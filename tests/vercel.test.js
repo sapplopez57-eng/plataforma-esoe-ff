@@ -1,8 +1,5 @@
 'use strict';
 
-/* La entrada de Vercel (api/index.js) es la misma aplicacion: sirve la interfaz y
-   la API con las mismas cabeceras de seguridad que el contenedor. */
-
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');

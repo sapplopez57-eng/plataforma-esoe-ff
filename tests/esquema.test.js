@@ -1,9 +1,5 @@
 'use strict';
 
-// Prueba de integracion del esquema. Requiere un PostgreSQL de pruebas:
-//   PRUEBAS_DATABASE_URL=postgresql://usuario:clave@host:5432/postgres
-// Sin esa variable la prueba se omite (y el ciclo de verificacion lo reporta).
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');

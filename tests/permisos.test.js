@@ -1,11 +1,5 @@
 'use strict';
 
-/* SEC-06. Pertenencia, no solo rol.
-   El rol dice que clase de cosas puede hacer una cuenta; la pertenencia dice
-   sobre cuales. Esta prueba recorre la matriz rol x ruta con dos catedraticos y
-   dos estudiantes reales en la base, y comprueba que cada uno llega a lo suyo y
-   a nada mas. */
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { levantar, como, crearBaseDePrueba, ENTORNO_CON_SESION, URL_ADMIN } = require('./ayuda');
@@ -14,9 +8,8 @@ const sinBase = URL_ADMIN ? false : { skip: 'Sin PRUEBAS_DATABASE_URL' };
 
 let base;
 let servidor;
-let d = {};   // identificadores del escenario
+let d = {};
 
-// Cuentas del proveedor. Cada una se liga a un expediente en la tabla usuarios.
 const CUENTA = {
   admin: 'user_admin',
   catedraticoUno: 'user_cat_1',
@@ -56,7 +49,6 @@ before(async () => {
     `INSERT INTO catedraticos (dni, nombres, apellidos, titulo)
      VALUES ('0801-2', 'Luis', 'Perez', 'Ingeniero') RETURNING id`);
 
-  // Un estudiante por promocion, para que cada catedratico alcance a uno solo.
   const estUno = await uno(
     `INSERT INTO estudiantes (codigo_alumno, dni, nombres, apellidos, fecha_nacimiento, promocion_id)
      VALUES ('A-001', '0501-1', 'Carla', 'Diaz', '2005-03-01', $1) RETURNING id`, [promA.id]);
@@ -64,7 +56,6 @@ before(async () => {
     `INSERT INTO estudiantes (codigo_alumno, dni, nombres, apellidos, fecha_nacimiento, promocion_id)
      VALUES ('B-001', '0501-2', 'Mario', 'Lopez', '2004-07-12', $1) RETURNING id`, [promB.id]);
 
-  // Clase de cada catedratico, en la promocion de su estudiante.
   const claseUno = await uno(
     `INSERT INTO clases (codigo_clase, periodo_id, promocion_id, materia_id, catedratico_id, horario)
      VALUES ('CL-1', $1, $2, $3, $4, 'L-M 08:00') RETURNING id`,
@@ -99,7 +90,6 @@ before(async () => {
   await liga('carla', CUENTA.estudianteUno, 'ESTUDIANTE', estUno.id);
   await liga('mario', CUENTA.estudianteDos, 'ESTUDIANTE', estDos.id);
   await liga('inactivo', CUENTA.inactiva, 'ESTUDIANTE', estDos.id, false);
-  // CUENTA.sinExpediente a proposito no tiene fila en usuarios.
 
   d = {
     claseUno: claseUno.id, claseDos: claseDos.id,
@@ -114,8 +104,6 @@ after(async () => {
   if (servidor) await servidor.cerrar();
   if (base) await base.cerrar();
 });
-
-// --- El criterio de aceptacion, literal ------------------------------------
 
 test('permisos: un catedratico que pide una clase que no imparte recibe 403', sinBase, async () => {
   const propia = await servidor.pedir(`/api/clases/${d.claseUno}/asistencia`, { headers: como('CATEDRATICO', CUENTA.catedraticoUno) });
@@ -158,16 +146,12 @@ test('permisos: sin sesion, toda ruta de /api salvo salud y configuracion respon
     assert.equal((await servidor.pedir(ruta)).status, 401, `${ruta} sin sesion`);
   }
 
-  // Una cookie no sustituye a la cabecera: asi un sitio ajeno no dispara nada.
   const conCookie = await servidor.pedir('/api/clases', { headers: { Cookie: '__session=cualquiera' } });
   assert.equal(conCookie.status, 401);
 });
 
-// --- Matriz rol x ruta ------------------------------------------------------
-
 test('permisos: la matriz rol x ruta no deja ningun hueco', sinBase, async () => {
   const casos = [
-    // [descripcion, ruta, cuenta, rol, estado esperado]
     ['admin ve la asistencia de cualquier clase', `/api/clases/${d.claseDos}/asistencia`, CUENTA.admin, 'ADMIN', 200],
     ['admin ve el boletin de cualquier estudiante', `/api/estudiantes/${d.estDos}/boletin`, CUENTA.admin, 'ADMIN', 200],
     ['catedratico ve el boletin de su alumno', `/api/estudiantes/${d.estUno}/boletin`, CUENTA.catedraticoUno, 'CATEDRATICO', 200],
@@ -202,14 +186,11 @@ test('permisos: cada rol ve en /api/clases solo lo que le toca', sinBase, async 
   assert.deepEqual((await lista(CUENTA.admin, 'ADMIN')).map((c) => c.codigo_clase), ['CL-1', 'CL-2']);
   assert.deepEqual((await lista(CUENTA.catedraticoUno, 'CATEDRATICO')).map((c) => c.codigo_clase), ['CL-1']);
   assert.deepEqual((await lista(CUENTA.catedraticoDos, 'CATEDRATICO')).map((c) => c.codigo_clase), ['CL-2']);
-  // un estudiante ve las clases de su promocion, no las de otra
   assert.deepEqual((await lista(CUENTA.estudianteUno, 'ESTUDIANTE')).map((c) => c.codigo_clase), ['CL-1']);
   assert.deepEqual((await lista(CUENTA.estudianteDos, 'ESTUDIANTE')).map((c) => c.codigo_clase), ['CL-2']);
 });
 
 test('permisos: un identificador que no es UUID no llega a la base', sinBase, async () => {
-  // Sin esta comprobacion, PostgreSQL responderia con un error de tipo y el
-  // servidor devolveria 500, revelando que la consulta se intento.
   for (const malo of ['x', '1 OR 1=1', '../../etc/passwd', '00000000-0000-0000-0000-00000000000']) {
     const clase = await servidor.pedir(`/api/clases/${encodeURIComponent(malo)}/asistencia`, { headers: como('ADMIN', CUENTA.admin) });
     assert.ok([403, 404].includes(clase.status), `clase ${malo} dio ${clase.status}`);
@@ -217,21 +198,12 @@ test('permisos: un identificador que no es UUID no llega a la base', sinBase, as
     assert.ok([403, 404].includes(est.status), `estudiante ${malo} dio ${est.status}`);
   }
 
-  // un UUID bien formado que no existe no debe dar 500 ni decir si existe
   const inexistente = '11111111-1111-4111-8111-111111111111';
   assert.equal((await servidor.pedir(`/api/clases/${inexistente}/asistencia`, { headers: como('CATEDRATICO', CUENTA.catedraticoUno) })).status, 403);
 });
 
-// --- Guardian: una ruta nueva no puede quedarse sin sesion -----------------
-
-// Rutas publicas a proposito. Agregar una aqui es una decision consciente que
-// queda escrita; olvidarse de proteger una, no.
 const PUBLICAS = new Set(['/api/health', '/api/config']);
 
-// Recorre las rutas que una aplicacion de Express tiene registradas y devuelve
-// las de /api cuyo primer manejador no es un guardian. Por convencion todo
-// guardian se llama `exigirSesion` o empieza por `guardianDe`, asi que ninguno
-// puede ser una funcion anonima.
 function rutasSinGuardian(app) {
   const sinGuardian = [];
   const recorrer = (pila, prefijo) => {
@@ -266,8 +238,6 @@ test('permisos: ninguna ruta de /api queda registrada sin guardian de sesion', s
 });
 
 test('permisos: sin base de datos las consultas academicas no existen y no se tragan /api', async () => {
-  // Un atrapatodo montado en /api devolveria 503 para cualquier ruta
-  // desconocida, incluida una que no tiene nada que ver.
   const sinDb = await levantar(ENTORNO_CON_SESION, { db: null });
   try {
     for (const ruta of ['/api/clases', '/api/estudiantes/x/boletin', '/api/lo-que-sea']) {
@@ -282,26 +252,22 @@ test('permisos: sin base de datos las consultas academicas no existen y no se tr
 });
 
 test('permisos: el guardian de rutas falla cuando debe', () => {
-  // Una comprobacion que no se puede ver fallar no protege nada (leccion L-018).
   const express = require('express');
 
   const descuidada = express();
   descuidada.get('/api/notas/:id', (req, res) => res.json({}));
   assert.deepEqual(rutasSinGuardian(descuidada), ['/api/notas/:id -> <anonymous>']);
 
-  // un manejador anonimo despues del guardian no es un problema
   const correcta = express();
   correcta.get('/api/notas/:id', function exigirSesion(req, res, next) { next(); }, (req, res) => res.json({}));
   assert.deepEqual(rutasSinGuardian(correcta), []);
 
-  // tampoco lo es una ruta montada dentro de un router
   const anidada = express();
   const router = express.Router();
   router.get('/suelta', (req, res) => res.json({}));
   anidada.use('/api/cosas', router);
   assert.deepEqual(rutasSinGuardian(anidada), ['/api/cosas/suelta -> <anonymous>']);
 
-  // y lo que esta fuera de /api no se revisa
   const fuera = express();
   fuera.get('/salud', (req, res) => res.json({}));
   assert.deepEqual(rutasSinGuardian(fuera), []);

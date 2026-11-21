@@ -1,17 +1,5 @@
 'use strict';
 
-/* Lo que va dentro de evaluate() corre en la pagina, no en Node. */
-/* global window, navigateTo, openModalNuevoPeriodo, store */
-
-/* SMS-05. La interfaz consume la API.
-   Criterio: cuando dos personas entran desde equipos distintos, ven los mismos datos.
-   Dos contextos de navegador son dos equipos: no comparten almacenamiento, cookies ni memoria. Lo que
-   una persona crea o califica, la otra lo ve al entrar, y nada de esos datos queda en el navegador.
-
-   El inicio de sesion real lo da Clerk desde su dominio; aqui ese dominio se sirve con un sustituto
-   que entrega una sesion firmada con las llaves de prueba, que el servidor verifica igual que en
-   produccion. Requiere Playwright con Chromium y la base de pruebas; sin ellos la prueba se omite. */
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { levantar, firmarSesion, crearBaseDePrueba, ENTORNO_CON_SESION, URL_ADMIN, DOMINIO_CLERK } = require('./ayuda');
@@ -19,15 +7,13 @@ const { levantar, firmarSesion, crearBaseDePrueba, ENTORNO_CON_SESION, URL_ADMIN
 let chromium = null;
 try {
   ({ chromium } = require('playwright'));
-} catch { /* sin navegador */ }
+} catch {}
 
-// En CI el navegador es obligatorio: alli esta prueba no se omite, falla.
 if (process.env.CI && !chromium) throw new Error('CI sin Playwright: la prueba de dos sesiones no puede omitirse.');
 const omitir = !URL_ADMIN ? { skip: 'Sin PRUEBAS_DATABASE_URL' } : (!chromium ? { skip: 'Sin Playwright' } : false);
 
 const CUENTA = { admin: 'user_nav_admin', ana: 'user_nav_ana', carla: 'user_nav_carla' };
 
-// Lo minimo de Clerk que usa public/js/sesion.js: una sesion iniciada que entrega su token.
 const CLERK_SUSTITUTO = `
   window.__internal_ClerkUICtor = function () {};
   window.Clerk = window.Clerk || {
@@ -80,7 +66,6 @@ after(async () => {
   await base?.cerrar();
 });
 
-// Un "equipo": contexto de navegador propio con la sesion de una cuenta.
 async function equipo(cuenta, rol) {
   const contexto = await navegador.newContext({ reducedMotion: 'reduce', viewport: { width: 1280, height: 900 } });
   const ahora = Math.floor(Date.now() / 1000);
@@ -109,7 +94,6 @@ test('navegador: dos personas en equipos distintos ven los mismos datos', omitir
   const admin = await equipo(CUENTA.admin, 'ADMIN');
   const ana = await equipo(CUENTA.ana, 'CATEDRATICO');
   try {
-    // 1. La administracion crea un periodo desde el formulario.
     await ir(admin.pagina, 'estructura');
     await admin.pagina.evaluate(() => openModalNuevoPeriodo());
     await admin.pagina.fill('#per-codigo', 'nav-2027');
@@ -121,14 +105,12 @@ test('navegador: dos personas en equipos distintos ven los mismos datos', omitir
     await admin.pagina.click('#modal-body-content button[type="submit"]');
     assert.equal((await creado).status(), 201);
 
-    // 2. Y pone una nota a Carla.
     await ir(admin.pagina, 'calificaciones');
     const notaAdmin = esperarRespuesta(admin.pagina, 'PUT', '/calificaciones/');
     await admin.pagina.fill('.grade-input >> nth=0', '88');
     await admin.pagina.press('.grade-input >> nth=0', 'Tab');
     assert.equal((await notaAdmin).status(), 200);
 
-    // 3. Ana entra desde otro equipo y ve ambas cosas.
     await ana.pagina.reload();
     await ana.pagina.waitForSelector('#app-shell:not(.hidden)');
     await ir(ana.pagina, 'estructura');
@@ -136,7 +118,6 @@ test('navegador: dos personas en equipos distintos ven los mismos datos', omitir
     await ir(ana.pagina, 'calificaciones');
     assert.equal(await ana.pagina.inputValue('.grade-input >> nth=0'), '88');
 
-    // 4. Ana cambia el acumulativo; la administracion lo ve al recargar.
     const notaAna = esperarRespuesta(ana.pagina, 'PUT', '/calificaciones/');
     await ana.pagina.fill('.grade-input >> nth=3', '75');
     await ana.pagina.press('.grade-input >> nth=3', 'Tab');
@@ -146,13 +127,11 @@ test('navegador: dos personas en equipos distintos ven los mismos datos', omitir
     await ir(admin.pagina, 'calificaciones');
     assert.equal(await admin.pagina.inputValue('.grade-input >> nth=3'), '75');
 
-    // 5. La auditoria sabe quien hizo cada cambio.
     const { rows } = await base.db.consultar(
       `SELECT campo, valor_nuevo, autor FROM auditoria WHERE estudiante_id = $1 ORDER BY cambiado_en`, [d.est]);
     assert.ok(rows.some((r) => r.campo === 'parcial_1' && r.valor_nuevo === '88.00' && r.autor === `api:${CUENTA.admin}`));
     assert.ok(rows.some((r) => r.campo === 'acumulativo' && r.valor_nuevo === '75.00' && r.autor === `api:${CUENTA.ana}`));
 
-    // 6. Nada de esto quedo guardado en los navegadores.
     assert.equal(await almacenLocal(admin.pagina), null);
     assert.equal(await almacenLocal(ana.pagina), null);
     assert.deepEqual(admin.errores, []);

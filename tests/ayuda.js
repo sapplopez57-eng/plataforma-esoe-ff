@@ -8,10 +8,6 @@ const { cargarConfig } = require('../src/config');
 const { crearBaseDeDatos } = require('../src/db');
 const { migrar } = require('../src/migraciones');
 
-// --- Sesiones de prueba -----------------------------------------------------
-// Se genera un par de llaves por ejecucion. El servidor verifica las sesiones
-// con la llave publica, igual que en produccion, sin salir a la red.
-
 const DOMINIO_CLERK = 'clerk.pruebas.example';
 const ORIGEN = 'https://esoe.pruebas.example';
 const CATEGORIA_SESION = 'cl_B7d4PD111AAA';
@@ -49,8 +45,6 @@ function como(rol, usuario) {
   return { Authorization: `Bearer ${firmarSesion({ rol, usuario })}` };
 }
 
-// --- Servidor bajo prueba ---------------------------------------------------
-
 async function levantar(env = {}, dependencias = {}) {
   const config = cargarConfig({ NODE_ENV: 'test', ...env });
   const servidor = crearApp(config, dependencias).listen(0, '127.0.0.1');
@@ -69,8 +63,6 @@ async function levantar(env = {}, dependencias = {}) {
   };
 }
 
-// --- Base de datos desechable ----------------------------------------------
-
 const URL_ADMIN = process.env.PRUEBAS_DATABASE_URL || '';
 
 async function crearBaseDePrueba() {
@@ -80,8 +72,6 @@ async function crearBaseDePrueba() {
   await admin.query(`CREATE DATABASE ${nombre}`);
   const url = new URL(URL_ADMIN);
   url.pathname = `/${nombre}`;
-  // El esquema se crea con las migraciones, igual que en produccion, y con un
-  // cliente de una sola conexion (ver src/migraciones.js).
   const cliente = new Client({ connectionString: url.toString() });
   await cliente.connect();
   try {
@@ -99,10 +89,6 @@ async function crearBaseDePrueba() {
     }
   };
 }
-
-// --- Moodle de imitacion ----------------------------------------------------
-// Reproduce los tres puntos de entrada que usa el conector, con el mismo
-// formato de respuesta que un Moodle real (errores incluidos, con estado 200).
 
 async function crearMoodleFalso(opciones = {}) {
   const estado = {

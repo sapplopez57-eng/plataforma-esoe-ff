@@ -1,11 +1,5 @@
 'use strict';
 
-/* SMS-04. Clases, asistencia y calificaciones.
-   Criterio: cuando se modifica una nota, queda una fila de auditoria con
-   usuario, valor anterior, valor nuevo y fecha. Ademas: la auditoria la escribe
-   la base (tambien para cambios por fuera de la API), no se puede alterar, y
-   solo el titular de la clase o la administracion escriben. */
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { levantar, como, crearBaseDePrueba, ENTORNO_CON_SESION, URL_ADMIN } = require('./ayuda');
@@ -72,7 +66,6 @@ before(async () => {
 
   servidor = await levantar(ENTORNO_CON_SESION, { db });
 
-  // La clase de Ana entra por la API, como en la realidad.
   const { status, cuerpo } = await json(await servidor.enviar('/api/clases', {
     codigo_clase: 'cl-101', periodo_id: periodo.id, promocion_id: promA.id, materia_id: matUno.id,
     catedratico_id: catUno.id, horario: 'L-M 08:00', aula: 'A-1'
@@ -94,8 +87,6 @@ after(async () => {
 
 const nota = (clase, estudiante, cuerpo, quien) =>
   servidor.enviar(`/api/clases/${clase}/calificaciones/${estudiante}`, cuerpo, quien, 'PUT');
-
-// --- El criterio de aceptacion ----------------------------------------------
 
 test('clases: modificar una nota deja auditoria con usuario, valor anterior, valor nuevo y fecha', sinBase, async () => {
   assert.equal((await nota(d.claseUno, d.estUno, { parcial_1: 80 }, ANA)).status, 200);
@@ -168,8 +159,6 @@ test('clases: si la transaccion falla, no queda ni el cambio ni su auditoria', s
   assert.equal(rows[0].parcial_3, '70.00');
 });
 
-// --- Quien escribe ----------------------------------------------------------
-
 test('clases: solo el titular o la administracion ponen notas', sinBase, async () => {
   assert.equal((await nota(d.claseUno, d.estUno, { parcial_2: 90 }, LUIS)).status, 403, 'otro catedratico no');
   assert.equal((await nota(d.claseUno, d.estUno, { parcial_2: 100 }, CARLA)).status, 403, 'el estudiante no');
@@ -193,8 +182,6 @@ test('clases: una nota fuera de escala, con tres decimales o como texto responde
   assert.equal(r.cuerpo.campos.nota_final, 'Campo no admitido.', 'la final no se escribe a mano');
   assert.equal((await nota(d.claseUno, d.estUno, {}, ANA)).status, 422);
 });
-
-// --- Asistencia -------------------------------------------------------------
 
 test('clases: el titular registra asistencia y corregirla deja auditoria', sinBase, async () => {
   const primera = await json(await servidor.enviar(`/api/clases/${d.claseUno}/asistencia`, {
@@ -244,8 +231,6 @@ test('clases: la asistencia rechaza fechas fuera del periodo, futuras y estudian
   assert.equal(nada.rows.length, 0, 'nada rechazado llego a la base');
 });
 
-// --- Carga academica --------------------------------------------------------
-
 test('clases: la administracion crea y reasigna clases; los demas no', sinBase, async () => {
   const base1 = { periodo_id: d.periodo, promocion_id: d.promB, materia_id: d.matUno, catedratico_id: d.catUno, horario: 'V 07:00' };
   assert.equal((await servidor.enviar('/api/clases', { ...base1, codigo_clase: 'CL-X' }, ANA)).status, 403);
@@ -254,7 +239,6 @@ test('clases: la administracion crea y reasigna clases; los demas no', sinBase, 
   const repetida = await json(await servidor.enviar('/api/clases', { ...base1, codigo_clase: 'CL-304' }, ADMIN));
   assert.equal(repetida.status, 409);
   assert.ok(repetida.cuerpo.campos.materia_id);
-  // Promocion A con la materia 2 todavia no tiene clase: lo unico que choca es lo que se prueba.
   const libre = { ...base1, promocion_id: d.promA, materia_id: d.matDos };
   const codigo = await json(await servidor.enviar('/api/clases', { ...libre, codigo_clase: 'cl-303' }, ADMIN));
   assert.deepEqual(codigo.cuerpo.campos, { codigo_clase: 'Ya existe.' });
@@ -263,7 +247,6 @@ test('clases: la administracion crea y reasigna clases; los demas no', sinBase, 
   assert.equal(fantasma.status, 422);
   assert.deepEqual(fantasma.cuerpo.campos, { catedratico_id: 'No existe.' });
 
-  // Reasignar la clase cambia quien puede calificar en ella.
   const clase = nueva.cuerpo.clase.id;
   assert.equal((await nota(clase, d.estDos, { parcial_1: 75 }, ANA)).status, 200);
   const reasignada = await json(await servidor.enviar(`/api/clases/${clase}`, { catedratico_id: d.catDos }, ADMIN, 'PUT'));
@@ -275,8 +258,6 @@ test('clases: la administracion crea y reasigna clases; los demas no', sinBase, 
   assert.equal((await servidor.enviar('/api/clases/11111111-1111-4111-8111-111111111111', { horario: 'X' }, ADMIN, 'PUT')).status, 404);
   assert.equal((await servidor.enviar(`/api/clases/${clase}`, { materia_id: d.matUno, promocion_id: d.promA }, ADMIN, 'PUT')).status, 409);
 });
-
-// --- Las reglas, sin base ---------------------------------------------------
 
 test('clases: validacion de notas y asistencia sin base', () => {
   assert.deepEqual(validarNotas({ parcial_1: 0, acumulativo: 100, parcial_2: 99.99 }).campos, {});

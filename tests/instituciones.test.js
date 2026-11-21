@@ -1,10 +1,5 @@
 'use strict';
 
-/* SMS-06. Una plataforma, varias instituciones (ESOE, UDH, INFOP, COPECO).
-   Cada institucion ve y escribe solo lo suyo; lo de otra responde igual que lo
-   que no existe; los codigos y documentos se repiten sin chocar entre
-   instituciones; y la base impide mezclar datos aunque se escriba sin la API. */
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { levantar, como, crearBaseDePrueba, ENTORNO_CON_SESION, URL_ADMIN } = require('./ayuda');
@@ -39,7 +34,6 @@ before(async () => {
   await liga(CUENTA.infop, 'ADMIN', inst.INFOP);
   servidor = await levantar(ENTORNO_CON_SESION, { db });
 
-  // Las dos instituciones arman su estructura por la API, con los MISMOS codigos y DNI.
   const armar = async (quien) => {
     const periodo = await crear('/api/periodos', { codigo: 'P-2026', nombre: 'Periodo', modalidad: 'SEMESTRAL',
       fecha_inicio: '2026-01-10', fecha_fin: '2026-06-30' }, quien);
@@ -81,7 +75,6 @@ test('instituciones: los mismos codigos y el mismo DNI conviven en instituciones
   assert.notEqual(d.esoe.estudiante.id, d.infop.estudiante.id);
   assert.equal(d.esoe.estudiante.dni, d.infop.estudiante.dni);
   assert.equal(d.esoe.clase.codigo_clase, d.infop.clase.codigo_clase);
-  // Dentro de una misma institucion el codigo sigue siendo unico.
   const repetido = await json(await servidor.enviar('/api/materias', { codigo: 'MAT-1', nombre: 'Otra' }, ADMIN_INFOP));
   assert.equal(repetido.status, 409);
 });

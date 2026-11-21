@@ -1,10 +1,5 @@
 'use strict';
 
-/* Campus 3D. La escena necesita WebGL y no corre en Node, pero su plano si:
-   aqui se prueba que es estable, que coincide con los puntos de la pagina y
-   con la paleta de :root, que el archivo servido esta al dia con su fuente y
-   que la pagina no lo carga cuando no debe. */
-
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -61,8 +56,6 @@ test('campus3d: todos los colores de la escena salen de variables de :root', () 
 });
 
 test('campus3d: el archivo servido esta compilado de la fuente actual', async () => {
-  // Si alguien cambia interfaz/campus3d y olvida "npm run construir:campus",
-  // la pagina seguiria sirviendo la escena vieja sin que nadie lo note.
   const esbuild = require('esbuild');
   const resultado = await esbuild.build({
     entryPoints: [path.join(FUENTE, 'entrada.js')],

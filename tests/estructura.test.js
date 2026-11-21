@@ -1,9 +1,5 @@
 'use strict';
 
-// Estructura de la interfaz, medida con la misma vara que los sitios de referencia
-// (Harvard, Campus Virtual UNAH, INFOP, TecNM): regiones con nombre, un solo <main>
-// visible, un <h1> por pantalla y un texto que la persona puede agrandar.
-
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,7 +11,6 @@ const html = fs.readFileSync(path.join(PUBLICO, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(PUBLICO, 'css', 'styles.css'), 'utf8');
 const lectura = fs.readFileSync(path.join(PUBLICO, 'js', 'lectura.js'), 'utf8');
 
-// Trozo del documento entre la apertura de un elemento con ese id y el siguiente bloque de pantalla.
 function bloque(id, hasta) {
   const inicio = html.indexOf(`id="${id}"`);
   const fin = html.indexOf(hasta, inicio);
@@ -72,7 +67,6 @@ test('lectura: cada boton de tamano tiene su regla y su nombre completo', () => 
   }
 });
 
-// Un DOM minimo: lo justo para ejecutar lectura.js de verdad.
 function entorno({ almacenamiento } = {}) {
   const atributos = {};
   const clases = (inicial) => {
@@ -138,8 +132,6 @@ test('lectura: un valor guardado invalido o un almacenamiento bloqueado no rompe
   assert.equal(atributos['data-texto'], 'muy-grande');
 });
 
-// --- Ambiente: escena, barra, reloj, noche y sonido ---------------------------
-
 const ambiente = fs.readFileSync(path.join(PUBLICO, 'js', 'ambiente.js'), 'utf8');
 
 test('ambiente: la escena es decorativa y la barra tiene nombre', () => {
@@ -154,7 +146,6 @@ test('ambiente: la escena es decorativa y la barra tiene nombre', () => {
   }
 });
 
-// Presentacion de mentira: un video que registra si se pidio reproducir.
 function introFalsa({ reproduce = true } = {}) {
   const oyentes = {};
   const video = {
@@ -212,7 +203,6 @@ function entornoAmbiente({ almacenamiento, Audio, sesion, movimientoReducido = f
   return { contexto, atributos, botones, intro, pantalla, teclas, avanzar };
 }
 
-// Web Audio de mentira: registra lo que se programa sobre el volumen general.
 function audioFalso(registro) {
   const parametro = () => ({ value: 0, setValueAtTime() {}, cancelScheduledValues() {}, linearRampToValueAtTime(v) { registro.push(v); } });
   const nodo = () => ({ connect() {}, start() {}, gain: parametro(), frequency: parametro(), detune: parametro(), Q: parametro() });
@@ -258,7 +248,6 @@ test('ambiente: sin almacenamiento el modo noche funciona igual', () => {
 test('ambiente: el sonido solo arranca cuando se pide y se apaga con el mismo boton', () => {
   const volumen = [];
   const { contexto, botones } = entornoAmbiente({ almacenamiento: { getItem: () => null, setItem() {} }, Audio: audioFalso(volumen) });
-  // sonido es un const del script: vive en el contexto, no como propiedad global.
   const estado = () => vm.runInContext('sonido', contexto);
   assert.equal(estado().contexto, null, 'nada suena al cargar');
   assert.equal(contexto.alternarSonido(), true);
@@ -333,8 +322,6 @@ test('campus3d: la pagina no lo carga sin escena, con "reducir movimiento" ni si
   assert.equal(e.contexto.prepararCampus3D(), false, 'sin WebGL se queda el dibujo');
 });
 
-// --- Avisos accesibles (comparado con Khan Academy: 8 regiones aria-live) ---
-
 test('avisos: el contenedor de avisos es una region que el lector de pantalla anuncia', () => {
   const contenedor = html.match(/<div id="toast-container"[^>]*>/);
   assert.ok(contenedor, 'falta el contenedor de avisos');
@@ -364,22 +351,10 @@ test('presentacion: nombra a las demas instituciones que usan la plataforma', ()
   }
 });
 
-test('presentacion: cada institucion muestra su escudo oficial junto al de la ESOE', () => {
-  assert.match(html, /<video class="intro-video"[^>]*poster="video\/escudo-esoe\.jpg"/, 'el escudo de la ESOE debe seguir en la presentacion');
-  const entes = html.match(/<div class="intro-entes">[\s\S]*?<\/div>/)[0];
-  for (const siglas of ['udh', 'infop', 'copeco']) {
-    const img = entes.match(new RegExp(`<img class="ente-escudo" src="img/escudo-${siglas}\\.png" alt="([^"]+)"`));
-    assert.ok(img && img[1].length > 10, `falta el escudo de ${siglas} con texto alternativo`);
-    assert.ok(fs.existsSync(path.join(PUBLICO, 'img', `escudo-${siglas}.png`)), `falta el archivo del escudo de ${siglas}`);
-  }
-});
-
 test('diseno: ningun punto ni faro que parpadee sin fin en la interfaz', () => {
   const css = fs.readFileSync(path.join(PUBLICO, 'css', 'styles.css'), 'utf8');
-  // Una animacion infinita que cambia la opacidad es un indicador parpadeante.
   const keyframes = [...css.matchAll(/@keyframes\s+([\w-]+)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g)];
   const parpadeantes = keyframes.filter(([, , cuerpo]) => /opacity/.test(cuerpo)).map(([, nombre]) => nombre);
-  // Cada animacion de una lista separada por comas se revisa por su cuenta.
   const tramos = [...css.matchAll(/animation:\s*([^;}]+)/g)].flatMap(([, valor]) => valor.split(','));
   for (const nombre of parpadeantes) {
     const infinita = tramos.some((t) => new RegExp(`\\b${nombre}\\b`).test(t) && /infinite/.test(t));

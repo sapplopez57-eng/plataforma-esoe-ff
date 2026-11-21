@@ -1,13 +1,5 @@
 'use strict';
 
-/* DIS-01 y DIS-03. La identidad visual tiene una sola fuente de verdad: las
-   variables de :root en public/css/styles.css. Esta prueba falla si:
-   - la paleta de marca deja de coincidir con la que declara el README;
-   - se usa una variable que no existe (no da error: el color cae en herencia
-     y los fondos y bordes desaparecen sin aviso);
-   - se escribe un color o un tamano de letra fuera de :root;
-   - un par de texto y fondo baja de 4.5:1 (WCAG 2.1 AA). */
-
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -17,11 +9,10 @@ const RAIZ = path.join(__dirname, '..');
 const HOJA = path.join(RAIZ, 'public', 'css', 'styles.css');
 const leer = (archivo) => fs.readFileSync(archivo, 'utf8');
 
-// --- Lectura de la hoja ------------------------------------------------------
-
 function separarRaiz(css) {
-  const inicio = css.indexOf(':root');
-  assert.ok(inicio !== -1, 'la hoja debe declarar sus variables en :root');
+  const encontrada = /(^|[\s,}]):root\s*\{/.exec(css);
+  assert.ok(encontrada, 'la hoja debe declarar sus variables en :root');
+  const inicio = encontrada.index + encontrada[1].length;
   const abre = css.indexOf('{', inicio);
   let nivel = 0;
   let fin = abre;
@@ -48,7 +39,6 @@ function variables(raiz) {
   return mapa;
 }
 
-// Sigue var(--x) hasta un valor literal.
 function resolver(mapa, valor, profundidad = 0) {
   assert.ok(profundidad < 10, `ciclo de variables en ${valor}`);
   const m = /^var\((--[a-z0-9-]+)\)$/i.exec(valor.trim());
@@ -56,8 +46,6 @@ function resolver(mapa, valor, profundidad = 0) {
   assert.ok(mapa.has(m[1]), `${m[1]} no esta definida en :root`);
   return resolver(mapa, mapa.get(m[1]), profundidad + 1);
 }
-
-// --- Contraste WCAG ---------------------------------------------------------
 
 function luminancia(hex) {
   const limpio = hex.replace('#', '');
@@ -72,8 +60,6 @@ function contraste(a, b) {
   return (claro + 0.05) / (oscuro + 0.05);
 }
 
-// --- Comprobaciones reutilizables (las prueban tambien los casos negativos) --
-
 const COLOR_LITERAL = /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(/i;
 
 function coloresFueraDeRaiz(resto) {
@@ -84,10 +70,16 @@ function coloresFueraDeRaiz(resto) {
 
 function tamanosFueraDeEscala(texto) {
   const halladas = [];
+  const limpio = quitarComentarios(texto);
   const re = /font-size\s*:\s*([^;"]+)/gi;
   let m;
-  while ((m = re.exec(quitarComentarios(texto))) !== null) {
-    if (!/^var\(--fs-[a-z0-9]+\)$/i.test(m[1].trim())) halladas.push(m[1].trim());
+  while ((m = re.exec(limpio)) !== null) {
+    const valor = m[1].trim();
+    if (/^var\(--fs-[a-z0-9]+\)$/i.test(valor)) continue;
+    const previo = limpio.slice(0, m.index);
+    const selector = previo.slice(previo.lastIndexOf('}') + 1, previo.lastIndexOf('{')).trim();
+    if (/^html(\[data-texto="[a-z-]+"\])?$/.test(selector) && /^\d+(\.\d+)?%$/.test(valor)) continue;
+    halladas.push(valor);
   }
   return halladas;
 }
@@ -107,8 +99,6 @@ function estilosEnLinea(texto) {
   while ((m = re.exec(texto)) !== null) halladas.push(m[1]);
   return halladas.join(';\n');
 }
-
-// ---------------------------------------------------------------------------
 
 const css = leer(HOJA);
 const { raiz, resto } = separarRaiz(css);
@@ -134,8 +124,6 @@ test('identidad: la paleta de marca coincide con la del README', () => {
 });
 
 test('identidad: hay un solo bloque :root', () => {
-  // Las variables viven en un unico :root. Un segundo bloque las repartiria y
-  // esta prueba, que lee el primero, daria por inexistentes las del segundo.
   assert.equal(contarRaices(css), 1, 'declare todas las variables en el :root principal de styles.css');
 });
 
@@ -170,12 +158,7 @@ test('identidad: ningun tamano de letra sale de la escala', () => {
   assert.equal(resolver(definidas, 'var(--fs-base)'), '1rem', 'el texto base es 1rem: 16 px con la base del navegador (DIS-03)');
 });
 
-// Variables que un selector redefine (p. ej. .app-shell): se mezclan sobre :root
-// para medir los mismos pares en ese ambito.
 function redefinicionesDe(css, selector) {
-  // Junta las variables de TODAS las reglas cuya lista de selectores incluye
-  // ese selector exacto: puede aparecer en varias (una para la maquetacion,
-  // otra para la paleta) y compartida con otros (".app-shell, .toast-container").
   const mapa = new Map();
   const re = /([^{}]+)\{([^}]*)\}/g;
   let m;
@@ -231,7 +214,6 @@ test('identidad: los pares de texto y fondo cumplen 4.5:1 en cada ambito', () =>
 });
 
 test('identidad: las comprobaciones fallan cuando deben', () => {
-  // Una comprobacion que no se puede ver fallar no protege nada (L-018).
   assert.equal(coloresFueraDeRaiz('.a { color: #2859C5; }').length, 1);
   assert.equal(coloresFueraDeRaiz('.a { background: rgba(0,0,0,.5); }').length, 1);
   assert.equal(coloresFueraDeRaiz('.a { color: var(--texto); } /* #fff en comentario */').length, 0);
@@ -239,11 +221,9 @@ test('identidad: las comprobaciones fallan cuando deben', () => {
   assert.deepEqual(tamanosFueraDeEscala('.a { font-size: 13px; } .b { font-size: var(--fs-sm); }'), ['13px']);
   assert.deepEqual(tamanosFueraDeEscala(estilosEnLinea('<b style="font-size:12.5px; color:var(--texto)">')), ['12.5px']);
 
-  // la regresion real de esta vuelta: nombres viejos tras renombrar la paleta
   assert.deepEqual(variablesSinDefinir('style="color:var(--olivo-fuerte)"', definidas), ['--olivo-fuerte']);
   assert.deepEqual(variablesSinDefinir('style="color:var(--piedra)"', definidas), []);
 
-  // y el contraste distingue lo que pasa de lo que no
   assert.equal(contarRaices(':root { --a: 1; }\n.x {}\n:root { --b: 2; }'), 2);
   assert.equal(contarRaices('/* :root { } */ :root { --a: 1; }'), 1);
 

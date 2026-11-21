@@ -1,10 +1,5 @@
 'use strict';
 
-/* SMS-03. Expedientes de estudiantes y catedraticos.
-   Criterio: cada rol recibe solo los campos que necesita; un catedratico no
-   recibe direccion ni tipo de sangre. La prueba compara la lista exacta de
-   campos y busca en el cuerpo crudo los valores sensibles, no solo las claves. */
-
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { levantar, como, crearBaseDePrueba, ENTORNO_CON_SESION, URL_ADMIN } = require('./ayuda');
@@ -22,7 +17,6 @@ const CUENTA = {
 };
 const ADMIN = como('ADMIN', CUENTA.admin);
 
-// Valores sensibles reconocibles: si aparecen en un cuerpo, se filtraron.
 const SENSIBLE = {
   direccion: 'Colonia Kennedy, bloque 7, casa 1234',
   tipo_sangre: 'AB-',
@@ -69,13 +63,11 @@ before(async () => {
 
   servidor = await levantar(ENTORNO_CON_SESION, { db });
 
-  // Cada cuenta escribe dentro de su institucion: la administracion se vincula primero.
   const liga = (proveedor, rol, referencia) => db.consultar(
     `INSERT INTO usuarios (username, proveedor_id, rol, nombre_completo, referencia_id)
      VALUES ($1, $1, $2, $1, $3)`, [proveedor, rol, referencia]);
   await liga(CUENTA.admin, 'ADMIN', null);
 
-  // El expediente con datos sensibles entra por la API, como en la realidad.
   const creado = await servidor.enviar('/api/estudiantes', {
     codigo_alumno: 'exp-001', nombres: 'Carla', apellidos: 'Diaz', condicion: 'MILITAR', grado: 'Cadete',
     correo: 'carla@esoe.example', promocion_id: promA.id, ...SENSIBLE
@@ -98,8 +90,6 @@ after(async () => {
   await servidor?.cerrar();
   await base?.cerrar();
 });
-
-// --- El criterio de aceptacion ----------------------------------------------
 
 test('expedientes: un catedratico no recibe direccion ni tipo de sangre de su estudiante', sinBase, async () => {
   const r = await leer(`/api/estudiantes/${d.estUno}`, como('CATEDRATICO', CUENTA.catUno));
@@ -172,8 +162,6 @@ test('expedientes: el directorio de catedraticos no muestra DNI, correo ni telef
   assert.deepEqual(Object.keys(admin[0]).sort(), [...CAMPOS.catedraticoCompleto].sort());
 });
 
-// --- Escribir ---------------------------------------------------------------
-
 test('expedientes: solo la administracion crea y edita; sin sesion, 401', sinBase, async () => {
   const nuevo = { dni: 'CAT-9', nombres: 'X', apellidos: 'Y', titulo: 'Z' };
   for (const [rol, cuenta] of [['CATEDRATICO', CUENTA.catUno], ['ESTUDIANTE', CUENTA.estUno]]) {
@@ -218,7 +206,6 @@ test('expedientes: DNI o codigo repetidos responden 409 con el campo; promocion 
 });
 
 test('expedientes: editar valida contra lo guardado', sinBase, async () => {
-  // Carla es militar con grado: pasarla a civil sin quitar el grado no cuadra.
   const malo = await servidor.enviar(`/api/estudiantes/${d.estUno}`, { condicion: 'CIVIL' }, ADMIN, 'PUT');
   assert.equal(malo.status, 422);
   assert.match((await malo.json()).campos.grado, /militar/);
@@ -250,8 +237,6 @@ test('expedientes: la base sostiene las mismas reglas aunque se escriba sin la A
     `INSERT INTO catedraticos (dni, nombres, apellidos, titulo, condicion, grado)
      VALUES ('SQL-C', 'N', 'A', 'T', 'CIVIL', 'Coronel')`), /catedratico_grado_solo_militar/);
 });
-
-// --- Las reglas, sin base ---------------------------------------------------
 
 test('expedientes: DNI y codigo se normalizan; los opcionales vacios quedan ausentes', () => {
   const { datos, campos } = validar('estudiante', {
