@@ -351,6 +351,16 @@ test('presentacion: nombra a las demas instituciones que usan la plataforma', ()
   }
 });
 
+test('presentacion: cada institucion muestra su escudo oficial junto al de la ESOE', () => {
+  assert.match(html, /<video class="intro-video"[^>]*poster="video\/escudo-esoe\.jpg"/, 'el escudo de la ESOE debe seguir en la presentacion');
+  const entes = html.match(/<div class="intro-entes">[\s\S]*?<\/div>/)[0];
+  for (const siglas of ['udh', 'infop', 'copeco']) {
+    const img = entes.match(new RegExp(`<img class="ente-escudo" src="img/escudo-${siglas}\\.png" alt="([^"]+)"`));
+    assert.ok(img && img[1].length > 10, `falta el escudo de ${siglas} con texto alternativo`);
+    assert.ok(fs.existsSync(path.join(PUBLICO, 'img', `escudo-${siglas}.png`)), `falta el archivo del escudo de ${siglas}`);
+  }
+});
+
 test('diseno: ningun punto ni faro que parpadee sin fin en la interfaz', () => {
   const css = fs.readFileSync(path.join(PUBLICO, 'css', 'styles.css'), 'utf8');
   const keyframes = [...css.matchAll(/@keyframes\s+([\w-]+)\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g)];
