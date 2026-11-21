@@ -97,8 +97,8 @@ test('estilo: detecta rutas no permitidas', () => {
   assert.deepEqual(buscarRutas('src/visible/x.js', rutas), []);
 });
 
-test('estilo: rechaza ramas con nombre generado automaticamente', () => {
-  assert.equal(revisarRama('equipo/sweet-babbage-chgwxt').length, 1);
+test('estilo: el nombre de la rama solo se revisa por terminos', () => {
+  assert.deepEqual(revisarRama('equipo/sweet-babbage-chgwxt'), []);
   assert.deepEqual(revisarRama('configuracion-inicial'), []);
   assert.deepEqual(revisarRama('main'), []);
 });
