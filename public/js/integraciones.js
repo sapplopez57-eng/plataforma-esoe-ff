@@ -1,6 +1,3 @@
-/* ESOE SMS - Conexion con otras plataformas educativas (Moodle, INFOP).
-   Todo dato que llega del servidor o de la plataforma externa pasa por esc(). */
-
 const integraciones = { cargando: false, error: '', plataformas: [], cursos: [], catalogo: [] };
 
 function renderIntegracionesView() {

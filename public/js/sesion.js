@@ -1,7 +1,3 @@
-/* ESOE SMS - Sesion e interfaz con el servidor.
-   Con el inicio de sesion configurado, la identidad y el rol los decide el servidor.
-   Sin el (archivo abierto directamente o entorno local) la interfaz queda en modo demostracion. */
-
 const sesionReal = { activa: false, clerk: null, integraciones: false, nombre: '', correo: '' };
 
 function esc(valor) {
@@ -78,7 +74,6 @@ async function entrarConSesionReal() {
   appState.currentRole = identidad.rol;
   appState.currentView = identidad.rol === 'ESTUDIANTE' ? 'boletin' : 'dashboard';
 
-  // SMS-05: con sesion real los datos vienen del servidor, nunca del navegador.
   store = emptyStore();
   await cargarDesdeServidor();
 
@@ -102,7 +97,6 @@ async function iniciarSesionReal(configuracion) {
   sesionReal.clerk = window.Clerk;
   sesionReal.integraciones = Boolean(configuracion.integraciones);
 
-  // El rol ya no se elige en pantalla.
   document.getElementById('login-demo').classList.add('hidden');
   document.getElementById('role-quick-switch').classList.add('hidden');
 

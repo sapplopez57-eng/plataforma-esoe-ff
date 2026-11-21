@@ -1,8 +1,5 @@
 'use strict';
 
-// Plataformas conocidas que un administrativo puede agregar con un clic.
-// Verificadas (INFOP el 14-11-2026, de nuevo junto con la UDH el 19-11-2026): todas son
-// Moodle con servicios web y servicio movil activos, e inicio de sesion con usuario y clave.
 const PLATAFORMAS_CONOCIDAS = Object.freeze([
   Object.freeze({
     clave: 'infop-elearning',
@@ -25,8 +22,6 @@ const PLATAFORMAS_CONOCIDAS = Object.freeze([
     urlBase: 'https://aula.udh.edu.hn',
     descripcion: 'Campus virtual de la Universidad de Defensa de Honduras.'
   }),
-  // Verificada el 21-11-2026: es Moodle, pero con los servicios web apagados. Hasta que su
-  // administracion los active, registrarla responde con ese motivo y no se conecta.
   Object.freeze({
     clave: 'copeco-cenicac',
     nombre: 'COPECO — CENICAC',

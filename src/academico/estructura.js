@@ -1,10 +1,5 @@
 'use strict';
 
-// SMS-02. Estructura academica: periodos lectivos, promociones y materias.
-// Cualquier cuenta con sesion la consulta; solo la administracion la crea y la
-// edita. Toda entrada pasa por src/academico/validacion.js: un dato que no sirve
-// responde 422 con el campo y el motivo, y un codigo repetido responde 409.
-
 const express = require('express');
 const { validar } = require('./validacion');
 
@@ -14,7 +9,6 @@ const RECURSOS = [
   {
     ruta: 'periodos', tabla: 'periodos_lectivos', tipo: 'periodo', clave: 'periodo',
     columnas: ['codigo', 'nombre', 'modalidad', 'fecha_inicio', 'fecha_fin', 'activo'],
-    // Las fechas salen como texto AAAA-MM-DD, sin zona horaria de por medio.
     lectura: `id, codigo, nombre, modalidad, to_char(fecha_inicio, 'YYYY-MM-DD') AS fecha_inicio,
               to_char(fecha_fin, 'YYYY-MM-DD') AS fecha_fin, activo`,
     orden: 'fecha_inicio DESC, codigo'
@@ -35,7 +29,6 @@ const RECURSOS = [
 
 const rechazar = (res, campos) => res.status(422).json({ error: 'Hay datos que corregir.', campos });
 
-// Un codigo repetido (restriccion UNIQUE) no es un error del servidor.
 function esDuplicado(error) {
   return error && error.code === '23505';
 }
@@ -43,7 +36,6 @@ function esDuplicado(error) {
 function crearRutasEstructura({ auth, db, permisos }) {
   const rutas = express.Router();
   if (!db) return rutas;
-  // SMS-06: cada consulta y cada escritura queda dentro de la institucion de quien pide.
   const { resolverVinculo } = permisos;
   const conSesion = [auth.exigirSesion, resolverVinculo];
   const soloAdministracion = [auth.exigirRol('ADMIN'), resolverVinculo];

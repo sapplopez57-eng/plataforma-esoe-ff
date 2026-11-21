@@ -4,27 +4,16 @@
 @font-face { font-family: 'DM Serif Display'; font-style: normal; font-weight: 400; font-display: swap; src: url('../fonts/dm-serif-display-latin-400-normal.woff2') format('woff2'); }
 @font-face { font-family: 'DM Serif Display'; font-style: italic; font-weight: 400; font-display: swap; src: url('../fonts/dm-serif-display-latin-400-italic.woff2') format('woff2'); }
 
-/* ESOE SMS - Sistema visual
-   Paleta del README: azul profundo, cian, cielo, ambar y naranja.
-   Todo color de la interfaz sale de estas variables; fuera de :root no se
-   escribe ninguno (lo comprueba tests/identidad.test.js). */
-
 :root {
-  /* Paleta de marca: las cinco muestras declaradas en el README, en su orden.
-     No se alteran. tests/identidad.test.js las compara con el README. */
-  --marca-1: #0287A8;  /* azul profundo */
-  --marca-2: #00BFDC;  /* cian */
-  --marca-3: #10C5EA;  /* cielo */
-  --marca-4: #F19F05;  /* ambar */
-  --marca-5: #F28805;  /* naranja */
+  --marca-1: #0287A8;
+  --marca-2: #00BFDC;
+  --marca-3: #10C5EA;
+  --marca-4: #F19F05;
+  --marca-5: #F28805;
 
-  /* Paleta de las paginas internas (README, 06 a 08): blanco, naranja e
-     indigo. La pantalla de acceso usa la paleta 01 a 05. */
-  --marca-6: #FFFFFF;  /* blanco */
-  --marca-7: #EF5F18;  /* naranja */
-  --marca-8: #261A66;  /* indigo (Scarlet Bikini) */
-  /* El naranja de marca da 4.44:1 con texto indigo encima: le faltan 0.06. Un
-     4 % mas claro llega a 4.63 sin que se note la diferencia. */
+  --marca-6: #FFFFFF;
+  --marca-7: #EF5F18;
+  --marca-8: #261A66;
   --interno-naranja: #F06521;
   --interno-naranja-claro: #F27A3D;
   --interno-naranja-texto: #B8440C;
@@ -37,11 +26,6 @@
   --interno-velo-suave: rgba(38, 26, 102, 0.5);
   --interno-resalte-claro: rgba(255, 255, 255, 0.08);
 
-  /* Papeles. Las variables se nombran por funcion, no por color: si la paleta
-     vuelve a cambiar, cambian estos valores y nada mas (leccion L-021).
-     Ninguna muestra aguanta texto blanco encima (de 2.06 a 4.17), pero las
-     cuatro brillantes si aguantan texto oscuro (de 5.9 a 7.3): se usan vivas,
-     tal cual, con --sobre-accion encima. */
   --accion: var(--marca-3);
   --accion-hondo: var(--marca-2);
   --positivo: var(--marca-2);
@@ -52,16 +36,12 @@
   --decoracion: var(--marca-1);
   --decoracion-viva: var(--marca-3);
   --decoracion-calida: var(--marca-5);
-  /* El azul profundo de marca da 3.97:1 sobre papel: sirve para titulos
-     grandes y bordes, no para texto corriente. Para enlaces, un tono mas hondo. */
   --enlace: #026F8A;
 
-  /* Estructura: menu lateral y panel de acceso */
   --estructura: #0A2A35;
   --sobre-estructura: #E6F6FA;
   --sobre-estructura-tenue: #8FC3D1;
 
-  /* Superficies y texto */
   --papel: #F6FAFB;
   --superficie: #E6F3F6;
   --linea: #CFE4EA;
@@ -73,11 +53,6 @@
   --trazo-claro: rgba(230, 246, 250, 0.16);
   --resalte-claro: rgba(230, 246, 250, 0.10);
 
-  /* Escala tipografica: base de 16 px y saltos claros. Ningun tamano fuera
-     de esta lista (lo comprueba la misma prueba). */
-  /* En rem: siguen el tamano de letra que la persona eligio en su navegador y el control
-     "Tamano del texto" (WCAG 1.4.4). Con la base del navegador (16 px) equivalen a
-     12, 14, 16, 18, 24, 28, 40 y 56 px. */
   --fs-meta: 0.75rem;
   --fs-sm: 0.875rem;
   --fs-base: 1rem;
@@ -87,16 +62,12 @@
   --fs-2xl: 2.5rem;
   --fs-display: 3.5rem;
 
-  /* Palabra destacada del titulo de acceso: el naranja de marca no llega a 3:1
-     sobre papel; este tono hondo da 5.16:1. */
   --acento-titulo: #B8440C;
-  /* Ambiente: sombras suaves y nubes. */
   --sombra-suave: 0 6px 18px rgba(10, 42, 53, 0.14);
   --sombra-flotante: 0 10px 30px rgba(10, 42, 53, 0.18);
   --nube: rgba(246, 250, 251, 0.55);
   --filtro-noche: brightness(0.5) saturate(0.85);
 
-  /* Modo noche. Acceso: azul casi negro con letra clara y el cielo de marca. */
   --noche-papel: #071C24;
   --noche-superficie: #0D2730;
   --noche-linea: #1E3E49;
@@ -106,7 +77,6 @@
   --noche-acento: #F19F05;
   --noche-nube: rgba(230, 246, 250, 0.08);
   --noche-sombra: 0 10px 30px rgba(0, 0, 0, 0.45);
-  /* Paginas internas: el indigo de marca hecho noche, con el mismo naranja. */
   --noche-interno-papel: #16103D;
   --noche-interno-superficie: #1E1750;
   --noche-interno-linea: #2E2668;
@@ -114,12 +84,9 @@
   --noche-interno-enlace: #F27A3D;
   --noche-interno-velo: rgba(8, 5, 26, 0.7);
 
-  /* Movimiento: entradas con easeOut, ~0.8 s,
-     escalonadas ~0.2 s. */
   --curva-entrada: cubic-bezier(0.16, 1, 0.3, 1);
   --duracion-entrada: 0.8s;
   --escalon: 0.2s;
-  /* Campus 3D: los colores del plano los lee interfaz/campus3d desde aqui. */
   --campus-mar: #0287A8;
   --campus-mar-hondo: #0A2A35;
   --campus-mar-noche: #06222B;
@@ -139,18 +106,14 @@
   --campus-espuma: #F6FAFB;
   --campus-cadete: #0A2A35;
   --campus-cadete-gorra: #F28805;
-  /* Etiquetas de los puntos: papel traslucido, sin borde, para no tapar el arte. */
   --punto-fondo: rgba(246, 250, 251, 0.88);
   --noche-punto-fondo: rgba(13, 39, 48, 0.86);
-  /* Ancho de la columna de texto del acceso: la escena empieza despues. */
   --columna-acceso: 600px;
-  /* Bandas de las tarjetas de clase (bienvenida): la paleta de marca en degradado. */
   --banda-0: linear-gradient(135deg, #261A66 0%, #4E4685 100%);
   --banda-1: linear-gradient(135deg, #A33C0A 0%, #B8440C 100%);
   --banda-2: linear-gradient(135deg, #015E75 0%, #026F8A 100%);
   --banda-3: linear-gradient(135deg, #0A2A35 0%, #026F8A 100%);
   --sobre-banda: #FFFFFF;
-  /* Paralaje de la escena (lo mueve ambiente.js) y orden de llegada de los puntos. */
   --paralaje-x: 0px;
   --paralaje-y: 0px;
   --orden: 0;
@@ -158,8 +121,6 @@
   --sidebar-width: 256px;
   --topbar-height: 64px;
   --radius: 4px;
-  /* Vidrio de los controles y avisos (estilo iOS): claro sobre el acceso, indigo
-     dentro de la plataforma y en la noche. */
   --vidrio-claro: rgba(255, 255, 255, 0.58);
   --vidrio-claro-borde: rgba(255, 255, 255, 0.85);
   --vidrio-claro-tenue: rgba(15, 42, 51, 0.06);
@@ -177,7 +138,6 @@
   --vidrio-pulgar: var(--vidrio-pulgar-claro);
   --vidrio-sombra: var(--vidrio-sombra-clara);
   --vidrio-texto-pulgar: var(--marca-8);
-  /* Resorte de iOS: llega, se pasa un poco y se asienta. */
   --curva-resorte: cubic-bezier(0.34, 1.56, 0.64, 1);
   --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'DM Serif Display', Georgia, serif;
@@ -205,10 +165,6 @@ button { font-family: inherit; }
 svg { flex-shrink: 0; }
 .acento { fill: var(--decoracion); }
 
-/* ---------- Acceso: escena ---------- */
-/* Columna de texto a la izquierda y, detras, el plano ilustrativo del campus que
-   se funde con el papel (la "niebla" es una mascara: en modo noche funde con el
-   papel oscuro sin cambiar nada). */
 .login-screen {
   position: relative;
   isolation: isolate;
@@ -218,8 +174,6 @@ svg { flex-shrink: 0; }
 }
 .login-container { display: contents; }
 
-/* Fija a la altura de la ventana: la columna de texto se desplaza por delante.
-   La niebla es una mascara sobre toda la escena, medida desde su propio borde. */
 .escena {
   position: fixed; inset: 0 0 0 max(34%, calc(var(--columna-acceso) - 40px)); overflow: hidden; z-index: -1;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, black 30%), linear-gradient(180deg, transparent 0, black 12%, black 100%);
@@ -233,7 +187,6 @@ svg { flex-shrink: 0; }
   transition: filter 0.6s ease;
 }
 
-/* Puntos numerados del plano, con su varilla y su ancla. */
 .escena-puntos { list-style: none; transition: opacity 0.4s ease, visibility 0.4s; }
 .plano-oculto .escena-puntos { opacity: 0; visibility: hidden; }
 .punto {
@@ -266,7 +219,6 @@ svg { flex-shrink: 0; }
 }
 @keyframes flotar { from { translate: 0 0; } to { translate: 0 -4px; } }
 
-/* Nubes que cruzan despacio. */
 .escena-nube {
   position: absolute; width: 360px; height: 120px; border-radius: 50%;
   background: radial-gradient(ellipse at center, var(--nube) 0%, transparent 70%);
@@ -283,13 +235,11 @@ svg { flex-shrink: 0; }
   padding: 10px 22px; border-radius: 16px; background: var(--punto-fondo);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); box-shadow: var(--sombra-suave);
 }
-/* Sobre el mar cambia el fondo: la leyenda lleva su propio papel traslucido. */
 .escena-pie .rotulo { color: var(--piedra); }
 .escena-margen { color: var(--piedra); }
 .escena-pie em { display: block; font-family: var(--font-display); font-style: italic; font-size: var(--fs-lg); color: var(--titulo); }
 .escena-margen { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; opacity: 0.7; }
 
-/* ---------- Acceso: columna ---------- */
 .login-brand-panel {
   position: relative;
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -328,7 +278,6 @@ svg { flex-shrink: 0; }
 .login-form-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
 .login-form-header h2 { color: var(--titulo); }
 
-/* Perfiles: tarjetas, como quien elige con que entrar. */
 .role-selector-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 24px; }
 .role-card-btn {
   position: relative;
@@ -350,7 +299,6 @@ svg { flex-shrink: 0; }
 .role-nombre { font-size: var(--fs-base); font-weight: 700; }
 .role-detalle { letter-spacing: 0.08em; }
 
-/* Boton de entrada: grande, oscuro, con su flecha y su rotulo. */
 .btn.btn-entrar {
   width: 100%; margin-top: 8px; padding: 18px 22px;
   justify-content: space-between;
@@ -366,13 +314,10 @@ svg { flex-shrink: 0; }
 
 .login-footer-meta { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--linea); }
 
-/* ---------- Ambiente: barra flotante, reloj ---------- */
-
 .reloj { display: inline-flex; align-items: center; gap: 8px; color: var(--titulo); }
 .topbar-right { gap: 6px; }
 .topbar-right .reloj { margin-right: 6px; }
 
-/* ---------- Acceso en pantallas medianas y telefonos ---------- */
 @media (max-width: 960px) {
   .escena {
     position: relative; inset: auto; z-index: auto;
@@ -405,7 +350,6 @@ svg { flex-shrink: 0; }
 }
 
 
-/* ---------- Shell ---------- */
 .app-shell { display: flex; min-height: 100vh; }
 
 .sidebar {
@@ -520,11 +464,8 @@ svg { flex-shrink: 0; }
 
 .content-area { padding: 32px 40px 64px; max-width: 1360px; }
 
-/* ---------- Metricas ---------- */
 .stats-grid {
   display: grid;
-  /* minmax(0, ...) para que una cifra o un icono no ensanchen la columna
-     mas alla de la pantalla. */
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border-top: 2px solid var(--decoracion);
   border-bottom: 1px solid var(--linea);
@@ -540,7 +481,6 @@ svg { flex-shrink: 0; }
 .stat-card-info h3 { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-display); line-height: 1.1; margin: 6px 0 2px; color: var(--titulo); }
 .stat-card-info small { display: none; }
 
-/* ---------- Paneles ---------- */
 .panel { background: transparent; margin-bottom: 40px; }
 .panel-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; }
 .panel-title h2 { font-size: var(--fs-md); font-weight: 700; color: var(--titulo); }
@@ -554,22 +494,18 @@ svg { flex-shrink: 0; }
 .search-input-wrap .ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--piedra); }
 .search-input-wrap input { padding-left: 36px; }
 
-/* ---------- Formularios ---------- */
 .form-group { margin-bottom: 16px; }
 .form-label { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--piedra); margin-bottom: 6px; }
 .form-control {
   width: 100%;
   padding: 9px 12px;
   font-family: inherit;
-  /* 16 px tambien evita que el telefono amplie la pagina al escribir. */
   font-size: var(--fs-base);
   color: var(--texto);
   background: var(--papel);
   border: 1px solid var(--piedra);
   border-radius: var(--radius);
 }
-/* Un select se ensancha hasta su opcion mas larga; max-width lo frena en el
-   ancho disponible y el navegador recorta el texto mostrado. */
 select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .toolbar-filters { min-width: 0; }
 .form-group select.form-control, .form-grid-2 select.form-control, .form-grid-3 select.form-control { width: 100%; }
@@ -578,7 +514,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 
-/* ---------- Botones ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -605,7 +540,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .btn:focus-visible, .nav-item:focus-visible { outline: 2px solid var(--enlace); outline-offset: 2px; }
 .sidebar .nav-item:focus-visible { outline-color: var(--decoracion-viva); }
 
-/* ---------- Tablas ---------- */
 .table-responsive { width: 100%; overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; text-align: left; }
 .data-table th {
@@ -624,11 +558,8 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .data-table tbody tr:hover { background: var(--superficie); }
 .data-table td small { color: var(--piedra); font-size: var(--fs-sm); }
 .data-table td .btn + .btn { margin-left: 4px; }
-/* Un codigo (A-26001, TAC-101-A) no se parte en el guion, y una nota no se
-   separa de su signo de porcentaje. */
 .data-table td:first-child, .data-table td:has(> .grade-input) { white-space: nowrap; }
 
-/* ---------- Etiquetas ---------- */
 .badge {
   display: inline-block;
   padding: 2px 8px;
@@ -640,14 +571,11 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
   background: transparent;
   white-space: nowrap;
 }
-/* Aprobado y reprobado: la palabra va siempre escrita; el color la acompana,
-   no la sustituye. */
 .badge-olive { background: var(--positivo); color: var(--sobre-accion); border-color: var(--positivo); }
 .badge-rust { background: var(--negativo); color: var(--sobre-accion); border-color: var(--negativo); }
 .badge-choco { background: var(--superficie); border-color: var(--linea); color: var(--estructura); }
 .badge-neutral { border-color: var(--linea); color: var(--piedra); }
 
-/* ---------- Notas ---------- */
 .grade-input {
   width: 64px;
   padding: 6px;
@@ -662,7 +590,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 }
 .grade-input:focus { outline: 2px solid var(--enlace); outline-offset: 1px; }
 
-/* ---------- Asistencia ---------- */
 .attendance-group { display: inline-flex; border: 1px solid var(--piedra); border-radius: var(--radius); overflow: hidden; }
 .att-btn { border: none; border-right: 1px solid var(--linea); background: transparent; padding: 6px 10px; font-size: var(--fs-sm); font-weight: 600; color: var(--piedra); cursor: pointer; }
 .att-btn:last-child { border-right: none; }
@@ -672,7 +599,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .att-btn.active-TARDANZA { background: var(--advertencia); color: var(--sobre-accion); }
 .att-btn.active-EXCUSA { background: var(--superficie); color: var(--estructura); box-shadow: inset 0 0 0 2px var(--estructura); }
 
-/* ---------- Tarjetas ---------- */
 .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 16px; }
 .entity-card { border: 1px solid var(--linea); border-top: 3px solid var(--decoracion-viva); border-radius: var(--radio-tarjeta); box-shadow: var(--sombra-suave); padding: 20px; background: var(--papel); display: flex; flex-direction: column; justify-content: space-between; }
 .entity-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 8px; }
@@ -682,7 +608,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .section-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .entity-card > div:last-child { border-top: 1px solid var(--linea) !important; }
 
-/* ---------- Modal ---------- */
 .modal-backdrop { position: fixed; inset: 0; background: var(--velo); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 200; }
 .modal-dialog { background: var(--papel); border-radius: var(--radio-tarjeta); box-shadow: var(--sombra-flotante); width: 100%; max-width: 640px; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--estructura); border-top: 4px solid var(--decoracion-viva); }
 .modal-header { padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--linea); }
@@ -693,7 +618,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 
 .sidebar-overlay { display: none; position: fixed; inset: 0; background: var(--velo-suave); z-index: 90; }
 
-/* ---------- Responsivo ---------- */
 @media (max-width: 1080px) {
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat-card:nth-child(2) { border-right: none; }
@@ -733,20 +657,15 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 }
 .empty-state { border: 1px dashed var(--piedra); border-radius: var(--radius); padding: 56px 24px; text-align: center; color: var(--piedra); }
 
-/* Titulos grandes: DM Serif Display, un solo peso; el tamano hace la jerarquia. */
 .titulo-grande, .page-title-block h1, .stat-card-info h3, .entity-card-header h3, .modal-header h3 { font-weight: 400; letter-spacing: -0.02em; }
 
-/* Acento de los iconos: sobre un relleno vivo pasa a oscuro, y sobre la
-   estructura oscura pasa a cian, para no perderse en ninguno de los dos. */
 .btn-primary .ico .acento, .btn-rust .ico .acento, .nav-item.active .ico .acento,
 .role-card-btn.active .ico .acento { fill: var(--decoracion-viva); }
 .nav-item .ico .acento, .btn-choco .ico .acento { fill: var(--decoracion-viva); }
 .nav-item.active .ico .acento { fill: var(--sobre-accion); }
 
-/* ---------- Acceso y conexiones externas ---------- */
 .login-aviso { border-left: 3px solid var(--decoracion); background: var(--superficie); padding: 10px 12px; margin-bottom: 16px; font-size: var(--fs-base); }
 
-/* Solo para lectores de pantalla: completa el nombre de un control sin mostrarse. */
 .solo-lectores {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
@@ -755,7 +674,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .login-form-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .topbar-right .control-texto { margin-right: 12px; }
 
-/* Preguntas frecuentes del acceso. */
 .ayuda-acceso { margin-top: 32px; border-top: 1px solid var(--linea); padding-top: 20px; }
 .ayuda-acceso h3 { font-size: var(--fs-md); font-weight: 700; color: var(--titulo); margin-bottom: 8px; }
 .ayuda-acceso details { border-bottom: 1px solid var(--linea); }
@@ -766,9 +684,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 #login-salir { margin-top: 12px; }
 .section-title { font-family: var(--font-display); font-size: var(--fs-base); text-transform: uppercase; letter-spacing: .04em; margin: 24px 0 10px; color: var(--titulo); }
 
-/* ---------- Accesibilidad ---------- */
-/* Primer elemento enfocable de la pagina: con el teclado se salta el menu de un
-   golpe, como en Harvard y Canvas. Invisible hasta recibir el foco. */
 .saltar-contenido {
   position: absolute;
   left: 16px;
@@ -784,18 +699,9 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .saltar-contenido:focus { top: 16px; outline: 2px solid var(--estructura); outline-offset: 2px; }
 .content-area:focus { outline: none; }
 
-/* ---------- Escudo ---------- */
-/* El escudo conserva sus colores oficiales: es un emblema, no un elemento de
-   la interfaz, y la paleta no lo recolorea. */
 .escudo { display: block; height: auto; }
 .escudo-acceso { width: 56px; }
 .escudo-menu { width: 36px; }
-
-/* ---------- Movimiento ---------- */
-/* Reglas de movimiento: las entradas usan la curva easeOut
-   bezier(0.16, 1, 0.3, 1), duran ~0.8 s y se escalonan ~0.2 s. Solo se anima la
-   llegada a la pantalla de acceso: dentro de la aplicacion, donde se trabaja,
-   nada se mueve sin motivo. */
 
 @keyframes llegar {
   from { opacity: 0; transform: translateY(14px); }
@@ -814,17 +720,10 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
 .escena { animation: aparecer calc(var(--duracion-entrada) * 2) var(--curva-entrada) both; }
 @keyframes aparecer { from { opacity: 0; } to { opacity: 1; } }
 
-/* Quien pidio a su sistema reducir el movimiento no ve ninguna animacion
-   (WCAG 2.3.3). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
-/* ---------- Paginas internas ---------- */
-/* Dentro de la aplicacion los mismos papeles toman la paleta blanco, naranja
-   e indigo. Solo se redefinen valores: ninguna regla cambia. La ventana modal y
-   los avisos cuelgan fuera del armazon pero solo aparecen con la sesion
-   abierta, asi que llevan la misma paleta. */
 .app-shell, .modal-backdrop, .toast-container {
   --estructura: var(--marca-8);
   --sobre-estructura: var(--marca-6);
@@ -836,8 +735,6 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
   --negativo-hondo: var(--interno-naranja-claro);
   --enlace: var(--interno-naranja-texto);
   --decoracion: var(--marca-7);
-  /* El acento vivo tambien lleva letra (las iniciales del usuario): va con el
-     naranja que alcanza 4.5 con indigo. */
   --decoracion-viva: var(--interno-naranja);
   --texto: var(--marca-8);
   --titulo: var(--marca-8);
@@ -850,12 +747,8 @@ select.form-control { width: auto; min-width: 180px; max-width: 100%; }
   --velo: var(--interno-velo);
   --velo-suave: var(--interno-velo-suave);
 }
-/* El fondo solo en el armazon: en .modal-backdrop taparia el velo. */
 .app-shell { background: var(--papel); color: var(--texto); }
 
-/* ---------- Modo noche ---------- */
-/* Solo cambian valores de las variables; ninguna regla cambia. El plano se
-   oscurece con un filtro y las nubes casi desaparecen. */
 html[data-noche] {
   --vidrio: var(--vidrio-oscuro);
   --vidrio-borde: var(--vidrio-oscuro-borde);
@@ -891,13 +784,9 @@ html[data-noche] .app-shell, html[data-noche] .modal-backdrop, html[data-noche] 
 html[data-noche] .escena-plano img { filter: var(--filtro-noche); }
 html[data-noche] .btn.btn-entrar { border-color: var(--decoracion-viva); }
 
-/* ---------- Presentacion: el escudo animado ---------- */
-/* El fondo del video es el mismo azul de la estructura: la presentacion se funde
-   con la pantalla sin marco. */
 .intro {
   position: fixed; inset: 0; z-index: 500;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-  /* Abajo queda libre el lugar del boton "Saltar intro". */
   padding: 24px 20px 88px;
   background: var(--estructura);
   transition: opacity 0.6s ease, visibility 0.6s;
@@ -906,7 +795,6 @@ html[data-noche] .btn.btn-entrar { border-color: var(--decoracion-viva); }
 .intro-saliendo { opacity: 0; visibility: hidden; }
 .intro-video { width: min(56vmin, 520px, calc(100dvh - 400px)); min-width: 120px; height: auto; aspect-ratio: 1 / 1; }
 .intro-rotulo { color: var(--sobre-estructura-tenue); text-align: center; padding: 0 20px; }
-/* Las demas instituciones que usan la plataforma: entran despues del escudo. */
 .intro-entes { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 0 20px;
   animation: aparecer 1.2s var(--curva-entrada) 1.4s both; }
 .intro-entes .rotulo { color: var(--sobre-estructura-tenue); }
@@ -914,9 +802,6 @@ html[data-noche] .btn.btn-entrar { border-color: var(--decoracion-viva); }
 .intro-entes li { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; max-width: 220px; }
 .intro-entes strong { font-family: var(--font-display); font-weight: 400; font-size: var(--fs-lg); line-height: 1.1; color: var(--sobre-estructura); }
 .intro-entes li > span:last-child { font-size: var(--fs-meta); line-height: 1.3; color: var(--sobre-estructura-tenue); }
-/* Cada escudo se muestra tal cual lo publica su institucion, sobre un medallon
-   claro para respetar sus colores. Entran uno tras otro girando como una moneda
-   que se asienta; una sola vez, sin repetir. */
 .ente-medallon {
   display: grid; place-items: center; width: 84px; height: 84px; margin-bottom: 8px;
   border-radius: 50%; background: var(--papel);
@@ -932,7 +817,6 @@ html[data-noche] .btn.btn-entrar { border-color: var(--decoracion-viva); }
   to { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) { .ente-medallon { animation: none; } }
-/* En el telefono las tres instituciones van en una fila compacta. */
 @media (max-width: 600px) {
   .intro-entes ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; width: 100%; }
   .ente-medallon { width: 60px; height: 60px; margin-bottom: 4px; }
@@ -956,42 +840,33 @@ html[data-noche] .btn.btn-entrar { border-color: var(--decoracion-viva); }
 }
 .ver-presentacion:focus-visible { outline: 2px solid var(--enlace); outline-offset: 2px; }
 
-/* Mientras corre la presentacion, la llegada del acceso espera. */
 .esperando-intro, .esperando-intro * { animation-play-state: paused !important; }
 
-/* ---------- Mas movimiento ---------- */
-/* Titulo: cada linea sube desde su propio recorte. */
 .titulo-grande .linea { display: block; overflow: hidden; padding: 0 0.12em 0.1em 0; margin-bottom: -0.1em; }
 .titulo-grande .linea > span { display: inline-block; animation: subir 1s var(--curva-entrada) both; }
 .titulo-grande em.linea > span { animation-delay: 0.15s; }
 @keyframes subir { from { transform: translateY(105%); } to { transform: none; } }
 
-/* El plano se acerca al llegar y sigue al puntero (variables puestas por ambiente.js). */
 .escena-plano { translate: var(--paralaje-x, 0) var(--paralaje-y, 0); transition: translate 0.6s var(--curva-entrada); }
 .escena-plano img { animation: acercar 2.6s var(--curva-entrada) both; }
 @keyframes acercar { from { scale: 1.1; } to { scale: 1; } }
 
-/* Los puntos caen uno a uno y despues flotan. */
-/* :nth-child(n) para ganar a los retrasos anteriores de .punto:nth-child(2n) y (3n). */
 .punto:nth-child(n) { animation: caer 0.8s var(--curva-entrada) both, flotar 4s ease-in-out infinite alternate; animation-delay: calc(0.6s + var(--orden, 0) * 0.12s), calc(var(--orden, 0) * -0.7s); }
 .punto:nth-child(1) { --orden: 0; } .punto:nth-child(2) { --orden: 1; } .punto:nth-child(3) { --orden: 2; }
 .punto:nth-child(4) { --orden: 3; } .punto:nth-child(5) { --orden: 4; } .punto:nth-child(6) { --orden: 5; }
 .punto:nth-child(7) { --orden: 6; } .punto:nth-child(8) { --orden: 7; }
 @keyframes caer { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
 
-/* Tarjetas, boton y barra responden al puntero. */
 .role-card-btn { transition: border-color 0.2s ease, background 0.2s ease, transform 0.25s var(--curva-entrada), box-shadow 0.25s ease; }
 .role-card-btn:hover { transform: translateY(-2px); box-shadow: var(--sombra-suave); }
 .btn-entrar-flecha { transition: transform 0.3s var(--curva-entrada); }
 .btn.btn-entrar:hover .btn-entrar-flecha { transform: translate(3px, -3px); }
 
-/* El cambio a noche se funde en lugar de saltar. */
 body, .login-screen, .sidebar, .topbar, .app-shell, .barra-ambiente, .punto, .role-card-btn, .form-control {
   transition-property: background-color, color, border-color, transform, box-shadow;
   transition-duration: 0.5s;
 }
 
-/* Dentro de la plataforma: cada vista nueva llega escalonada. */
 .content-area.vista-nueva > * { animation: llegar 0.6s var(--curva-entrada) both; }
 .content-area.vista-nueva > :nth-child(2) { animation-delay: 0.08s; }
 .content-area.vista-nueva > :nth-child(3) { animation-delay: 0.16s; }
@@ -1002,21 +877,15 @@ body, .login-screen, .sidebar, .topbar, .app-shell, .barra-ambiente, .punto, .ro
 .content-area.vista-nueva .stat-card:nth-child(4) { animation-delay: 0.24s; }
 .nav-item { transition: background 0.2s ease, color 0.2s ease; }
 
-/* ---------- Campus 3D ---------- */
-/* Con WebGL el plano pasa a ser una escena Three.js: el lienzo ocupa toda la
-   escena y los puntos se colocan en pixeles sobre sus edificios. Sin WebGL, o
-   con "reducir movimiento", queda el dibujo SVG. */
 .escena-3d .escena-plano { inset: 0; top: 0; left: 0; width: 100%; height: 100%; aspect-ratio: auto; transform: none; translate: none; }
 .escena-3d .escena-plano img { display: none; }
 .campus-3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .escena-puntos { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 
-/* Puntos que chocan en pantalla: se quedan solo con su numero. */
 .punto.punto-compacto { gap: 0; padding: 3px; }
 .punto.punto-compacto .punto-nombre { display: none; }
 html[data-noche] { --punto-fondo: var(--noche-punto-fondo); }
 
-/* ---------- Bienvenida (como el Campus Virtual de la UNAH) ---------- */
 .bienvenida {
   position: relative; overflow: hidden;
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
@@ -1059,9 +928,6 @@ html[data-noche] { --punto-fondo: var(--noche-punto-fondo); }
 }
 
 
-/* ---------- Controles de ambiente y avisos: vidrio estilo iOS ---------- */
-/* La barra es una capsula de vidrio esmerilado; cada boton es una pildora que
-   se llena con el naranja de la marca al activarse y se hunde al tocarla. */
 .barra-ambiente {
   position: fixed; left: calc(50% + max(34vw, calc(var(--columna-acceso) - 40px)) / 2); bottom: 28px; translate: -50% 0; z-index: 5;
   display: flex; align-items: center; gap: 6px; padding: 6px;
@@ -1091,8 +957,6 @@ html[data-noche] { --punto-fondo: var(--noche-punto-fondo); }
 .topbar-right .ambiente-btn:hover { background: var(--vidrio-borde); }
 .topbar-right .ambiente-btn[aria-pressed="true"] { background: var(--accion); }
 
-/* Tamano del texto: control segmentado de iOS. Una pastilla se desliza bajo la
-   opcion elegida; su lugar sale del tamano activo en <html data-texto>. */
 .control-texto {
   position: relative; isolation: isolate;
   display: inline-grid; grid-template-columns: repeat(3, 1fr);
@@ -1119,8 +983,6 @@ html[data-texto="muy-grande"] .control-texto::before { translate: 200% 0; }
 .barra-ambiente .control-texto { margin-left: 4px; }
 .topbar-right .control-texto { margin-right: 12px; }
 
-/* Avisos: banner de notificacion de iOS. Vidrio arriba al centro, con el escudo,
-   el remitente, la hora y el mensaje; baja con resorte y sale hacia arriba. */
 .toast-container {
   position: fixed; z-index: 300; left: 50%; translate: -50% 0;
   top: max(16px, env(safe-area-inset-top, 0px));

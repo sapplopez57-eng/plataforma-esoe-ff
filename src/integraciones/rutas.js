@@ -27,8 +27,6 @@ function crearRutasDeIntegraciones({ config, auth, db }) {
     return rutas;
   }
 
-  // Vincular una cuenta implica probar credenciales contra un tercero:
-  // limite estricto para no servir de intermediario en ataques de fuerza bruta.
   const limiteDeVinculacion = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 10,
@@ -138,7 +136,6 @@ function crearRutasDeIntegraciones({ config, auth, db }) {
     }
   });
 
-  // Elimina la plataforma y, en cascada, todas las cuentas vinculadas a ella.
   rutas.delete('/plataformas/:id', auth.exigirRol('ADMIN'), validarId, async (req, res, next) => {
     try {
       const { rowCount } = await db.consultar('DELETE FROM plataformas_externas WHERE id = $1', [req.params.id]);
@@ -189,8 +186,6 @@ function crearRutasDeIntegraciones({ config, auth, db }) {
     }
   });
 
-  // Cursos del usuario en todas sus plataformas vinculadas. Una plataforma caida
-  // no impide ver las demas: se informa su estado y se sigue.
   rutas.get('/mis-cursos', auth.exigirSesion, async (req, res, next) => {
     try {
       const { rows } = await db.consultar(

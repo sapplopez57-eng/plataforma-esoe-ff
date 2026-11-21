@@ -1,14 +1,5 @@
 'use strict';
 
-// SMS-04. Clases, asistencia y calificaciones, con registro de cada cambio.
-//
-// - La carga academica (crear y editar clases) es de la administracion.
-// - La asistencia y las notas de una clase las escribe su titular o la
-//   administracion; el guardian de pertenencia (SEC-06) lo decide.
-// - Quien cambio que lo anota la base (migracion 0004): cada escritura corre en
-//   una transaccion que primero declara al usuario con set_config(..., true), y
-//   los disparadores lo leen. Fuera de la transaccion esa declaracion no existe.
-
 const express = require('express');
 const { validar, validarNotas, validarAsistencia, NOTAS } = require('./validacion');
 const { esUuid } = require('../permisos');
@@ -21,7 +12,6 @@ const LIMITE_AUDITORIA = 500;
 
 const rechazar = (res, campos) => res.status(422).json({ error: 'Hay datos que corregir.', campos });
 
-// Errores de la base que son de los datos, no del servidor.
 function traducirErrorDeClase(error) {
   const restriccion = String(error?.constraint || '');
   if (error?.code === '23505' && restriccion.includes('codigo_clase')) {
@@ -44,11 +34,9 @@ function crearRutasDeClases({ auth, db, permisos }) {
 
   const { resolverVinculo, exigirClasePropia } = permisos;
   const titularOAdministracion = [auth.exigirSesion, resolverVinculo, exigirClasePropia('id')];
-  // SMS-06: la carga academica se escribe solo en la institucion de quien pide.
   const soloAdministracion = [auth.exigirRol('ADMIN'), resolverVinculo];
   const privado = (res) => res.set('Cache-Control', 'no-store');
 
-  // Corre `trabajo` en una transaccion que ya sabe quien escribe.
   function comoUsuario(req, trabajo) {
     return db.transaccion(async (consultar) => {
       await consultar(
@@ -58,8 +46,6 @@ function crearRutasDeClases({ auth, db, permisos }) {
       return trabajo(consultar);
     });
   }
-
-  // --- Carga academica ------------------------------------------------------
 
   rutas.post('/clases', ...soloAdministracion, async (req, res, next) => {
     const { datos, campos } = validar('clase', req.body);
@@ -102,11 +88,6 @@ function crearRutasDeClases({ auth, db, permisos }) {
     }
   });
 
-  // --- Asistencia -----------------------------------------------------------
-
-  // Registra (o corrige) la asistencia de un dia. Una sesion por clase y fecha:
-  // volver a enviar el mismo dia corrige los registros, y cada correccion queda
-  // en la auditoria.
   rutas.post('/clases/:id/asistencia', ...titularOAdministracion, async (req, res, next) => {
     const { datos, campos } = validarAsistencia(req.body);
     if (Object.keys(campos).length) return rechazar(res, campos);
@@ -154,10 +135,6 @@ function crearRutasDeClases({ auth, db, permisos }) {
     }
   });
 
-  // --- Calificaciones -------------------------------------------------------
-
-  // Todos los estudiantes de la promocion de la clase, con sus notas si ya las
-  // tienen: el titular ve a quien le falta calificar.
   rutas.get('/clases/:id/calificaciones', ...titularOAdministracion, async (req, res, next) => {
     try {
       const { rows } = await db.consultar(
@@ -175,8 +152,6 @@ function crearRutasDeClases({ auth, db, permisos }) {
     }
   });
 
-  // Cambia una o varias notas de un estudiante. Solo se tocan las enviadas; la
-  // nota final y la aprobacion las calcula la base.
   rutas.put('/clases/:id/calificaciones/:estudianteId', ...titularOAdministracion, async (req, res, next) => {
     const { estudianteId } = req.params;
     if (!esUuid(estudianteId)) return res.status(404).json({ error: 'El estudiante no esta en esta clase.' });
@@ -206,10 +181,6 @@ function crearRutasDeClases({ auth, db, permisos }) {
     }
   });
 
-  // --- Auditoria ------------------------------------------------------------
-
-  // Historia de cambios de notas y asistencia de una clase, la mas reciente
-  // primero. La ven el titular y la administracion.
   rutas.get('/clases/:id/auditoria', ...titularOAdministracion, async (req, res, next) => {
     try {
       const { rows } = await db.consultar(

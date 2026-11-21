@@ -1,10 +1,3 @@
--- SMS-04. Registro de quien cambio cada nota y cada asistencia.
---
--- La auditoria la escribe la base con disparadores, no la aplicacion: asi
--- queda tambien lo que se cambie por fuera de la API. La API dice quien es en
--- la misma transaccion con set_config('esoe.usuario_id', ..., true); si nadie lo
--- dice, se anota el usuario de la base con el prefijo "sql:".
-
 CREATE TABLE auditoria (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tabla VARCHAR(40) NOT NULL,
@@ -14,8 +7,6 @@ CREATE TABLE auditoria (
     campo VARCHAR(40) NOT NULL,
     valor_anterior TEXT,
     valor_nuevo TEXT,
-    -- Sin llave foranea a proposito: la historia no se borra ni se altera
-    -- aunque la cuenta o el registro desaparezcan.
     usuario_id UUID,
     autor VARCHAR(120) NOT NULL,
     cambiado_en TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -24,7 +15,6 @@ CREATE TABLE auditoria (
 CREATE INDEX auditoria_por_clase ON auditoria (clase_id, cambiado_en DESC);
 CREATE INDEX auditoria_por_estudiante ON auditoria (estudiante_id, cambiado_en DESC);
 
--- La auditoria solo crece.
 CREATE FUNCTION auditoria_inmutable() RETURNS trigger AS $$
 BEGIN
     RAISE EXCEPTION 'La auditoria no se modifica ni se borra.' USING ERRCODE = 'insufficient_privilege';
@@ -35,7 +25,6 @@ CREATE TRIGGER auditoria_solo_crece
     BEFORE UPDATE OR DELETE ON auditoria
     FOR EACH ROW EXECUTE FUNCTION auditoria_inmutable();
 
--- Quien hace el cambio: lo que la API declaro, o el usuario de la base.
 CREATE FUNCTION auditoria_usuario() RETURNS UUID AS $$
     SELECT NULLIF(current_setting('esoe.usuario_id', true), '')::uuid;
 $$ LANGUAGE sql STABLE;

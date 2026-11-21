@@ -1,11 +1,5 @@
 'use strict';
 
-// Cliente de los servicios web de Moodle. Sirve para cualquier sitio Moodle,
-// incluidas las plataformas E-Learning y Academias de INFOP.
-//
-// Las credenciales viajan siempre en el cuerpo de la peticion, nunca en la URL,
-// para que no queden en registros de acceso.
-
 const { enviar, ErrorDeRed } = require('../seguridad/red');
 
 const SERVICIO_MOVIL = 'moodle_mobile_app';
@@ -36,7 +30,6 @@ function traducirError(codigo, mensaje) {
 function crearClienteMoodle(opciones = {}) {
   const red = { permitirRedPrivada: opciones.permitirRedPrivada, tiempoMaximoMs: opciones.tiempoMaximoMs };
 
-  // Datos publicos del sitio: no requiere credenciales.
   async function configuracionPublica(urlBase) {
     const respuesta = await enviar(`${urlBase}/lib/ajax/service-nologin.php?info=tool_mobile_get_public_config`, {
       ...red,
@@ -53,12 +46,10 @@ function crearClienteMoodle(opciones = {}) {
       serviciosWeb: d.enablewebservices === 1,
       servicioMovil: d.enablemobilewebservice === 1,
       enMantenimiento: d.maintenanceenabled === 1,
-      // 1 = formulario propio; 2 y 3 = inicio de sesion en el navegador (SSO).
       inicioConFormulario: d.typeoflogin === 1
     };
   }
 
-  // Cambia usuario y contrasena por un token personal. La contrasena no se conserva.
   async function obtenerToken(urlBase, usuario, clave) {
     const respuesta = await enviar(`${urlBase}/login/token.php`, {
       ...red,
@@ -90,7 +81,6 @@ function crearClienteMoodle(opciones = {}) {
     };
   }
 
-  // Cursos en los que esta inscrito el usuario, con avance y calificacion.
   async function cursosDelUsuario(urlBase, token, usuarioId) {
     const [cursos, notas] = await Promise.all([
       llamar(urlBase, token, 'core_enrol_get_users_courses', { userid: usuarioId }),

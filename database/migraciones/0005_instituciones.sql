@@ -1,15 +1,3 @@
--- SMS-06. Plataforma para varias instituciones.
---
--- Cada institucion (ESOE, UDH, INFOP, COPECO y las que se sumen) es duena de
--- sus propios datos: periodos, promociones, materias, expedientes, clases,
--- usuarios y plataformas externas. La base impide mezclarlas: una clase solo
--- puede usar periodo, promocion, materia y catedratico de su misma
--- institucion, y una nota o una asistencia solo puede unir una clase y un
--- estudiante de la misma institucion.
---
--- Lo que ya existia queda en la ESOE (institucion predeterminada), asi que esta
--- migracion no cambia el comportamiento de nada que ya funcionaba.
-
 CREATE TABLE instituciones (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     codigo VARCHAR(20) UNIQUE NOT NULL CHECK (codigo ~ '^[A-Z0-9][A-Z0-9-]*$'),
@@ -18,7 +6,6 @@ CREATE TABLE instituciones (
     tipo VARCHAR(30) NOT NULL CHECK (tipo IN (
         'ESCUELA_MILITAR', 'UNIVERSIDAD', 'FORMACION_PROFESIONAL', 'GESTION_DE_RIESGO', 'OTRA')),
     sitio_web VARCHAR(300) CHECK (sitio_web IS NULL OR sitio_web ~ '^https://'),
-    -- Campus virtual propio (Moodle u otro) con el que se integra; verificados el 21-11-2026.
     campus_virtual VARCHAR(300) CHECK (campus_virtual IS NULL OR campus_virtual ~ '^https://'),
     activa BOOLEAN NOT NULL DEFAULT TRUE,
     creada_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -33,12 +20,10 @@ INSERT INTO instituciones (codigo, siglas, nombre, tipo, sitio_web, campus_virtu
     ('COPECO', 'COPECO', 'Comisión Permanente de Contingencias', 'GESTION_DE_RIESGO',
         NULL, 'https://cenicac.copeco.gob.hn');
 
--- Institucion de los datos que llegan sin indicarla (los que ya existian).
 CREATE FUNCTION institucion_predeterminada() RETURNS UUID AS $$
     SELECT id FROM instituciones WHERE codigo = 'ESOE';
 $$ LANGUAGE sql STABLE;
 
--- 1. Cada tabla de primer nivel pasa a tener duena.
 ALTER TABLE usuarios
     ADD COLUMN institucion_id UUID NOT NULL DEFAULT institucion_predeterminada() REFERENCES instituciones(id);
 ALTER TABLE periodos_lectivos
@@ -65,9 +50,6 @@ CREATE INDEX estudiantes_por_institucion ON estudiantes (institucion_id, promoci
 CREATE INDEX clases_por_institucion ON clases (institucion_id);
 CREATE INDEX plataformas_por_institucion ON plataformas_externas (institucion_id);
 
--- 2. Los codigos y documentos son unicos dentro de cada institucion, no en
---    toda la plataforma. Los nombres conservan el campo, que la API usa para
---    decir cual se repite.
 ALTER TABLE periodos_lectivos DROP CONSTRAINT periodos_lectivos_codigo_key,
     ADD CONSTRAINT periodos_lectivos_institucion_codigo_key UNIQUE (institucion_id, codigo);
 ALTER TABLE promociones DROP CONSTRAINT promociones_codigo_key,
@@ -83,8 +65,6 @@ ALTER TABLE estudiantes DROP CONSTRAINT estudiantes_codigo_alumno_key,
 ALTER TABLE clases DROP CONSTRAINT clases_codigo_clase_key,
     ADD CONSTRAINT clases_institucion_codigo_clase_key UNIQUE (institucion_id, codigo_clase);
 
--- 3. Llaves compuestas: una referencia solo es valida dentro de la misma
---    institucion. Los nombres de las llaves no cambian.
 ALTER TABLE periodos_lectivos ADD CONSTRAINT periodos_lectivos_id_institucion_key UNIQUE (id, institucion_id);
 ALTER TABLE promociones ADD CONSTRAINT promociones_id_institucion_key UNIQUE (id, institucion_id);
 ALTER TABLE materias ADD CONSTRAINT materias_id_institucion_key UNIQUE (id, institucion_id);
@@ -108,7 +88,6 @@ ALTER TABLE clases
     ADD CONSTRAINT clases_catedratico_id_fkey FOREIGN KEY (catedratico_id, institucion_id)
         REFERENCES catedraticos (id, institucion_id);
 
--- 4. Notas y asistencia: la clase y el estudiante son de la misma institucion.
 CREATE FUNCTION exigir_misma_institucion() RETURNS trigger AS $$
 DECLARE
     de_la_clase UUID;

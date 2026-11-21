@@ -1,9 +1,5 @@
 'use strict';
 
-// Peticiones salientes hacia plataformas externas con proteccion contra SSRF:
-// la direccion se valida en el mismo paso en que se resuelve, no se siguen
-// redirecciones y la respuesta tiene limite de tiempo y de tamano.
-
 const dns = require('node:dns');
 const http = require('node:http');
 const https = require('node:https');
@@ -38,7 +34,6 @@ function esDireccionInterna(direccion) {
   return redesInternas.check(direccion, 'ipv4');
 }
 
-// Devuelve la URL base normalizada (sin barra final) o lanza ErrorDeRed.
 function normalizarUrlBase(texto, { permitirRedPrivada = false } = {}) {
   let url;
   try {
@@ -75,7 +70,6 @@ function resolucionSegura(permitirRedPrivada) {
   };
 }
 
-// Envia un POST y devuelve el JSON de respuesta.
 function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiempoMaximoMs = 10000 } = {}) {
   return new Promise((resolver, rechazar) => {
     const url = new URL(direccion);

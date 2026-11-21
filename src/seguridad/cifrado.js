@@ -1,8 +1,5 @@
 'use strict';
 
-// Cifrado autenticado (AES-256-GCM) para las credenciales de plataformas externas.
-// Formato del texto cifrado: v1.<iv>.<etiqueta>.<datos> en base64url.
-
 const crypto = require('node:crypto');
 
 const VERSION = 'v1';

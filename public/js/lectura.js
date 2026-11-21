@@ -1,15 +1,9 @@
-/* ESOE SMS - Pantallas y tamano del texto.
-   mostrarPantalla deja un solo <main> visible: el del acceso o el de la aplicacion.
-   El tamano del texto escala toda la escala tipografica (definida en rem) y se recuerda en este
-   navegador; si el almacenamiento no esta disponible, simplemente no se recuerda. */
-
 function mostrarPantalla(cual) {
   const enApp = cual === 'app';
   document.getElementById('login-screen').classList.toggle('hidden', enApp);
   document.getElementById('app-shell').classList.toggle('hidden', !enApp);
   document.getElementById('acceso-principal').hidden = enApp;
   document.getElementById('content-area').hidden = !enApp;
-  // Si la sesion se abre durante la presentacion, la presentacion termina.
   if (enApp && typeof cerrarIntro === 'function') cerrarIntro();
 }
 
@@ -28,11 +22,9 @@ function aplicarTamanoTexto(tamano) {
 
 function cambiarTamanoTexto(tamano) {
   const elegido = aplicarTamanoTexto(tamano);
-  try { localStorage.setItem(CLAVE_TAMANO_TEXTO, elegido); } catch { /* sin almacenamiento */ }
+  try { localStorage.setItem(CLAVE_TAMANO_TEXTO, elegido); } catch {}
 }
 
-// Tiempo que un aviso queda en pantalla: alcanza para leerlo con calma, segun su
-// largo (unas 3 palabras por segundo, con un minimo y un tope).
 function duracionAviso(texto) {
   const palabras = String(texto || '').trim().split(/\s+/).filter(Boolean).length;
   return Math.min(12000, Math.max(4000, 1500 + palabras * 350));
@@ -40,6 +32,6 @@ function duracionAviso(texto) {
 
 (function restaurarTamanoTexto() {
   let guardado = null;
-  try { guardado = localStorage.getItem(CLAVE_TAMANO_TEXTO); } catch { /* sin almacenamiento */ }
+  try { guardado = localStorage.getItem(CLAVE_TAMANO_TEXTO); } catch {}
   aplicarTamanoTexto(guardado);
 })();

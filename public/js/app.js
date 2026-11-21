@@ -1,13 +1,9 @@
-/* ==========================================================================
-   PLATAFORMA ESOE - LOGICA DE APLICACION E INTERFAZ (SMS)
-   ========================================================================== */
-
 let store = loadStore();
 document.addEventListener('DOMContentLoaded', () => hydrateStaticIcons());
 
 let appState = {
   authenticated: false,
-  currentRole: 'ADMIN', // 'ADMIN' | 'CATEDRATICO' | 'ESTUDIANTE'
+  currentRole: 'ADMIN',
   currentView: 'dashboard',
   selectedCatedraticoId: '',
   selectedEstudianteId: '',
@@ -24,7 +20,6 @@ let appState = {
   }
 };
 
-// Iconos: Icon Park (ver js/icons.js)
 const fa = (name) => (ICON_SVG[name] || '').replace('<svg', '<svg class="ico" aria-hidden="true"');
 const ICONS = {
   dashboard: fa('dashboard'),
@@ -48,10 +43,6 @@ function hydrateStaticIcons() {
 function emptyState(texto) {
   return `<div class="empty-state">${texto}</div>`;
 }
-
-// ==========================================================================
-// FUNCIONES UTILITARIAS Y CALCULOS DE NEGOCIO
-// ==========================================================================
 
 function getPromocion(id) {
   return store.promociones.find(p => p.id === id) || { nombre: 'Sin asignar', codigo: '-' };
@@ -117,8 +108,6 @@ function calcularPorcentajeAsistencia(claseId, estudianteId) {
 function showToast(mensaje) {
   const container = document.getElementById('toast-container');
   if (!container) return;
-  // Banner de notificacion: escudo, remitente y hora (decorativos para el lector
-  // de pantalla) y el mensaje, que es lo unico que se anuncia.
   const toast = document.createElement('div');
   toast.className = 'toast';
   const icono = document.createElement('img');
@@ -139,15 +128,12 @@ function showToast(mensaje) {
   toast.append(icono, remitente, hora, texto);
   container.appendChild(toast);
 
-  // Sale hacia arriba; con "reducir movimiento" se va sin animar.
   const retirar = () => {
     const sinMovimiento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (sinMovimiento) { toast.remove(); return; }
     toast.classList.add('aviso-sale');
     setTimeout(() => toast.remove(), 300);
   };
-  // El contenedor es una region anunciada (role="status"): el lector de pantalla lo lee.
-  // Dura segun el largo del mensaje y no se va mientras el puntero esta encima.
   let restante = duracionAviso(mensaje);
   let desde = Date.now();
   let reloj = setTimeout(retirar, restante);
@@ -160,10 +146,6 @@ function showToast(mensaje) {
     reloj = setTimeout(retirar, Math.max(restante, 1500));
   });
 }
-
-// ==========================================================================
-// AUTENTICACION Y CAMBIO DE PERFIL
-// ==========================================================================
 
 function selectLoginRole(role) {
   appState.currentRole = role;
@@ -199,7 +181,6 @@ function handleLogout() {
 }
 
 function switchActiveRole(role) {
-  // Con sesion real el rol lo decide el servidor.
   if (sesionReal.activa) return;
   appState.currentRole = role;
   if (role === 'ESTUDIANTE' && ['estructura', 'catedraticos'].includes(appState.currentView)) {
@@ -226,10 +207,6 @@ function navigateTo(view) {
   renderSidebarAndHeader();
   renderMainView();
 }
-
-// ==========================================================================
-// RENDERIZADO DE NAVEGACION Y CABECERA
-// ==========================================================================
 
 function renderSidebarAndHeader() {
   const navContainer = document.getElementById('sidebar-nav');
@@ -267,7 +244,6 @@ function renderSidebarAndHeader() {
 
   navContainer.innerHTML = html;
 
-  // Perfil inferior en Sidebar
   const profileName = document.getElementById('sidebar-user-name');
   const profileRole = document.getElementById('sidebar-user-role');
   const profileAvatar = document.getElementById('sidebar-user-avatar');
@@ -294,15 +270,10 @@ function renderSidebarAndHeader() {
     profileAvatar.textContent = 'AL';
   }
 
-  // Botones de cambio rapido de rol en la barra superior
   document.querySelectorAll('#role-quick-switch button').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.role === role);
   });
 }
-
-// ==========================================================================
-// ENRUTADOR DE VISTAS PRINCIPALES
-// ==========================================================================
 
 function renderMainView() {
   const container = document.getElementById('content-area');
@@ -361,12 +332,6 @@ function renderMainView() {
   }
 }
 
-// ==========================================================================
-// VISTA 1: PANEL DE CONTROL (DASHBOARD)
-// ==========================================================================
-
-// Bienvenida, tomada del Campus Virtual de la UNAH: saludo, accesos directos por
-// rol y las clases como tarjetas con su banda de color.
 const ACCESOS_POR_ROL = {
   ADMIN: [['Ver clases', 'clases'], ['Control de asistencia', 'asistencia'], ['Otras plataformas', 'integraciones']],
   CATEDRATICO: [['Ir a mis clases', 'clases'], ['Tomar asistencia', 'asistencia'], ['Calificar', 'calificaciones']],
@@ -374,7 +339,6 @@ const ACCESOS_POR_ROL = {
 };
 
 function renderBienvenida() {
-  // En la demostracion un estudiante puede no tener expediente elegido: se saluda por su perfil.
   const visible = (document.getElementById('sidebar-user-name').textContent || '').trim();
   const perfiles = { ADMIN: 'Administración', CATEDRATICO: 'Catedrático', ESTUDIANTE: 'Estudiante' };
   const nombre = visible && !/^no asignado$/i.test(visible) ? visible : (perfiles[appState.currentRole] || 'Usuario');
@@ -417,7 +381,6 @@ function renderDashboardView() {
   const totalPromociones = store.promociones.length;
   const totalCatedraticos = store.catedraticos.length;
 
-  // Calcular tasa de aprobacion global (>= 70%)
   let aprobadas = 0;
   store.calificaciones.forEach(c => {
     if (calcularNotaFinal(c) >= 70) aprobadas++;
@@ -533,10 +496,6 @@ function irAAsistenciaDeClase(claseId) {
   navigateTo('asistencia');
 }
 
-// ==========================================================================
-// VISTA 2: ESTRUCTURA ACADEMICA (4 MODALIDADES DE PERIODO Y PROMOCIONES)
-// ==========================================================================
-
 function renderEstructuraView() {
   const periodosRows = store.periodos.map(p => `
     <tr>
@@ -616,10 +575,6 @@ function renderEstructuraView() {
     </div>
   `;
 }
-
-// ==========================================================================
-// VISTA 3: EXPEDIENTES DE ESTUDIANTES
-// ==========================================================================
 
 function renderEstudiantesView() {
   const search = appState.filters.estudianteSearch.toLowerCase();
@@ -740,10 +695,6 @@ function verBoletinDeEstudiante(estudianteId) {
   navigateTo('boletin');
 }
 
-// ==========================================================================
-// VISTA 4: PLANTA DE CATEDRATICOS
-// ==========================================================================
-
 function renderCatedraticosView() {
   const search = appState.filters.catedraticoSearch.toLowerCase();
 
@@ -819,10 +770,6 @@ function renderCatedraticosView() {
     </div>
   `;
 }
-
-// ==========================================================================
-// VISTA 5: CARGA ACADEMICA Y ASIGNACION DE CLASES
-// ==========================================================================
 
 function renderClasesView() {
   const promFilter = appState.filters.clasePromocion;
@@ -922,10 +869,6 @@ function renderClasesView() {
   `;
 }
 
-// ==========================================================================
-// VISTA 6: CONTROL DE ASISTENCIA POR CLASE
-// ==========================================================================
-
 function renderAsistenciaView() {
   if (!store.clases.length) return emptyState('Aún no hay clases registradas.');
   const claseId = appState.filters.asistenciaClaseId || store.clases[0]?.id;
@@ -938,7 +881,6 @@ function renderAsistenciaView() {
 
   const alumnosSeccion = store.estudiantes.filter(e => e.promocionId === claseActual.promocionId);
 
-  // Buscar o inicializar sesion de asistencia para esa clase y fecha
   let sesion = store.asistencias.find(a => a.claseId === claseActual.id && a.fecha === fecha);
   if (!sesion) {
     sesion = {
@@ -1101,10 +1043,6 @@ function guardarSesionAsistencia() {
   showToast('Acta de asistencia de clase guardada correctamente');
 }
 
-// ==========================================================================
-// VISTA 7: LIBRO DE CALIFICACIONES (0% - 100%, APROBACION >= 70%)
-// ==========================================================================
-
 function renderCalificacionesView() {
   if (!store.clases.length) return emptyState('Aún no hay clases registradas.');
   const claseId = appState.filters.notasClaseId || store.clases[0]?.id;
@@ -1219,10 +1157,6 @@ function actualizarNota(claseId, estudianteId, campo, valor) {
   saveStore(store);
   renderMainView();
 }
-
-// ==========================================================================
-// VISTA 8: BOLETIN OFICIAL DE CALIFICACIONES Y EXPEDIENTE DEL ALUMNO
-// ==========================================================================
 
 function renderBoletinView() {
   if (!store.estudiantes.length) return emptyState('Aún no hay estudiantes registrados.');
@@ -1339,10 +1273,6 @@ function renderBoletinView() {
     </div>
   `;
 }
-
-// ==========================================================================
-// VENTANAS MODALES DE CREACION Y DETALLE
-// ==========================================================================
 
 function openModal(titulo, bodyHtml) {
   document.getElementById('modal-title').textContent = titulo;

@@ -1,9 +1,5 @@
 'use strict';
 
-// SMS-06. Instituciones que usan la plataforma (ESOE, UDH, INFOP, COPECO...).
-// Cualquier sesion las consulta; la propia viene marcada. Los datos academicos de
-// cada una se leen y escriben solo desde su institucion (ver src/permisos.js).
-
 const express = require('express');
 
 function crearRutasInstituciones({ auth, db, permisos }) {

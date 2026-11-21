@@ -1,9 +1,3 @@
-// Plano del campus: la misma isla, edificios, camino y puntos que el dibujo
-// public/img/campus-esoe.svg, en coordenadas del plano (x hacia la derecha-abajo,
-// y hacia la izquierda-abajo en la vista isometrica; una unidad = un "paso").
-// Es puro: sin navegador ni Three.js, para poder probarlo en Node.
-
-// Generador con semilla: el mismo campus en cada visita.
 export function azar(semilla) {
   let a = semilla >>> 0;
   return () => {
@@ -15,7 +9,6 @@ export function azar(semilla) {
   };
 }
 
-// Contorno organico: una elipse con tres ondulaciones superpuestas.
 export function contorno(rx, ry, { cx = 0, cy = 0, n = 72, amp = 0.09, semilla = 3 } = {}) {
   const r = azar(semilla);
   const fases = [r() * 6.28, r() * 6.28, r() * 6.28];
@@ -28,7 +21,6 @@ export function contorno(rx, ry, { cx = 0, cy = 0, n = 72, amp = 0.09, semilla =
   return puntos;
 }
 
-// Techos: el color sale de la paleta de marca (variables de :root).
 export const EDIFICIOS = {
   direccion: { x: -4, y: -8.5, w: 5, d: 2.6, h: 2.6, techo: '--marca-5' },
   aulas: { x: 4.5, y: -6.5, w: 2.6, d: 6, h: 2.2, techo: '--marca-1' },
@@ -45,7 +37,6 @@ export const MUELLE = { x: 14.6, y: -0.6, w: 3.2, d: 1.2 };
 export const ISLA = { rx: 15.5, ry: 13.2, alto: 1.1 };
 export const ANILLO = { rx: 10.2, ry: 8.6, ancho: 0.75 };
 
-// Donde se ancla cada punto numerado (en la cima de su edificio).
 export function anclas() {
   const res = {};
   for (const [clave, e] of Object.entries(EDIFICIOS)) {
@@ -56,7 +47,6 @@ export function anclas() {
   return res;
 }
 
-// Arboles: al azar con semilla, fuera de edificios, plaza, camino y torre.
 export function arboles(cantidad = 72) {
   const r = azar(4);
   const ocupado = Object.values(EDIFICIOS).map((e) => [e.x, e.y, e.w, e.d])

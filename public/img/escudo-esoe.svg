@@ -1,8 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" role="img" aria-labelledby="escudo-titulo">
   <title id="escudo-titulo">Escudo de la Escuela de Suboficiales del Ejército (E.S.O.E.): Pro Patri Mori</title>
-  <!-- Redibujo vectorial del escudo institucional. Conserva sus colores
-       oficiales; la paleta de la interfaz no lo recolorea. Cada grupo lleva un
-       id para poder animarlo pieza por pieza. -->
   <defs>
     <linearGradient id="columna" x1="0" x2="1">
       <stop offset="0" stop-color="#9C8560"/>
@@ -24,7 +21,6 @@
   </defs>
 
   <g id="campo">
-    <!-- Campo naranja: recto arriba, cerrado abajo por la cinta en arco -->
     <path d="M 92 92 H 308 V 300 Q 200 372 92 300 Z" fill="#EE5A1F" stroke="#1A1A1A" stroke-width="3"/>
   </g>
 
@@ -69,10 +65,8 @@
   </g>
 
   <g id="pluma-laurel">
-    <!-- Pluma: del borde izquierdo hacia el centro -->
     <path d="M 130 296 C 160 300 186 306 206 318" stroke="#5A3A12" stroke-width="5" fill="none" stroke-linecap="round"/>
     <path d="M 130 296 C 150 290 170 296 186 306" stroke="#E0B23A" stroke-width="3" fill="none" stroke-linecap="round"/>
-    <!-- Laurel: hojas a lo largo de una rama hacia la derecha -->
     <path d="M 206 318 C 232 312 256 300 278 282" stroke="#1F6B2E" stroke-width="3" fill="none"/>
     <g fill="#2E8B3E" stroke="#174F22" stroke-width="1">
       <ellipse cx="222" cy="308" rx="11" ry="4.5" transform="rotate(-35 222 308)"/>

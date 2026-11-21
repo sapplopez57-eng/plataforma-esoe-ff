@@ -1,10 +1,3 @@
-/* ESOE SMS - Delegacion de eventos.
-   Sustituye los atributos onclick/onchange/oninput/onsubmit en linea por data-on-<evento>, de modo que la
-   politica de contenido no necesita 'unsafe-inline' para scripts. No usa eval ni Function: cada atributo se
-   interpreta con una gramatica cerrada:  nombre(arg, ...)[; nombre(arg, ...)]
-   Argumentos admitidos: texto entre comillas simples, numeros, true, false, null, event, this,
-   this.value y this.dataset.<campo>. Solo se invocan funciones globales definidas por la aplicacion. */
-
 (function (raiz) {
   'use strict';
 
@@ -15,7 +8,6 @@
     'prompt', 'importScripts', 'XMLHttpRequest', 'WebSocket', 'require', 'import'
   ]);
 
-  // Divide por un separador respetando las comillas simples.
   function dividir(texto, separador) {
     const partes = [];
     let actual = '';

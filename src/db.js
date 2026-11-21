@@ -8,8 +8,6 @@ function crearBaseDeDatos(databaseUrl) {
   pool.on('error', (error) => console.error('[ESOE-SMS] Error en la conexion a la base de datos:', error.message));
   return {
     consultar: (texto, parametros) => pool.query(texto, parametros),
-    // Lo que tiene que ser atomico usa un solo cliente: BEGIN, el trabajo y
-    // COMMIT, o ROLLBACK si algo falla. El cliente vuelve al pool siempre.
     transaccion: async (trabajo) => {
       const cliente = await pool.connect();
       try {

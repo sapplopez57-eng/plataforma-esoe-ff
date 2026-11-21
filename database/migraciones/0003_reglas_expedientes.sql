@@ -1,6 +1,3 @@
--- SMS-03. Las reglas de los expedientes tambien viven en la base, para que
--- ningun camino que no sea la API pueda romperlas.
-
 ALTER TABLE estudiantes
     ADD CONSTRAINT estudiante_tipo_sangre_valido
         CHECK (tipo_sangre IS NULL OR tipo_sangre IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),

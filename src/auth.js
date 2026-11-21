@@ -1,12 +1,5 @@
 'use strict';
 
-// Autenticacion con Clerk. La identidad y el rol salen siempre de la sesion
-// verificada en el servidor; la interfaz no decide nada.
-//
-// El rol vive en los metadatos publicos del usuario en Clerk: { "rol": "ADMIN" }.
-// Para evitar una consulta por peticion, la plantilla del token de sesion debe
-// incluir:  { "metadata": "{{user.public_metadata}}" }
-
 const { clerkMiddleware, getAuth, createClerkClient } = require('@clerk/express');
 
 const ROLES = Object.freeze(['ADMIN', 'CATEDRATICO', 'ESTUDIANTE']);
@@ -68,8 +61,6 @@ function crearAutenticacion(config) {
     });
   }
 
-  // Solo se aceptan sesiones enviadas en la cabecera Authorization. Una cookie
-  // no basta: asi un sitio ajeno no puede disparar acciones con la sesion abierta.
   async function exigirSesion(req, res, next) {
     try {
       if (!/^Bearer \S+$/.test(req.get('authorization') || '')) {
@@ -90,8 +81,6 @@ function crearAutenticacion(config) {
     }
   }
 
-  // El middleware que devuelve lleva nombre a proposito: una prueba recorre las
-  // rutas registradas y reconoce por el nombre que cada una tiene su guardian.
   function exigirRol(...rolesPermitidos) {
     return function guardianDeRol(req, res, next) {
       exigirSesion(req, res, (error) => {

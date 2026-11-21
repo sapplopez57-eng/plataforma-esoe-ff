@@ -1,6 +1,3 @@
--- SMS-02. Las reglas de la estructura academica tambien en la base: la API las
--- valida primero, y la base las sostiene aunque alguien escriba sin pasar por ella.
-
 ALTER TABLE periodos_lectivos
     ADD CONSTRAINT periodo_fechas_en_orden CHECK (fecha_fin > fecha_inicio);
 

@@ -1,32 +1,11 @@
 'use strict';
 
-// SMS-01. Migraciones versionadas.
-//
-// Cada archivo de database/migraciones/ es un paso del esquema: NNNN_descripcion.sql.
-// La tabla migraciones_aplicadas guarda cuales se aplicaron y la huella de su
-// contenido. Ejecutar migrar() sobre una base vacia la lleva a la ultima
-// version; ejecutarlo otra vez no hace nada.
-//
-// Tres decisiones que no son obvias:
-//
-// 1. Recibe un cliente de UNA conexion, nunca el pool de la aplicacion. Una
-//    transaccion tiene que ir entera por la misma conexion: con un pool, BEGIN y
-//    COMMIT pueden salir por conexiones distintas y la migracion queda a medias
-//    sin que nada falle.
-// 2. Toma un candado de PostgreSQL antes de mirar nada. Si dos instancias
-//    arrancan a la vez, la segunda espera y luego encuentra todo aplicado, en
-//    lugar de intentar crear las mismas tablas.
-// 3. Una migracion ya aplicada no se edita. Si su contenido cambia, migrar()
-//    se detiene: el cambio nunca llegaria a las bases que ya la tienen, y cada
-//    base quedaria con un esquema distinto. Lo correcto es una migracion nueva.
-
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const DIRECTORIO = path.join(__dirname, '..', 'database', 'migraciones');
 const NOMBRE_VALIDO = /^(\d{4})_([a-z0-9_]+)\.sql$/;
-// Numero fijo que identifica el candado de migraciones en pg_advisory_lock.
 const CANDADO = 815_042_001;
 
 class ErrorDeMigracion extends Error {
@@ -41,8 +20,6 @@ function huella(contenido) {
   return crypto.createHash('sha256').update(contenido, 'utf8').digest('hex');
 }
 
-// Lee y valida el directorio sin tocar la base: un nombre mal escrito o un
-// numero repetido se descubren antes de aplicar nada.
 function leerMigraciones(directorio = DIRECTORIO) {
   const archivos = fs.readdirSync(directorio).filter((n) => n.endsWith('.sql')).sort();
   const migraciones = [];
@@ -70,8 +47,6 @@ function leerMigraciones(directorio = DIRECTORIO) {
   return migraciones;
 }
 
-// Las tablas que crea la primera migracion, leidas de la propia migracion para
-// no mantener una lista aparte que se desincronice.
 function tablasQueCrea(contenido) {
   return [...contenido.matchAll(/CREATE TABLE\s+(?:IF NOT EXISTS\s+)?([a-z_][a-z0-9_]*)/gi)].map((m) => m[1].toLowerCase());
 }
@@ -84,7 +59,7 @@ async function adoptarBaseExistente(cliente, primera, registrar) {
       WHERE table_schema = current_schema() AND table_name = ANY($1)`,
     [esperadas]
   );
-  if (rows.length === 0) return false;              // base vacia: se migra normal
+  if (rows.length === 0) return false;
   if (rows.length < esperadas.length) {
     const hay = new Set(rows.map((r) => r.table_name));
     throw new ErrorDeMigracion(
@@ -118,8 +93,6 @@ async function migrar({ cliente, directorio = DIRECTORIO, registrar = () => {} }
       )`);
     let { rows } = await cliente.query('SELECT version, nombre, huella FROM migraciones_aplicadas ORDER BY version');
 
-    // Una base creada antes de las migraciones (con el antiguo schema.sql) tiene
-    // las tablas pero no el registro. Aplicar la 0001 encima fallaria; se adopta.
     let adoptada = false;
     if (rows.length === 0 && migraciones.length > 0) {
       adoptada = await adoptarBaseExistente(cliente, migraciones[0], registrar);
@@ -127,8 +100,6 @@ async function migrar({ cliente, directorio = DIRECTORIO, registrar = () => {} }
     }
     const aplicadas = new Map(rows.map((r) => [r.version, r]));
 
-    // Una base que tiene una version que el codigo no conoce viene de un
-    // codigo mas nuevo: aplicar encima la dejaria en un estado imposible.
     const ultimaConocida = migraciones.length;
     const ajena = rows.find((r) => r.version > ultimaConocida);
     if (ajena) {

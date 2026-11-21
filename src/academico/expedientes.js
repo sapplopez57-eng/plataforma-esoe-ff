@@ -1,25 +1,9 @@
 'use strict';
 
-// SMS-03. Expedientes de estudiantes y catedraticos.
-//
-// Cada rol recibe solo los campos que necesita, y eso se decide en la consulta:
-// lo que un rol no debe ver nunca sale de la base, en lugar de salir y borrarse
-// despues. La pertenencia la deciden los guardianes de src/permisos.js (SEC-06).
-//
-//   Estudiante  ADMIN y el propio estudiante: todo.
-//               Catedratico (solo a quienes da clase): lo necesario para el aula,
-//               sin DNI, fecha de nacimiento, sangre, direccion ni contactos.
-//   Catedratico ADMIN y el propio catedratico: todo.
-//               Los demas: nombre, titulo, condicion y grado de los activos.
-//
-// Escribir es solo de la administracion, con la misma validacion de SMS-02.
-
 const express = require('express');
 const { validar } = require('./validacion');
 const { esUuid } = require('../permisos');
 
-// Cada lista dice que campos salen hacia el cliente; la consulta se arma con
-// ellas, asi que lo que se prueba es exactamente lo que se envia.
 const CAMPOS = {
   estudianteCompleto: ['id', 'codigo_alumno', 'dni', 'nombres', 'apellidos', 'condicion', 'grado',
     'fecha_nacimiento', 'tipo_sangre', 'telefono', 'correo', 'direccion', 'lugar_procedencia',
@@ -29,7 +13,6 @@ const CAMPOS = {
   catedraticoDirectorio: ['id', 'nombres', 'apellidos', 'titulo', 'condicion', 'grado']
 };
 
-// Las fechas salen como texto AAAA-MM-DD, sin zona horaria de por medio.
 const FECHAS = ['fecha_nacimiento'];
 const seleccion = (campos) => campos
   .map((c) => (FECHAS.includes(c) ? `to_char(${c}, 'YYYY-MM-DD') AS ${c}` : c))
@@ -55,7 +38,6 @@ const CATEDRATICO = {
 
 const rechazar = (res, campos) => res.status(422).json({ error: 'Hay datos que corregir.', campos });
 
-// Errores de la base que son de los datos y no del servidor.
 function traducirError(error, recurso) {
   if (!error) return null;
   if (error.code === '23505') {
@@ -74,7 +56,6 @@ function crearRutasExpedientes({ auth, db, permisos }) {
 
   const { resolverVinculo, exigirEstudiantePropio } = permisos;
   const conSesion = [auth.exigirSesion, resolverVinculo];
-  // SMS-06: la administracion escribe solo en su institucion.
   const soloAdministracion = [auth.exigirRol('ADMIN'), resolverVinculo];
 
   const privado = (res) => res.set('Cache-Control', 'no-store');
@@ -121,11 +102,6 @@ function crearRutasExpedientes({ auth, db, permisos }) {
     }
   }
 
-  // --- Estudiantes ----------------------------------------------------------
-
-  // La administracion ve todos (o los de una promocion); un catedratico, los de
-  // las promociones a las que da clase y con los campos del aula; un estudiante,
-  // solo el suyo.
   rutas.get('/estudiantes', ...conSesion, async (req, res, next) => {
     try {
       const { rol } = req.identidad;
@@ -173,8 +149,6 @@ function crearRutasExpedientes({ auth, db, permisos }) {
 
   rutas.post('/estudiantes', ...soloAdministracion, (req, res, next) => crear(ESTUDIANTE, req, res, next));
   rutas.put('/estudiantes/:id', ...soloAdministracion, (req, res, next) => editar(ESTUDIANTE, req, res, next));
-
-  // --- Catedraticos ---------------------------------------------------------
 
   rutas.get('/catedraticos', ...conSesion, async (req, res, next) => {
     try {

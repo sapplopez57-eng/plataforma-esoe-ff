@@ -1,18 +1,9 @@
-/* ESOE SMS - Datos desde el servidor (SMS-05).
-   Con sesion real, `store` se llena desde la API y cada cambio se envia al servidor: dos personas en
-   equipos distintos ven lo mismo. Nada de esos datos se guarda en el navegador (ver saveStore en
-   data.js). Sin servidor, la interfaz sigue en modo demostracion con el almacenamiento local.
-   Los nombres de la API (snake_case) se traducen aqui a los que usan las vistas (camelCase), para que
-   las vistas no cambien. Todo texto que llega del servidor se pinta con esc(). */
-
 const datosServidor = { cargando: false, aviso: '' };
 
 const NOTA_EN_SERVIDOR = { parcial1: 'parcial_1', parcial2: 'parcial_2', parcial3: 'parcial_3', acumulativo: 'acumulativo' };
 
 const aNumero = (v) => (v === null || v === undefined ? 0 : Number(v));
 const aTexto = (v) => (v === null || v === undefined ? '' : String(v));
-
-// --- De la API a las vistas --------------------------------------------------
 
 const traducir = {
   periodo: (p) => ({
@@ -31,7 +22,6 @@ const traducir = {
     condicion: c.condicion, grado: aTexto(c.grado), telefono: aTexto(c.telefono), correo: aTexto(c.correo),
     activo: c.activo !== false
   }),
-  // Un catedratico recibe menos campos que la administracion (SMS-03): los que faltan quedan vacios.
   estudiante: (e) => ({
     id: e.id, codigoAlumno: e.codigo_alumno, dni: aTexto(e.dni), nombres: e.nombres, apellidos: e.apellidos,
     condicion: e.condicion, grado: aTexto(e.grado), promocionId: e.promocion_id,
@@ -51,7 +41,6 @@ const traducir = {
   })
 };
 
-// Filas planas de asistencia (una por estudiante y sesion) a sesiones con sus registros.
 function agruparAsistencia(claseId, filas) {
   const sesiones = new Map();
   filas.forEach((f) => {
@@ -65,7 +54,6 @@ function agruparAsistencia(claseId, filas) {
   return [...sesiones.values()];
 }
 
-// Pide varias rutas a la vez; una que falla deja su parte vacia y se recuerda por que.
 async function pedirVarias(rutas) {
   const resultados = await Promise.allSettled(rutas.map((r) => api(r)));
   return resultados.map((r) => {
@@ -95,7 +83,6 @@ async function cargarDesdeServidor() {
   nuevo.estudiantes = (estudiantes?.estudiantes || []).map(traducir.estudiante);
 
   if (rol === 'ESTUDIANTE') {
-    // Solo recibe su propio expediente: es el del boletin.
     const propio = nuevo.estudiantes[0];
     if (propio) {
       appState.selectedEstudianteId = propio.id;
@@ -130,9 +117,6 @@ async function recargarDesdeServidor() {
   renderMainView();
 }
 
-// --- De las vistas a la API --------------------------------------------------
-
-// Quita los opcionales vacios: la API los trata como ausentes.
 function sinVacios(objeto) {
   return Object.fromEntries(Object.entries(objeto).filter(([, v]) => v !== '' && v !== null && v !== undefined));
 }
@@ -175,7 +159,6 @@ const PARA_LA_API = {
   })
 };
 
-// El primer motivo que dio el servidor, en lenguaje de la persona.
 function motivoDelServidor(error) {
   const campos = error && error.campos;
   if (campos) {

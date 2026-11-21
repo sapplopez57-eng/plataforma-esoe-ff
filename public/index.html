@@ -11,11 +11,6 @@
 </head>
 <body>
 
-  <!-- ====================================================================
-       PANTALLA DE ACCESO INSTITUCIONAL (LOGIN)
-       ==================================================================== -->
-  <!-- Presentacion: el escudo animado (video). Se ve una vez por sesion,
-       se puede saltar y no aparece con "reducir movimiento". -->
   <div id="intro" class="intro" role="dialog" aria-modal="true" aria-label="Presentación de la ESOE" hidden>
     <video class="intro-video" muted playsinline preload="auto" poster="video/escudo-esoe.jpg" aria-hidden="true">
       <source src="video/escudo-esoe.webm" type="video/webm">
@@ -35,8 +30,6 @@
   </div>
 
   <div id="login-screen" class="login-screen">
-    <!-- Escena: plano ilustrativo del campus. Es ambientacion: no lleva informacion
-         que no este tambien en el texto. -->
     <div class="escena" aria-hidden="true">
       <div class="escena-plano">
         <img src="img/campus-esoe.svg" alt="" width="1200" height="900">
@@ -154,15 +147,10 @@
     </div>
   </div>
 
-  <!-- ====================================================================
-       APLICACION PRINCIPAL (SHELL)
-       ==================================================================== -->
   <div id="app-shell" class="app-shell hidden">
     <a class="saltar-contenido" href="#content-area">Saltar al contenido</a>
-    <!-- Overlay para menu movil -->
     <div id="sidebar-overlay" class="sidebar-overlay" data-on-click="closeMobileSidebar()"></div>
 
-    <!-- Barra Lateral (Sidebar) -->
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-brand">
@@ -191,7 +179,6 @@
       </div>
     </aside>
 
-    <!-- Contenedor Principal -->
     <div class="main-wrapper">
       <header class="topbar">
         <div class="topbar-left">
@@ -230,9 +217,6 @@
     </div>
   </div>
 
-  <!-- ====================================================================
-       VENTANA MODAL REUTILIZABLE
-       ==================================================================== -->
   <div id="modal-backdrop" class="modal-backdrop hidden">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -245,7 +229,6 @@
     </div>
   </div>
 
-  <!-- Contenedor de Notificaciones -->
   <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
   <script src="js/icons.js"></script>

@@ -17,7 +17,6 @@ const { crearRutasInstituciones } = require('./academico/instituciones');
 const DIRECTORIO_PUBLICO = path.join(__dirname, '..', 'public');
 
 function politicaDeContenido(config) {
-  // Con Clerk activo el navegador carga su script y habla con su API.
   const clerk = config.clerk.habilitado ? [`https://${config.clerk.dominio}`] : [];
   const desafio = config.clerk.habilitado ? ['https://challenges.cloudflare.com'] : [];
   return {
@@ -25,7 +24,6 @@ function politicaDeContenido(config) {
     directives: {
       'default-src': ["'self'"],
       'script-src': ["'self'", ...clerk, ...desafio],
-      // Sin manejadores en linea: los eventos se delegan desde public/js/eventos.js.
       'script-src-attr': ["'none'"],
       'style-src': ["'self'", "'unsafe-inline'"],
       'font-src': ["'self'"],
@@ -55,7 +53,6 @@ function crearApp(config, dependencias = {}) {
     crossOriginEmbedderPolicy: false
   }));
 
-  // Sin lista de origenes la API solo se consume desde el mismo origen.
   if (config.origenesPermitidos.length > 0) {
     app.use('/api', cors({ origin: config.origenesPermitidos, credentials: true }));
   }
@@ -70,8 +67,6 @@ function crearApp(config, dependencias = {}) {
 
   app.use(express.json({ limit: '100kb' }));
 
-  // Salud del servicio y de su base. Un monitor externo (o el HEALTHCHECK del
-  // contenedor) ve 503 si la base no responde; el motivo interno no se expone.
   app.get('/api/health', async (req, res) => {
     res.set('Cache-Control', 'no-store');
     const cuerpo = { status: 'OK', service: 'ESOE-SMS-Platform', timestamp: new Date().toISOString() };
@@ -90,7 +85,6 @@ function crearApp(config, dependencias = {}) {
     }
   });
 
-  // Datos publicos que la interfaz necesita para iniciar sesion. Ninguno es secreto.
   app.get('/api/config', (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.json({
@@ -110,7 +104,6 @@ function crearApp(config, dependencias = {}) {
 
   app.use('/api/integraciones', crearRutasDeIntegraciones({ config, auth, db }));
 
-  // Consultas academicas: cada una tras su guardian de pertenencia (SEC-06).
   const permisos = db ? crearPermisos(db) : null;
   app.use('/api', crearRutasAcademicas({ auth, db, permisos }));
   app.use('/api', crearRutasEstructura({ auth, db, permisos }));
@@ -132,7 +125,6 @@ function crearApp(config, dependencias = {}) {
     res.status(404).type('text/plain').send('No encontrado');
   });
 
-  // Express identifica el manejador de errores por sus cuatro parametros.
   app.use((err, req, res, _next) => {
     const estado = err.status && err.status >= 400 && err.status < 500 ? err.status : 500;
     if (estado === 500) console.error('[ESOE-SMS] Error no controlado:', err.message);

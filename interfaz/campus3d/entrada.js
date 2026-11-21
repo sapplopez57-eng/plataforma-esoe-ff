@@ -1,8 +1,3 @@
-// Campus 3D de la pantalla de acceso (Three.js). Se construye con el mismo plano
-// que el dibujo SVG y con los colores de :root, asi que la paleta sigue siendo
-// una sola. Si no hay WebGL o la persona pidio reducir el movimiento, no se carga
-// y queda el dibujo. Se compila con: npm run construir:campus
-
 import {
   Scene, PerspectiveCamera, WebGLRenderer, Color, Fog, Vector3, Shape, ExtrudeGeometry, ShapeGeometry,
   BoxGeometry, CylinderGeometry, ConeGeometry, IcosahedronGeometry, PlaneGeometry, RingGeometry, SphereGeometry,
@@ -51,7 +46,6 @@ function materiales(raiz) {
   };
 }
 
-// Del plano (x, y) al mundo (x, altura, y).
 const enMundo = (x, y, z = 0) => new Vector3(x, z, y);
 
 function forma(puntos) {
@@ -61,7 +55,6 @@ function forma(puntos) {
   return s;
 }
 
-// Una superficie plana con la forma de un contorno, apoyada a cierta altura.
 function lamina(puntos, material, altura) {
   const g = new ShapeGeometry(forma(puntos));
   g.rotateX(Math.PI / 2);
@@ -85,7 +78,6 @@ function construirIsla(grupo, mat) {
   }
 }
 
-// Cinta del camino a lo largo del anillo, con su raya discontinua.
 function construirCamino(grupo, mat) {
   const ruta = contorno(ANILLO.rx, ANILLO.ry, { n: 90, amp: 0.04, semilla: 5 });
   const curva = new CatmullRomCurve3(ruta.map(([x, y]) => enMundo(x, y, 0.06)), true);
@@ -120,7 +112,6 @@ function construirCamino(grupo, mat) {
   }
   grupo.add(rayas);
 
-  // Accesos al muelle y a la costa.
   for (const [x, y, w, d] of [[-0.35, 8.6, 0.7, 5], [10.2, -0.35, 4.6, 0.7]]) {
     const tramo = new Mesh(new BoxGeometry(w, 0.05, d), mat.camino);
     tramo.position.copy(enMundo(x + w / 2, y + d / 2, 0.06));
@@ -155,7 +146,6 @@ function construirEdificios(grupo, mat) {
     cuerpo.receiveShadow = true;
     grupo.add(cuerpo);
 
-    // Techo a dos aguas: un prisma triangular a lo largo del edificio.
     const perfil = new Shape();
     perfil.moveTo(-e.d / 2 - 0.15, 0);
     perfil.lineTo(e.d / 2 + 0.15, 0);
@@ -231,9 +221,7 @@ function construirTorre(grupo, mat) {
   const foco = new Mesh(new SphereGeometry(0.2, 16, 12), new MeshBasicMaterial({ color: mat.ambar }));
   foco.position.y = TORRE.h + 0.38;
   torre.add(foco);
-  // Haz: un cono traslucido que gira, como el de un faro.
   const haz = new Group();
-  // Angosto y algo inclinado hacia el mar, para que no tape la isla.
   const cono = new Mesh(new ConeGeometry(1.2, 13, 24, 1, true), new MeshBasicMaterial({
     color: mat.ambar, transparent: true, opacity: 0.1, blending: AdditiveBlending, depthWrite: false, side: DoubleSide
   }));
@@ -312,7 +300,6 @@ function construirAves(grupo, mat) {
   });
 }
 
-// Mar: una malla que ondula, mas clara cerca de la isla y honda hacia el borde.
 function construirMar(grupo, mat) {
   const g = new PlaneGeometry(260, 260, 110, 110);
   g.rotateX(-Math.PI / 2);
@@ -334,7 +321,6 @@ function construirMar(grupo, mat) {
   return { mar, base: Float32Array.from(pos.array), material };
 }
 
-// Espuma en la orilla: un anillo blanco que late con las olas.
 function construirEspuma(grupo, mat) {
   const borde = contorno(ISLA.rx, ISLA.ry);
   const exterior = forma(borde.map(([x, y]) => [x * 1.07, y * 1.07]));
@@ -347,7 +333,6 @@ function construirEspuma(grupo, mat) {
   return espuma;
 }
 
-// Cadetes en formacion: tres filas que marchan de un lado a otro de la plaza.
 function construirCadetes(grupo, mat) {
   const filas = 3;
   const columnas = 6;
@@ -360,7 +345,6 @@ function construirCadetes(grupo, mat) {
 
 function moverCadetes({ cuerpos, gorras, filas, columnas }, t) {
   const o = new Object3D();
-  // Ida y vuelta a lo largo de la plaza, con media vuelta en cada extremo.
   const ciclo = (t / 9) % 2;
   const avance = ciclo < 1 ? ciclo : 2 - ciclo;
   const suave = avance * avance * (3 - 2 * avance);
@@ -386,7 +370,6 @@ function moverCadetes({ cuerpos, gorras, filas, columnas }, t) {
   gorras.instanceMatrix.needsUpdate = true;
 }
 
-// Etiquetas que chocan en pantalla se quedan con su numero.
 function ordenarEtiquetas(marcas) {
   const ocupados = [];
   const visibles = [...marcas].sort((a, b) => a.y - b.y);
@@ -429,8 +412,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
   sol.shadow.bias = -0.0008;
   escena.add(cielo, sol);
 
-  // Solo en el equipo de desarrollo: las pruebas visuales leen la escena y el
-  // renderizador desde window. En produccion no se publica nada.
   if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
     window.scene = escena;
     window.__renderer__ = renderer;
@@ -454,7 +435,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
   const cadetes = construirCadetes(mundo, mat);
 
   const anclaje = anclas();
-  // anclas() da [x del plano, altura, y del plano].
   const marcas = puntos
     .filter((el) => anclaje[el.dataset.punto])
     .map((el) => {
@@ -462,7 +442,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
       return { el, ancla: enMundo(x, y, altura), anchoCompleto: el.offsetWidth, compacto: false, x: 0, y: 0 };
     });
 
-  // Camara: vista isometrica, se acerca al llegar, respira y sigue al puntero.
   const objetivo = new Vector3(0.5, 0, 0.5);
   const puntero = { x: 0, y: 0, ax: 0, ay: 0 };
   contenedor.ownerDocument.addEventListener('pointermove', (e) => {
@@ -484,7 +463,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
   new ResizeObserver(ajustar).observe(contenedor);
   ajustar();
 
-  // Noche: cambia la luz poco a poco, nunca de golpe.
   let noche = raiz.hasAttribute('data-noche') ? 1 : 0;
   let nocheObjetivo = noche;
   const nieblaDia = mat.papel();
@@ -502,7 +480,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     if (detenido) return;
     requestAnimationFrame(cuadro);
     if (!contenedor.offsetParent || !ancho) return;
-    // El primer cuadro puede traer una marca de tiempo anterior a inicio: nunca negativo.
     const t = Math.max(0, (ahora - inicio) / 1000);
 
     noche += (nocheObjetivo - noche) * 0.05;
@@ -514,7 +491,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     torre.luz.intensity = MathUtils.lerp(0, 40, noche);
     mar.material.color.setRGB(1, 1, 1).lerp(mat.marNoche, noche * 0.75);
 
-    // Llegada: de lejos y alto a la vista de reposo en ~3 s.
     const llegada = 1 - (1 - Math.min(1, t / 3.2)) ** 3;
     puntero.ax += (puntero.x - puntero.ax) * 0.04;
     puntero.ay += (puntero.y - puntero.ay) * 0.04;
@@ -530,7 +506,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     escena.fog.near = distancia + 14;
     escena.fog.far = distancia + 95;
 
-    // Olas.
     const pos = mar.mar.geometry.attributes.position;
     for (let i = 0; i < pos.count; i += 1) {
       const x = mar.base[i * 3];
@@ -540,7 +515,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     pos.needsUpdate = true;
     mar.mar.geometry.computeVertexNormals();
 
-    // Bandera que ondea.
     const bp = bandera.geometry.attributes.position;
     for (let i = 0; i < bp.count; i += 1) {
       const x = banderaBase[i * 3];
@@ -548,7 +522,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
     }
     bp.needsUpdate = true;
 
-    // El haz barre el mar por detras de la isla: nunca apunta a la camara.
     torre.haz.rotation.y = 1.4 + Math.sin(t * 0.35) * 1.2;
     espuma.material.opacity = 0.35 + Math.sin(t * 1.1) * 0.2;
     espuma.scale.setScalar(1 + Math.sin(t * 1.1) * 0.006);
@@ -576,7 +549,6 @@ export function iniciarCampus3D(contenedor, { raiz = document.documentElement, p
 
     renderer.render(escena, camara);
 
-    // Puntos numerados: siguen a su edificio en pantalla.
     for (const m of marcas) {
       ancla2d.copy(m.ancla).project(camara);
       m.x = ((ancla2d.x + 1) / 2) * ancho;

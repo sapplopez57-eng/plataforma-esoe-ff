@@ -1,10 +1,5 @@
 'use strict';
 
-// Validacion de la estructura academica (SMS-02). Funciones puras: reciben el
-// cuerpo de la peticion y devuelven { datos, campos }. Si `campos` trae algo, la
-// peticion se rechaza con 422 nombrando cada campo y su motivo. Un campo que no
-// esta en la lista se rechaza tambien: nada llega a la base sin haberse revisado.
-
 const MODALIDADES = ['SEMESTRAL', 'CUATRIMESTRAL', 'MODULAR', 'ANUAL'];
 const CONDICIONES = ['MILITAR', 'CIVIL'];
 const ESTADOS_ESTUDIANTE = ['ACTIVO', 'BAJA', 'EGRESADO', 'PERMISO_ESPECIAL'];
@@ -24,7 +19,6 @@ function fechaValida(texto) {
 
 const esEntero = (v) => Number.isInteger(v);
 
-// Cada regla devuelve un mensaje si el valor no sirve, o nada si sirve.
 const reglas = {
   codigo: (max) => (v) => {
     if (typeof v !== 'string' || !v.trim()) return 'Es obligatorio.';
@@ -47,13 +41,11 @@ const reglas = {
   modalidad: (v) => (MODALIDADES.includes(v) ? null : `Modalidad no admitida. Use: ${MODALIDADES.join(', ')}.`),
   fecha: (v) => (fechaValida(v) ? null : 'Debe ser una fecha valida con formato AAAA-MM-DD.'),
   booleano: (v) => (typeof v === 'boolean' ? null : 'Debe ser verdadero o falso.'),
-  // Valor de una lista cerrada; opcional admite null para borrarlo.
   opcion: (lista, { obligatorio = true } = {}) => (v) => {
     if ((v === undefined || v === null) && !obligatorio) return null;
     return lista.includes(v) ? null : `Valor no admitido. Use: ${lista.join(', ')}.`;
   },
   uuid: (v) => (typeof v === 'string' && UUID.test(v) ? null : 'Debe ser un identificador valido.'),
-  // Texto con forma fija (DNI, telefono, correo). Opcional admite null o vacio.
   patron: (expresion, mensaje, max, { obligatorio = true, mayusculas = false } = {}) => (v) => {
     if (v === undefined || v === null || v === '') return obligatorio ? 'Es obligatorio.' : null;
     if (typeof v !== 'string') return 'Debe ser texto.';
@@ -63,7 +55,6 @@ const reglas = {
   }
 };
 
-// Reglas cruzadas comunes a los dos expedientes.
 function reglasDePersona(d, campos) {
   if (d.condicion === 'CIVIL' && d.grado && !campos.grado && !campos.condicion) {
     campos.grado = 'El grado solo aplica al personal militar.';
@@ -104,7 +95,6 @@ const ESQUEMAS = {
     obligatorios: ['codigo', 'nombre'],
     cruzadas: () => {}
   },
-  // SMS-03. Expedientes.
   estudiante: {
     campos: {
       codigo_alumno: reglas.codigo(30),
@@ -147,7 +137,6 @@ const ESQUEMAS = {
     mayusculas: ['dni'],
     cruzadas: reglasDePersona
   },
-  // SMS-04. Carga academica.
   clase: {
     campos: {
       codigo_clase: reglas.codigo(30), periodo_id: reglas.uuid, promocion_id: reglas.uuid,
@@ -160,14 +149,10 @@ const ESQUEMAS = {
   }
 };
 
-// --- SMS-04: notas y asistencia ----------------------------------------------
-
 const NOTAS = ['parcial_1', 'parcial_2', 'parcial_3', 'acumulativo'];
 const ESTADOS_ASISTENCIA = ['PRESENTE', 'AUSENTE', 'TARDANZA', 'EXCUSA'];
 const MAX_REGISTROS = 300;
 
-// Escala 0-100 con hasta dos decimales, como la columna NUMERIC(5,2): un valor
-// con mas decimales se rechaza en lugar de redondearse a escondidas.
 function notaInvalida(v) {
   if (typeof v !== 'number' || !Number.isFinite(v)) return 'Debe ser un numero.';
   if (v < 0 || v > 100) return 'Debe estar entre 0 y 100.';
@@ -175,7 +160,6 @@ function notaInvalida(v) {
   return null;
 }
 
-// Cambio parcial de las notas de un estudiante en una clase.
 function validarNotas(cuerpo) {
   if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo)) {
     return { datos: {}, campos: { _cuerpo: 'Se esperaba un objeto JSON.' } };
@@ -192,7 +176,6 @@ function validarNotas(cuerpo) {
   return { datos, campos };
 }
 
-// Una sesion de asistencia: fecha, tema y un registro por estudiante.
 function validarAsistencia(cuerpo) {
   if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo)) {
     return { datos: {}, campos: { _cuerpo: 'Se esperaba un objeto JSON.' } };
@@ -238,8 +221,6 @@ function validarAsistencia(cuerpo) {
   return { datos, campos };
 }
 
-// actual: al editar, la fila guardada; las reglas cruzadas se aplican sobre la
-// combinacion (lo guardado mas lo que cambia), no solo sobre lo enviado.
 function validar(tipo, cuerpo, { parcial = false, actual = {} } = {}) {
   const esquema = ESQUEMAS[tipo];
   if (!esquema) throw new Error(`Esquema desconocido: ${tipo}`);
@@ -263,7 +244,6 @@ function validar(tipo, cuerpo, { parcial = false, actual = {} } = {}) {
     const mayusculas = esquema.mayusculas || ['codigo'];
     if (typeof valor !== 'string') datos[nombre] = valor;
     else if (mayusculas.includes(nombre)) datos[nombre] = valor.trim().toUpperCase();
-    // Un texto opcional enviado vacio se guarda como ausente, no como ''.
     else datos[nombre] = valor.trim() === '' ? null : valor.trim();
   }
   if (parcial && Object.keys(cuerpo).length === 0) campos._cuerpo = 'No hay nada que cambiar.';

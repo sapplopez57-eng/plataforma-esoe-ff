@@ -1,22 +1,14 @@
--- =============================================================================
--- PLATAFORMA ESOE - SCHOOL MANAGEMENT SYSTEM (SMS)
--- Esquema de Base de Datos Relacional (PostgreSQL)
--- =============================================================================
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. Tipos Enumerados
 CREATE TYPE modalidad_periodo AS ENUM ('SEMESTRAL', 'CUATRIMESTRAL', 'MODULAR', 'ANUAL');
 CREATE TYPE condicion_personal AS ENUM ('MILITAR', 'CIVIL');
 CREATE TYPE rol_usuario AS ENUM ('ADMIN', 'CATEDRATICO', 'ESTUDIANTE');
 CREATE TYPE estado_estudiante AS ENUM ('ACTIVO', 'BAJA', 'EGRESADO', 'PERMISO_ESPECIAL');
 CREATE TYPE estado_asistencia AS ENUM ('PRESENTE', 'AUSENTE', 'TARDANZA', 'EXCUSA');
 
--- 2. Usuarios y Autenticacion
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(60) UNIQUE NOT NULL,
-    -- La identidad y la contrasena las gestiona el proveedor de autenticacion.
     proveedor_id VARCHAR(64) UNIQUE NOT NULL,
     rol rol_usuario NOT NULL,
     nombre_completo VARCHAR(150) NOT NULL,
@@ -26,7 +18,6 @@ CREATE TABLE usuarios (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Periodos Lectivos (4 modalidades habilitadas)
 CREATE TABLE periodos_lectivos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     codigo VARCHAR(30) UNIQUE NOT NULL,
@@ -38,7 +29,6 @@ CREATE TABLE periodos_lectivos (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Promociones
 CREATE TABLE promociones (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     codigo VARCHAR(30) UNIQUE NOT NULL,
@@ -50,15 +40,14 @@ CREATE TABLE promociones (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Expediente de Estudiantes
 CREATE TABLE estudiantes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    codigo_alumno VARCHAR(30) UNIQUE NOT NULL, -- Codigo numerico nivel FFAA
+    codigo_alumno VARCHAR(30) UNIQUE NOT NULL,
     dni VARCHAR(25) UNIQUE NOT NULL,
     nombres VARCHAR(80) NOT NULL,
     apellidos VARCHAR(80) NOT NULL,
     condicion condicion_personal NOT NULL DEFAULT 'MILITAR',
-    grado VARCHAR(60), -- Grado militar en caso de ser militar
+    grado VARCHAR(60),
     fecha_nacimiento DATE NOT NULL,
     tipo_sangre VARCHAR(5),
     telefono VARCHAR(30),
@@ -72,7 +61,6 @@ CREATE TABLE estudiantes (
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. Expediente de Catedraticos
 CREATE TABLE catedraticos (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     dni VARCHAR(25) UNIQUE NOT NULL,
@@ -80,14 +68,13 @@ CREATE TABLE catedraticos (
     apellidos VARCHAR(80) NOT NULL,
     titulo VARCHAR(150) NOT NULL,
     condicion condicion_personal NOT NULL DEFAULT 'MILITAR',
-    grado VARCHAR(60), -- Grado militar en caso de ser militar
+    grado VARCHAR(60),
     correo VARCHAR(120),
     telefono VARCHAR(30),
     activo BOOLEAN DEFAULT TRUE,
     creado_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 8. Catalogo de Materias
 CREATE TABLE materias (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     codigo VARCHAR(20) UNIQUE NOT NULL,
@@ -98,9 +85,6 @@ CREATE TABLE materias (
     activa BOOLEAN DEFAULT TRUE
 );
 
--- 9. Carga Academica / Clases
--- Regla de negocio: 1 Catedratico titular por clase (materia + promocion).
--- Un catedratico puede impartir varias clases, pero cada clase tiene solo 1 titular.
 CREATE TABLE clases (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     codigo_clase VARCHAR(30) UNIQUE NOT NULL,
@@ -114,7 +98,6 @@ CREATE TABLE clases (
     UNIQUE(periodo_id, promocion_id, materia_id)
 );
 
--- 10. Sesiones de Asistencia (Por Clase)
 CREATE TABLE sesiones_asistencia (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     clase_id UUID NOT NULL REFERENCES clases(id) ON DELETE CASCADE,
@@ -134,7 +117,6 @@ CREATE TABLE detalle_asistencia (
     UNIQUE(sesion_id, estudiante_id)
 );
 
--- 11. Calificaciones (Escala 0% - 100%, Aprobacion >= 70%)
 CREATE TABLE calificaciones (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     clase_id UUID NOT NULL REFERENCES clases(id) ON DELETE CASCADE,
@@ -153,7 +135,6 @@ CREATE TABLE calificaciones (
     UNIQUE(clase_id, estudiante_id)
 );
 
--- 12. Conexion con otras plataformas educativas (Moodle, INFOP)
 CREATE TYPE tipo_plataforma AS ENUM ('MOODLE');
 
 CREATE TABLE plataformas_externas (
@@ -166,8 +147,6 @@ CREATE TABLE plataformas_externas (
     creada_en TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Cuenta personal de un usuario en una plataforma externa.
--- El token se guarda cifrado; la contrasena nunca se almacena.
 CREATE TABLE cuentas_externas (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     plataforma_id UUID NOT NULL REFERENCES plataformas_externas(id) ON DELETE CASCADE,

@@ -1,25 +1,15 @@
 'use strict';
 
-// Consultas academicas de solo lectura, cada una tras su guardian de
-// pertenencia (SEC-06). El escribir llega con SMS-04; aqui solo se lee, que es
-// lo que el criterio de aceptacion de SEC-06 necesita para poder demostrarse.
-
 const express = require('express');
 
 function crearRutasAcademicas({ auth, db, permisos }) {
   const rutas = express.Router();
 
-  // Sin base de datos estas consultas no existen, asi que no se registra nada y
-  // responde el 404 general. Un atrapatodo aqui se tragaria toda ruta
-  // desconocida de /api, porque este router se monta en /api y no en un prefijo
-  // propio como el de integraciones.
   if (!db) return rutas;
 
   const { resolverVinculo, exigirClasePropia, exigirEstudiantePropio } = permisos;
   const conSesion = [auth.exigirSesion, resolverVinculo];
 
-  // Las clases que le corresponden a quien pide: todas para la administracion,
-  // las suyas para un catedratico, las de su promocion para un estudiante.
   rutas.get('/clases', ...conSesion, async (req, res, next) => {
     try {
       const { rol } = req.identidad;
@@ -31,7 +21,6 @@ function crearRutasAcademicas({ auth, db, permisos }) {
                       JOIN materias m ON m.id = c.materia_id
                       JOIN promociones p ON p.id = c.promocion_id
                      WHERE c.activa = TRUE AND c.institucion_id = $1`;
-      // SMS-06: siempre dentro de la institucion de quien pide.
       let consulta = `${base} ORDER BY c.codigo_clase`;
       let parametros = [req.vinculo.institucionId];
       if (rol === 'CATEDRATICO') {
@@ -50,7 +39,6 @@ function crearRutasAcademicas({ auth, db, permisos }) {
     }
   });
 
-  // Asistencia de una clase completa: solo su titular o la administracion.
   rutas.get('/clases/:id/asistencia', ...conSesion, exigirClasePropia('id'), async (req, res, next) => {
     try {
       const { rows } = await db.consultar(
@@ -71,8 +59,6 @@ function crearRutasAcademicas({ auth, db, permisos }) {
     }
   });
 
-  // Boletin de un estudiante: el propio estudiante, un catedratico que le da
-  // clase, o la administracion.
   rutas.get('/estudiantes/:id/boletin', ...conSesion, exigirEstudiantePropio('id'), async (req, res, next) => {
     try {
       const { rows } = await db.consultar(
@@ -94,9 +80,6 @@ function crearRutasAcademicas({ auth, db, permisos }) {
     }
   });
 
-  // Asistencia de un estudiante en todas sus clases: el propio estudiante, un
-  // catedratico que le da clase (solo de las clases que imparte) o la
-  // administracion. La interfaz la usa para el porcentaje del boletin.
   rutas.get('/estudiantes/:id/asistencia', ...conSesion, exigirEstudiantePropio('id'), async (req, res, next) => {
     try {
       const soloSusClases = req.identidad.rol === 'CATEDRATICO';

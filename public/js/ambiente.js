@@ -1,16 +1,8 @@
-/* ESOE SMS - Ambiente: reloj, plano del campus, modo noche y sonido ambiental.
-   El sonido se sintetiza en el navegador (Web Audio): un acorde lento y el
-   rumor del mar. No descarga archivos ni suena solo: arranca cuando la persona
-   lo pide y se apaga con el mismo boton. El modo noche se recuerda en este
-   navegador; si el almacenamiento no esta disponible, simplemente no se recuerda. */
-
 const CLAVE_NOCHE = 'esoe.noche';
 
 function marcarBotones(selector, activo) {
   document.querySelectorAll(selector).forEach((boton) => boton.setAttribute('aria-pressed', String(activo)));
 }
-
-// ---------- Reloj ----------
 
 function horaLocal(fecha) {
   const dos = (n) => String(n).padStart(2, '0');
@@ -25,15 +17,11 @@ function actualizarReloj(fecha = new Date()) {
   });
 }
 
-// ---------- Plano ----------
-
 function alternarPlano() {
   const pantalla = document.getElementById('login-screen');
   const oculto = pantalla.classList.toggle('plano-oculto');
   marcarBotones('[data-atlas]', !oculto);
 }
-
-// ---------- Noche ----------
 
 function aplicarNoche(activa) {
   if (activa) document.documentElement.setAttribute('data-noche', '');
@@ -44,14 +32,11 @@ function aplicarNoche(activa) {
 
 function alternarNoche() {
   const activa = aplicarNoche(!document.documentElement.hasAttribute('data-noche'));
-  try { localStorage.setItem(CLAVE_NOCHE, activa ? '1' : '0'); } catch { /* sin almacenamiento */ }
+  try { localStorage.setItem(CLAVE_NOCHE, activa ? '1' : '0'); } catch {}
 }
-
-// ---------- Sonido ----------
 
 const sonido = { contexto: null, maestro: null, activo: false };
 
-// Notas del acorde (La menor con novena): graves y suaves, para acompanar sin distraer.
 const ACORDE = [110, 164.81, 220, 246.94, 329.63];
 
 function construirSonido(Contexto) {
@@ -60,7 +45,6 @@ function construirSonido(Contexto) {
   maestro.gain.value = 0;
   maestro.connect(ctx.destination);
 
-  // Acorde: dos osciladores ligeramente desafinados por nota, por un filtro que respira.
   const filtro = ctx.createBiquadFilter();
   filtro.type = 'lowpass';
   filtro.frequency.value = 700;
@@ -86,7 +70,6 @@ function construirSonido(Contexto) {
     }
   }
 
-  // Mar: ruido filtrado cuyo volumen sube y baja como las olas.
   const muestras = ctx.sampleRate * 2;
   const buffer = ctx.createBuffer(1, muestras, ctx.sampleRate);
   const datos = buffer.getChannelData(0);
@@ -138,15 +121,9 @@ function alternarSonido() {
   return sonido.activo;
 }
 
-// ---------- Movimiento ----------
-
-// Quien pidio a su sistema reducir el movimiento no ve la presentacion, ni la
-// escena siguiendo el puntero, ni cifras contando.
 function sinMovimiento() {
   return Boolean(globalThis.matchMedia && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
-
-// ---------- Presentacion (video del escudo) ----------
 
 const CLAVE_INTRO = 'esoe.intro';
 
@@ -157,7 +134,7 @@ function teclaIntro(evento) {
 function cerrarIntro() {
   const intro = document.getElementById('intro');
   if (!intro || intro.hidden) return;
-  try { sessionStorage.setItem(CLAVE_INTRO, '1'); } catch { /* sin almacenamiento */ }
+  try { sessionStorage.setItem(CLAVE_INTRO, '1'); } catch {}
   document.removeEventListener('keydown', teclaIntro);
   intro.classList.add('intro-saliendo');
   setTimeout(() => {
@@ -181,7 +158,6 @@ function verIntro() {
   if (!video || typeof video.play !== 'function') { cerrarIntro(); return false; }
   video.currentTime = 0;
   const reproduccion = video.play();
-  // Si el navegador no deja reproducir, no se insiste: se pasa al acceso.
   if (reproduccion && typeof reproduccion.catch === 'function') reproduccion.catch(cerrarIntro);
   return true;
 }
@@ -201,14 +177,12 @@ function prepararIntro() {
     }
   }
   let vista = null;
-  try { vista = sessionStorage.getItem(CLAVE_INTRO); } catch { /* sin almacenamiento */ }
+  try { vista = sessionStorage.getItem(CLAVE_INTRO); } catch {}
   if (vista || sinMovimiento()) return;
   const pantalla = document.getElementById('login-screen');
   if (pantalla) pantalla.classList.add('esperando-intro');
   verIntro();
 }
-
-// ---------- Escena que sigue al puntero ----------
 
 function prepararParalaje() {
   const pantalla = document.getElementById('login-screen');
@@ -227,8 +201,6 @@ function prepararParalaje() {
     });
   });
 }
-
-// ---------- Cifras que cuentan y vistas que llegan ----------
 
 function contarHasta(elemento, duracion = 900) {
   const texto = elemento.textContent.trim();
@@ -251,7 +223,6 @@ function prepararVistas() {
   if (!area || typeof MutationObserver === 'undefined') return;
   let ultima = null;
   new MutationObserver(() => {
-    // appState es un let de app.js: se ve por su nombre, no como globalThis.appState.
     const actual = typeof appState !== 'undefined' ? appState.currentView : null;
     if (actual === ultima) return;
     ultima = actual;
@@ -263,10 +234,6 @@ function prepararVistas() {
   }).observe(area, { childList: true });
 }
 
-// ---------- Campus 3D ----------
-
-// Si el equipo tiene WebGL, el plano se vuelve una escena Three.js (se descarga
-// solo aqui, en el acceso). Si algo falla, queda el dibujo SVG tal cual.
 function prepararCampus3D() {
   if (!document.querySelector || sinMovimiento()) return false;
   const plano = document.querySelector('.escena-plano');
@@ -279,15 +246,13 @@ function prepararCampus3D() {
       modulo.iniciarCampus3D(plano, { puntos: [...plano.querySelectorAll('.punto')] });
       plano.closest('.escena').classList.add('escena-3d');
     })
-    .catch(() => { /* sin 3D: se queda el plano dibujado */ });
+    .catch(() => {});
   return true;
 }
 
-// ---------- Inicio ----------
-
 (function iniciarAmbiente() {
   let noche = null;
-  try { noche = localStorage.getItem(CLAVE_NOCHE); } catch { /* sin almacenamiento */ }
+  try { noche = localStorage.getItem(CLAVE_NOCHE); } catch {}
   aplicarNoche(noche === '1');
   if (!(globalThis.AudioContext || globalThis.webkitAudioContext)) {
     document.querySelectorAll('[data-sonido]').forEach((boton) => { boton.hidden = true; });
