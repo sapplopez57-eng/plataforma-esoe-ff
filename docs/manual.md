@@ -75,7 +75,9 @@ El flujo `.github/workflows/estilo.yml` corre en cada push a cualquier rama, en 
 cada lunes y a demanda desde la pestaña Actions:
 
 1. Retira los comentarios que encuentre. Si cambió algo, corre `eslint` y las pruebas, y sube la
-   corrección como `github-actions[bot]` con el mensaje «Retira comentarios del codigo».
+   corrección como `github-actions[bot]` con el mensaje «Retira comentarios del codigo». Después
+   lanza `Verificacion` sobre esa corrección, porque un commit hecho con el token de Actions no la
+   dispara por sí solo.
 2. Revisa archivos, mensajes y autores de los commits nuevos, y el nombre de la rama. Si encuentra un
    término no permitido, la ejecución falla y señala
    dónde está.
