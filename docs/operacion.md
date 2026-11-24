@@ -44,6 +44,37 @@ Configurar `ORIGEN_PUBLICO` como origen HTTPS y `TRUST_PROXY` según la cadena r
 No confiar indiscriminadamente en cabeceras externas. Mantener las claves en el gestor de secretos,
 reutilizar la instancia Clerk existente y comprobar sus dominios autorizados antes de publicar.
 
+## Base de datos administrada y cifrado en tránsito
+
+La base puede vivir en el mismo clúster o en un servicio administrado. El cliente de PostgreSQL
+elige el cifrado con `DB_SSL`. Sin definirla, una base local o de red interna sigue sin cifrado,
+igual que antes, y una base remota o administrada se conecta con el certificado verificado.
+`DB_SSL=requerido` cifra sin comprobar el certificado y no se admite para una base remota en
+producción. Una autoridad certificadora propia se entrega en `DB_CA_CERT`, en formato PEM.
+
+Un despliegue sin estado, como Vercel, abre y cierra conexiones con cada invocación. En ese caso
+se usa el agrupador de conexiones del servicio administrado, no la conexión directa: la
+configuración rechaza el puerto `5432` de un servidor administrado cuando `VERCEL` está activo y
+exige el `6543` del agrupador. `DB_POOL_MAX` baja a dos por proceso en ese entorno.
+
+Las migraciones no se aplican desde el proceso web sin estado. Se ejecuta `npm run migrar` con la
+conexión directa y un rol autorizado para cambiar el esquema, antes de publicar la versión que las
+necesita. El proceso web conserva su rol sin privilegios de administración.
+
+## Comprobación previa al despliegue
+
+`npm run comprobar:despliegue` valida contra la base real, sin modificarla, y termina con código
+distinto de cero si algo falta:
+
+- La configuración completa del entorno, con las exigencias de producción.
+- Que la conexión viaja cifrada cuando la base es remota.
+- Que el rol de la aplicación no es superusuario.
+- Que la base acepta escrituras y no está en recuperación.
+- Que la versión del esquema aplicado coincide con la que espera el código.
+
+Ejecutarlo después de migrar y antes de dirigir tráfico a la versión nueva. No sustituye a
+`npm run verificar`, que cubre el código; comprueba el entorno al que se publica.
+
 ## Respaldo y restauración
 
 El servicio de respaldo genera un archivo PostgreSQL personalizado al arrancar y cada 24 horas,
