@@ -99,6 +99,38 @@ function crearPermisos(db) {
     };
   }
 
+  async function estudianteEnLaClase(estudianteId, claseId) {
+    if (!esUuid(estudianteId) || !esUuid(claseId)) return false;
+    const { rows } = await db.consultar(
+      `SELECT 1
+         FROM estudiantes e
+         JOIN clases c ON c.promocion_id = e.promocion_id
+        WHERE e.id = $1 AND c.id = $2 AND c.activa = TRUE`,
+      [estudianteId, claseId]
+    );
+    return rows.length > 0;
+  }
+
+  function exigirClaseVisible(nombreDelParametro = 'id') {
+    return async function guardianDeClaseVisible(req, res, next) {
+      try {
+        const claseId = req.params[nombreDelParametro];
+        if (!esUuid(claseId)) return res.status(404).json({ error: 'Clase no encontrada.' });
+        if (!await esDeLaInstitucion('clases', claseId, req.vinculo.institucionId)) {
+          return res.status(404).json({ error: 'Clase no encontrada.' });
+        }
+        if (req.identidad.rol === 'ADMIN') return next();
+        if (req.identidad.rol === 'CATEDRATICO'
+          && await imparteLaClase(req.vinculo.referenciaId, claseId)) return next();
+        if (req.identidad.rol === 'ESTUDIANTE'
+          && await estudianteEnLaClase(req.vinculo.referenciaId, claseId)) return next();
+        res.status(403).json({ error: SIN_PERMISO, codigo: 'NO_ES_SUYO' });
+      } catch (error) {
+        next(error);
+      }
+    };
+  }
+
   function exigirEstudiantePropio(nombreDelParametro = 'id') {
     return async function guardianDeEstudiantePropio(req, res, next) {
       try {
@@ -130,9 +162,11 @@ function crearPermisos(db) {
   return {
     resolverVinculo,
     exigirClasePropia,
+    exigirClaseVisible,
     exigirEstudiantePropio,
     imparteLaClase,
     ensenaAlEstudiante,
+    estudianteEnLaClase,
     esDeLaInstitucion,
     esUuid
   };

@@ -1,6 +1,6 @@
 # Plataforma ESOE — Sistema de Administración Escolar (SMS)
 
-Plataforma web integral desarrollada para la **Escuela de Suboficiales del Ejército (ESOE)**, enfocada en la gestión administrativa y académica (**SMS - School Management System**), con una base modular preparada para acoplar un **LMS (Learning Management System)** en etapas posteriores.
+Plataforma web integral desarrollada para la **Escuela de Suboficiales del Ejército (ESOE)**, enfocada en la gestión administrativa y académica (**SMS - School Management System**). La primera etapa del **LMS (Learning Management System)** ya está acoplada: el **aula virtual** de cada clase, con sus unidades, contenidos, tareas y entregas calificables.
 
 ---
 
@@ -68,6 +68,13 @@ paleta de la interfaz no lo recolorea. Si se dispone del archivo original, basta
    * Registro de asistencia **por clase y sesión impartida** (`PRESENTE`, `AUSENTE`, `TARDANZA`, `EXCUSA`).
 7. **Sistema de Calificaciones:**
    * Escala oficial de **0% a 100%**, con nota mínima aprobatoria de **70%**.
+8. **Aula Virtual (LMS, primera etapa):**
+   * Cada clase tiene **un aula virtual**, a cargo de su catedrático titular o de la administración.
+   * El aula se organiza en **unidades ordenadas**, y cada unidad en **contenidos** (`TEXTO`, `ENLACE`, `VIDEO`, `DOCUMENTO`). Todo enlace es HTTPS.
+   * Las **tareas** llevan instrucciones, puntaje máximo, fecha de entrega con zona horaria y si admiten atraso.
+   * El estudiante guarda un **borrador** y luego **entrega**; fuera de plazo no se recibe salvo que la tarea lo permita.
+   * El titular **califica** sin pasar del puntaje máximo. Una entrega calificada ya no la modifica el estudiante.
+   * Unidades, contenidos y tareas se publican por separado: el estudiante solo ve lo publicado.
 
 ---
 
@@ -100,6 +107,13 @@ Todo cambio pasa por la compuerta de calidad antes de integrarse:
 
 ```bash
 npm run verificar
+```
+
+Antes de dirigir tráfico a una versión nueva, se comprueba el entorno real al que se publica
+(configuración, cifrado de la conexión, rol sin privilegios y versión del esquema):
+
+```bash
+npm run comprobar:despliegue
 ```
 
 Las presentaciones a clientes usan una cuenta real de Clerk con datos de una institución de

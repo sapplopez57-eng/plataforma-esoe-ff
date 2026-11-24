@@ -221,9 +221,7 @@ function validarAsistencia(cuerpo) {
   return { datos, campos };
 }
 
-function validar(tipo, cuerpo, { parcial = false, actual = {} } = {}) {
-  const esquema = ESQUEMAS[tipo];
-  if (!esquema) throw new Error(`Esquema desconocido: ${tipo}`);
+function validarConEsquema(esquema, cuerpo, { parcial = false, actual = {} } = {}) {
   const campos = {};
   const datos = {};
   if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo)) {
@@ -251,7 +249,13 @@ function validar(tipo, cuerpo, { parcial = false, actual = {} } = {}) {
   return { datos, campos };
 }
 
+function validar(tipo, cuerpo, opciones) {
+  const esquema = ESQUEMAS[tipo];
+  if (!esquema) throw new Error(`Esquema desconocido: ${tipo}`);
+  return validarConEsquema(esquema, cuerpo, opciones);
+}
+
 module.exports = {
-  validar, validarNotas, validarAsistencia, fechaValida,
+  validar, validarConEsquema, validarNotas, validarAsistencia, fechaValida, reglas,
   MODALIDADES, CONDICIONES, ESTADOS_ESTUDIANTE, TIPOS_SANGRE, NOTAS, ESTADOS_ASISTENCIA, ESQUEMAS
 };
