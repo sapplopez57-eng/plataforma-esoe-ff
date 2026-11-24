@@ -2,6 +2,7 @@
 
 const { Client } = require('pg');
 const { migrar, ErrorDeMigracion } = require('../src/migraciones');
+const { tlsDeBaseDeDatos } = require('../src/config');
 
 async function principal() {
   const url = process.env.DATABASE_URL;
@@ -11,7 +12,9 @@ async function principal() {
     return;
   }
 
-  const cliente = new Client({ connectionString: url });
+  const { modo, ssl } = tlsDeBaseDeDatos(process.env);
+  console.log(`[ESOE-SMS] Conexion TLS en modo ${modo}.`);
+  const cliente = new Client({ connectionString: url, ssl });
   await cliente.connect();
   try {
     const resultado = await migrar({ cliente, registrar: (m) => console.log(`[ESOE-SMS] ${m}`) });

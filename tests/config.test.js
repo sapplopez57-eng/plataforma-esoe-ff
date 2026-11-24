@@ -71,7 +71,7 @@ test('config: valores numericos invalidos caen al valor por defecto', () => {
 
 test('config: el pool tiene limites finitos y configurables sin cambiar Clerk', () => {
   const configurada = cargarConfig({ ...PRODUCCION, DB_POOL_MAX: '4', DB_CONNECTION_TIMEOUT_MS: '1000', DB_STATEMENT_TIMEOUT_MS: '2000' });
-  assert.deepEqual(configurada.baseDeDatos, { max: 4, connectionTimeoutMillis: 1000, idleTimeoutMillis: 30000, statement_timeout: 2000 });
+  assert.deepEqual(configurada.baseDeDatos, { max: 4, connectionTimeoutMillis: 1000, idleTimeoutMillis: 30000, statement_timeout: 2000, ssl: false });
   assert.deepEqual(configurada.clerk, cargarConfig(PRODUCCION).clerk);
   for (const valor of ['0', '-1', '101', '2.5', '12abc', 'Infinity']) {
     assert.throws(() => cargarConfig({ DB_POOL_MAX: valor }), /DB_POOL_MAX/);

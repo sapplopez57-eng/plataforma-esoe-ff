@@ -46,6 +46,8 @@ en el repositorio). `.env.example` lista las variables sin valores.
 | `DB_CONNECTION_TIMEOUT_MS` | Espera máxima para obtener conexión (3000 ms). |
 | `DB_IDLE_TIMEOUT_MS` | Cierre de conexiones inactivas (30000 ms). |
 | `DB_STATEMENT_TIMEOUT_MS` | Tiempo máximo de una sentencia en PostgreSQL (10000 ms). |
+| `DB_SSL` | Cifrado hacia PostgreSQL: `desactivado`, `requerido` o `verificado`. Si no se define, se deduce: `verificado` con una base remota, administrada o con `sslmode=require`; `desactivado` con una base local o de red interna. |
+| `DB_CA_CERT` | Autoridad certificadora propia en PEM, solo con `DB_SSL=verificado`. Admite saltos de línea escapados. |
 | `RATE_LIMIT_PUBLIC_MAX` | Peticiones anónimas y del servicio de voz por IP y ventana (1200 por defecto). |
 
 ---
