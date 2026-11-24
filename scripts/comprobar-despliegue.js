@@ -5,9 +5,21 @@ const { cargarConfig, tlsDeBaseDeDatos, hostDeBaseDeDatos, esHostLocal } = requi
 const { leerMigraciones } = require('../src/migraciones');
 
 const TIEMPO_MAXIMO_MS = 10000;
+const ATRIBUTOS_DE_ADMINISTRACION = {
+  rolsuper: 'superusuario',
+  rolcreatedb: 'crear bases',
+  rolcreaterole: 'crear roles',
+  rolbypassrls: 'omitir seguridad por fila'
+};
 
 async function conectarConPg(url, ssl) {
-  const cliente = new Client({ connectionString: url, ssl, connectionTimeoutMillis: TIEMPO_MAXIMO_MS });
+  const cliente = new Client({
+    connectionString: url,
+    ssl,
+    connectionTimeoutMillis: TIEMPO_MAXIMO_MS,
+    statement_timeout: TIEMPO_MAXIMO_MS,
+    query_timeout: TIEMPO_MAXIMO_MS
+  });
   await cliente.connect();
   return cliente;
 }
@@ -53,16 +65,28 @@ async function revisarBaseDeDatos(config, env, informe, conectar) {
     }
 
     const { rows: [rol] } = await cliente.query(
-      'SELECT current_user AS usuario, usesuper AS superusuario FROM pg_user WHERE usename = current_user');
+      `SELECT current_user AS usuario, rolsuper, rolcreatedb, rolcreaterole, rolbypassrls
+         FROM pg_roles WHERE rolname = current_user`);
     informe.datos.usuario = rol ? rol.usuario : '';
-    if (rol && rol.superusuario === true) {
-      informe.fallos.push(`El rol ${rol.usuario} es superusuario. La aplicacion debe usar un rol sin privilegios de administracion.`);
+    const privilegios = rol
+      ? Object.entries(ATRIBUTOS_DE_ADMINISTRACION).filter(([col]) => rol[col] === true).map(([, nombre]) => nombre)
+      : [];
+    if (privilegios.length > 0) {
+      informe.fallos.push(`El rol ${rol.usuario} tiene privilegios de administracion (${privilegios.join(', ')}). La aplicacion debe usar un rol sin ellos.`);
     }
 
     const { rows: [escritura] } = await cliente.query(
       "SELECT NOT pg_is_in_recovery() AND current_setting('transaction_read_only') = 'off' AS disponible");
     if (!escritura || escritura.disponible !== true) {
       informe.fallos.push('La base de datos no acepta escrituras.');
+    }
+
+    const { rows: [permisos] } = await cliente.query(
+      `SELECT has_table_privilege('estudiantes', 'INSERT') AS inserta,
+              has_table_privilege('calificaciones', 'UPDATE') AS actualiza`);
+    informe.datos.puedeEscribir = Boolean(permisos && permisos.inserta && permisos.actualiza);
+    if (!informe.datos.puedeEscribir) {
+      informe.fallos.push(`El rol ${informe.datos.usuario} no tiene permiso para escribir en las tablas de la aplicacion.`);
     }
 
     const esperada = leerMigraciones().length;

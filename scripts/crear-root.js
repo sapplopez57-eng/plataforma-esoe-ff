@@ -2,6 +2,7 @@
 
 const { createClerkClient } = require('@clerk/express');
 const { Client } = require('pg');
+const { tlsDeBaseDeDatos } = require('../src/config');
 
 function datosRoot(env) {
   const usuario = String(env.ESOE_ROOT_USUARIO || '').trim().toLowerCase();
@@ -35,7 +36,7 @@ async function principal() {
     console.error(`Falta o no es valido en .env: ${faltan.join(', ')}.`);
     process.exit(2);
   }
-  const cliente = new Client({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 3000 });
+  const cliente = new Client({ connectionString: process.env.DATABASE_URL, ssl: tlsDeBaseDeDatos(process.env).ssl, connectionTimeoutMillis: 3000 });
   await cliente.connect();
   try {
     const { rows } = await cliente.query('SELECT id FROM instituciones WHERE codigo=$1 AND activa', [institucion]);

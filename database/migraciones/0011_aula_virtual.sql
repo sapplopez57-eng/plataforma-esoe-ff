@@ -69,7 +69,7 @@ CREATE TABLE tareas (
     CONSTRAINT tareas_curso_id_fkey FOREIGN KEY (curso_id, institucion_id)
         REFERENCES cursos (id, institucion_id) ON DELETE CASCADE,
     CONSTRAINT tareas_unidad_id_fkey FOREIGN KEY (unidad_id, institucion_id)
-        REFERENCES unidades (id, institucion_id) ON DELETE SET NULL
+        REFERENCES unidades (id, institucion_id) ON DELETE SET NULL (unidad_id)
 );
 
 CREATE TABLE entregas (
@@ -96,6 +96,46 @@ CREATE TABLE entregas (
     CONSTRAINT entregas_calificada_con_nota CHECK (
         estado <> 'CALIFICADA' OR (nota IS NOT NULL AND calificada_en IS NOT NULL))
 );
+
+CREATE FUNCTION exigir_nota_dentro_del_puntaje() RETURNS trigger AS $$
+DECLARE
+    tope NUMERIC(5,2);
+BEGIN
+    IF NEW.nota IS NULL THEN
+        RETURN NEW;
+    END IF;
+    SELECT puntaje_maximo INTO tope FROM tareas WHERE id = NEW.tarea_id;
+    IF tope IS NOT NULL AND NEW.nota > tope THEN
+        RAISE EXCEPTION 'La nota % pasa del puntaje maximo % de la tarea.', NEW.nota, tope
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER entregas_nota_dentro_del_puntaje
+    BEFORE INSERT OR UPDATE OF nota, tarea_id ON entregas
+    FOR EACH ROW EXECUTE FUNCTION exigir_nota_dentro_del_puntaje();
+
+CREATE FUNCTION exigir_puntaje_sobre_las_notas() RETURNS trigger AS $$
+DECLARE
+    mayor NUMERIC(5,2);
+BEGIN
+    IF NEW.puntaje_maximo >= OLD.puntaje_maximo THEN
+        RETURN NEW;
+    END IF;
+    SELECT MAX(nota) INTO mayor FROM entregas WHERE tarea_id = NEW.id;
+    IF mayor IS NOT NULL AND mayor > NEW.puntaje_maximo THEN
+        RAISE EXCEPTION 'Ya hay una nota de % en esta tarea: el puntaje maximo no puede bajar a %.', mayor, NEW.puntaje_maximo
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tareas_puntaje_sobre_las_notas
+    BEFORE UPDATE OF puntaje_maximo ON tareas
+    FOR EACH ROW EXECUTE FUNCTION exigir_puntaje_sobre_las_notas();
 
 CREATE INDEX unidades_por_curso ON unidades (curso_id, orden);
 CREATE INDEX contenidos_por_unidad ON contenidos (unidad_id, orden);

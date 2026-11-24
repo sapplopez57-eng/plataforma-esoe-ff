@@ -11,7 +11,12 @@ const MARCA_DE_TIEMPO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d{1,3})?(Z|[
 
 function marcaDeTiempoValida(texto) {
   if (typeof texto !== 'string' || !MARCA_DE_TIEMPO.test(texto)) return false;
-  return !Number.isNaN(new Date(texto).getTime());
+  const fecha = new Date(texto);
+  if (Number.isNaN(fecha.getTime())) return false;
+  const [anio, mes, dia] = texto.slice(0, 10).split('-').map(Number);
+  if (mes < 1 || mes > 12 || dia < 1) return false;
+  const diasDelMes = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+  return dia <= diasDelMes;
 }
 
 const url = (obligatorio) => reglas.patron(URL_SEGURA, 'Debe ser una direccion https valida.', 500, { obligatorio });

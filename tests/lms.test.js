@@ -350,3 +350,88 @@ test('aula: una tarea no toma prestada una unidad de otro curso', sinBase, async
   assert.equal(r.status, 422, JSON.stringify(r.cuerpo));
   assert.equal(r.cuerpo.campos.unidad_id, 'Pertenece a otro curso.');
 });
+
+test('aula: el titular ve el contenido entregado, no solo que se entrego', sinBase, async () => {
+  const r = await json(await pedir(`/api/tareas/${d.tarea}/entregas`, ANA));
+  assert.equal(r.status, 200);
+  const entrega = r.cuerpo.entregas[0];
+  assert.equal(entrega.texto, 'Informe completo.');
+  assert.equal(entrega.url, 'https://aula.udh.edu.hn/e/1');
+  assert.equal(entrega.retroalimentacion, 'Buen informe.');
+});
+
+test('aula: una entrega ya enviada no vuelve a borrador', sinBase, async () => {
+  const tarea = await json(await enviar(`/api/clases/${d.claseUno}/curso/tareas`,
+    { titulo: 'Tercera', instrucciones: 'Otra mas.', fecha_entrega: FUTURO, publicada: true }, ANA, 'POST'));
+  assert.equal(tarea.status, 201);
+  d.tareaTercera = tarea.cuerpo.tarea.id;
+
+  const enviada = await json(await enviar(`/api/tareas/${d.tareaTercera}/entrega`,
+    { estado: 'ENTREGADA', texto: 'Primera version.' }, CARLA));
+  assert.equal(enviada.status, 201);
+  d.entregaTercera = enviada.cuerpo.entrega.id;
+
+  const atras = await json(await enviar(`/api/tareas/${d.tareaTercera}/entrega`,
+    { estado: 'BORRADOR', texto: 'Me arrepenti.' }, CARLA));
+  assert.equal(atras.status, 409);
+  assert.equal(atras.cuerpo.codigo, 'NO_REGRESA_A_BORRADOR');
+});
+
+test('aula: al reentregar una devuelta, la nota anterior no sobrevive', sinBase, async () => {
+  const devuelta = await json(await enviar(`/api/entregas/${d.entregaTercera}/calificacion`,
+    { estado: 'DEVUELTA', nota: 30, retroalimentacion: 'Rehacer el analisis.' }, ANA));
+  assert.equal(devuelta.status, 200, JSON.stringify(devuelta.cuerpo));
+  assert.equal(Number(devuelta.cuerpo.entrega.nota), 30);
+
+  const otra = await json(await enviar(`/api/tareas/${d.tareaTercera}/entrega`,
+    { estado: 'ENTREGADA', texto: 'Version corregida.' }, CARLA));
+  assert.equal(otra.status, 200, JSON.stringify(otra.cuerpo));
+  assert.equal(otra.cuerpo.entrega.nota, null);
+  assert.equal(otra.cuerpo.entrega.retroalimentacion, null);
+  assert.equal(otra.cuerpo.entrega.calificada_en, null);
+});
+
+test('aula: un curso sin publicar no recibe entregas ni se deja ver', sinBase, async () => {
+  const tarea = await json(await enviar(`/api/clases/${d.claseDos}/curso/tareas`,
+    { titulo: 'En curso oculto', instrucciones: 'No deberia recibirse.', fecha_entrega: FUTURO, publicada: true },
+    LUIS, 'POST'));
+  assert.equal(tarea.status, 201, JSON.stringify(tarea.cuerpo));
+
+  const entrega = await json(await enviar(`/api/tareas/${tarea.cuerpo.tarea.id}/entrega`,
+    { estado: 'ENTREGADA', texto: 'Hola.' }, MARIO));
+  assert.equal(entrega.status, 404);
+  assert.equal((await json(await pedir(`/api/tareas/${tarea.cuerpo.tarea.id}/entrega`, MARIO))).status, 404);
+  assert.equal((await json(await pedir(`/api/clases/${d.claseDos}/curso`, MARIO))).status, 404);
+});
+
+test('aula: la base deja retirar una unidad que una tarea referencia', sinBase, async () => {
+  const { rows: [creada] } = await base.db.consultar(
+    `INSERT INTO tareas (institucion_id, curso_id, unidad_id, titulo, instrucciones, fecha_entrega)
+     SELECT u.institucion_id, u.curso_id, u.id, 'Atada a la unidad', 'x', $2
+       FROM unidades u WHERE u.id = $1 RETURNING id`, [d.unidadOculta, FUTURO]);
+  await base.db.consultar('DELETE FROM unidades WHERE id = $1', [d.unidadOculta]);
+  const { rows: [despues] } = await base.db.consultar(
+    'SELECT unidad_id, curso_id FROM tareas WHERE id = $1', [creada.id]);
+  assert.equal(despues.unidad_id, null);
+  assert.ok(despues.curso_id);
+});
+
+test('aula: la base rechaza una nota que pasa el puntaje maximo de la tarea', sinBase, async () => {
+  await assert.rejects(
+    base.db.consultar('UPDATE entregas SET nota = 90 WHERE id = $1', [d.entrega]),
+    (error) => {
+      assert.match(error.message, /puntaje maximo/i);
+      return true;
+    });
+});
+
+test('aula: el puntaje maximo no baja por debajo de una nota ya puesta', sinBase, async () => {
+  await assert.rejects(
+    base.db.consultar('UPDATE tareas SET puntaje_maximo = 10 WHERE id = $1', [d.tarea]),
+    (error) => {
+      assert.match(error.message, /no puede bajar/i);
+      return true;
+    });
+  const subir = await base.db.consultar('UPDATE tareas SET puntaje_maximo = 60 WHERE id = $1 RETURNING puntaje_maximo', [d.tarea]);
+  assert.equal(Number(subir.rows[0].puntaje_maximo), 60);
+});

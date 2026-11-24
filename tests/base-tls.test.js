@@ -88,3 +88,20 @@ test('tls: en un despliegue sin estado se exige el agrupador de conexiones', () 
   assert.ok(directo.some((e) => e.includes('6543')), directo.join(' | '));
   assert.deepEqual(validarConfig({ ...base, databaseUrl: `${ADMINISTRADO}:6543/postgres` }), []);
 });
+
+test('tls: una base en red privada no exige certificado verificado', () => {
+  for (const host of ['10.0.0.5', '172.20.1.3', '192.168.1.10', '127.0.0.1', 'db.interno.local']) {
+    assert.equal(esHostLocal(host), true, host);
+    assert.equal(tlsDeBaseDeDatos({ DATABASE_URL: `postgresql://u:c@${host}:5432/esoe` }).modo, 'desactivado', host);
+  }
+});
+
+test('tls: una url sin puerto cuenta como conexion directa', () => {
+  const errores = validarConfig({
+    esProduccion: true, tlsBaseDeDatos: 'verificado', sinEstado: true,
+    databaseUrl: 'postgresql://db.abcdefghijkl.supabase.co/postgres',
+    clerk: { habilitado: true, origenesAutorizados: ['https://esoe.ejemplo.hn'] },
+    integraciones: { claveCifrado: 'a'.repeat(64) }, voz: {}, limitePeticiones: { almacen: 'postgres' }
+  });
+  assert.ok(errores.some((e) => e.includes('6543')), errores.join(' | '));
+});

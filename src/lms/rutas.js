@@ -26,7 +26,7 @@ const DUENO = {
                 FROM contenidos co JOIN unidades u ON u.id = co.unidad_id
                 JOIN cursos c ON c.id = u.curso_id WHERE co.id = $1`,
   tarea: `SELECT t.institucion_id, t.curso_id, t.puntaje_maximo, t.fecha_entrega, t.permite_atraso,
-                 t.publicada, c.clase_id
+                 t.publicada, c.publicado AS curso_publicado, c.clase_id
             FROM tareas t JOIN cursos c ON c.id = t.curso_id WHERE t.id = $1`,
   entrega: `SELECT e.institucion_id, e.estudiante_id, e.tarea_id, t.puntaje_maximo, c.clase_id
               FROM entregas e JOIN tareas t ON t.id = e.tarea_id
@@ -117,9 +117,11 @@ function crearRutasLms({ auth, db, permisos }) {
           WHERE curso_id = $1 AND ($2::boolean IS FALSE OR publicada = TRUE) ORDER BY orden`,
         [curso.id, soloPublicado]);
       const { rows: contenidos } = await db.consultar(
-        `SELECT ${LECTURA_CONTENIDO} FROM contenidos
-          WHERE unidad_id = ANY($1::uuid[]) AND ($2::boolean IS FALSE OR publicado = TRUE)
-          ORDER BY orden`,
+        `SELECT co.id, co.unidad_id, co.orden, co.titulo, co.tipo, co.cuerpo, co.url, co.publicado
+           FROM contenidos co JOIN unidades u ON u.id = co.unidad_id
+          WHERE co.unidad_id = ANY($1::uuid[])
+            AND ($2::boolean IS FALSE OR (co.publicado = TRUE AND u.publicada = TRUE))
+          ORDER BY co.orden`,
         [unidades.map((u) => u.id), soloPublicado]);
       const { rows: tareas } = await db.consultar(
         `SELECT ${LECTURA_TAREA} FROM tareas
@@ -270,7 +272,8 @@ function crearRutasLms({ auth, db, permisos }) {
   rutas.get('/tareas/:id/entregas', ...conSesion, exigirRecurso('tarea'), async (req, res, next) => {
     try {
       const { rows } = await db.consultar(
-        `SELECT e.id, e.estudiante_id, e.estado, e.nota, e.entregada_en, e.calificada_en,
+        `SELECT e.id, e.estudiante_id, e.estado, e.texto, e.url, e.nota,
+                e.retroalimentacion, e.entregada_en, e.calificada_en,
                 es.codigo_alumno, es.nombres, es.apellidos
            FROM estudiantes es
            JOIN clases c ON c.promocion_id = es.promocion_id
@@ -287,6 +290,9 @@ function crearRutasLms({ auth, db, permisos }) {
   rutas.get('/tareas/:id/entrega', ...conSesion, exigirRecurso('tarea', { escritura: false }), async (req, res, next) => {
     if (req.identidad.rol !== 'ESTUDIANTE') {
       return res.status(403).json({ error: 'Esta vista es la del estudiante.', codigo: 'NO_ES_SUYO' });
+    }
+    if (!req.recurso.publicada || !req.recurso.curso_publicado) {
+      return res.status(404).json({ error: NO_ENCONTRADO.tarea });
     }
     try {
       const { rows } = await db.consultar(
@@ -305,8 +311,9 @@ function crearRutasLms({ auth, db, permisos }) {
     }
     const { datos, campos } = validarLms('entrega', req.body);
     if (Object.keys(campos).length) return rechazar(res, campos);
-    const { publicada, fecha_entrega: vence, permite_atraso: atraso } = req.recurso;
-    if (!publicada) return res.status(404).json({ error: NO_ENCONTRADO.tarea });
+    const { publicada, curso_publicado: cursoPublicado,
+      fecha_entrega: vence, permite_atraso: atraso } = req.recurso;
+    if (!publicada || !cursoPublicado) return res.status(404).json({ error: NO_ENCONTRADO.tarea });
     const entregada = datos.estado === 'ENTREGADA';
     if (entregada && !atraso && new Date() > new Date(vence)) {
       return res.status(409).json({ error: 'La fecha de entrega ya vencio.', codigo: 'FUERA_DE_PLAZO' });
@@ -317,13 +324,22 @@ function crearRutasLms({ auth, db, permisos }) {
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (tarea_id, estudiante_id) DO UPDATE
             SET texto = EXCLUDED.texto, url = EXCLUDED.url, estado = EXCLUDED.estado,
-                entregada_en = EXCLUDED.entregada_en, actualizada_en = CURRENT_TIMESTAMP
+                entregada_en = EXCLUDED.entregada_en, nota = NULL, retroalimentacion = NULL,
+                calificada_por = NULL, calificada_en = NULL, actualizada_en = CURRENT_TIMESTAMP
           WHERE entregas.estado <> 'CALIFICADA'
+            AND NOT (EXCLUDED.estado = 'BORRADOR' AND entregas.estado <> 'BORRADOR')
          RETURNING ${LECTURA_ENTREGA}, (xmax = 0) AS nueva`,
         [req.vinculo.institucionId, req.params.id, req.vinculo.referenciaId,
           datos.texto ?? null, datos.url ?? null, datos.estado, entregada ? new Date().toISOString() : null]);
       if (!rows.length) {
-        return res.status(409).json({ error: 'La entrega ya fue calificada y no se puede cambiar.', codigo: 'YA_CALIFICADA' });
+        const { rows: [previa] } = await db.consultar(
+          'SELECT estado FROM entregas WHERE tarea_id = $1 AND estudiante_id = $2',
+          [req.params.id, req.vinculo.referenciaId]);
+        if (previa && previa.estado === 'CALIFICADA') {
+          return res.status(409).json({ error: 'La entrega ya fue calificada y no se puede cambiar.', codigo: 'YA_CALIFICADA' });
+        }
+        return res.status(409).json({
+          error: 'Una entrega ya enviada no vuelve a borrador.', codigo: 'NO_REGRESA_A_BORRADOR' });
       }
       const { nueva, ...entrega } = rows[0];
       privado(res).status(nueva ? 201 : 200).json({ entrega });

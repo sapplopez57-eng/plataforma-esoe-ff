@@ -19,12 +19,19 @@ const ENTORNO_PRODUCCION = Object.freeze({
 
 function clienteFalso(respuestas = {}) {
   const estado = {
-    cifrada: true, superusuario: false, escritura: true, version: VERSION, cerrado: false, ssl: null, ...respuestas
+    cifrada: true, superusuario: false, crearBases: false, escribe: true,
+    escritura: true, version: VERSION, cerrado: false, ssl: null, ...respuestas
   };
   const cliente = {
     query: async (texto) => {
       if (texto.includes('pg_stat_ssl')) return { rows: [{ ssl: estado.cifrada }] };
-      if (texto.includes('usesuper')) return { rows: [{ usuario: 'esoe_app', superusuario: estado.superusuario }] };
+      if (texto.includes('rolsuper')) {
+        return { rows: [{ usuario: 'esoe_app', rolsuper: estado.superusuario,
+          rolcreatedb: estado.crearBases, rolcreaterole: false, rolbypassrls: false }] };
+      }
+      if (texto.includes('has_table_privilege')) {
+        return { rows: [{ inserta: estado.escribe, actualiza: estado.escribe }] };
+      }
       if (texto.includes('pg_is_in_recovery')) return { rows: [{ disponible: estado.escritura }] };
       if (texto.includes('migraciones_aplicadas')) {
         if (estado.version === 'sin_tabla') {
@@ -113,4 +120,17 @@ test('despliegue: una base inalcanzable se reporta sin lanzar', async () => {
   const informe = await comprobarDespliegue({
     env: ENTORNO_PRODUCCION, conectar: async () => { throw new Error('tiempo de conexion agotado'); } });
   assert.ok(informe.fallos.some((f) => f.includes('No se pudo conectar')), informe.fallos.join(' | '));
+});
+
+test('despliegue: un rol con otros privilegios de administracion tampoco pasa', async () => {
+  const { conectar } = clienteFalso({ crearBases: true });
+  const informe = await comprobarDespliegue({ env: ENTORNO_PRODUCCION, conectar });
+  assert.ok(informe.fallos.some((f) => f.includes('crear bases')), informe.fallos.join(' | '));
+});
+
+test('despliegue: un rol sin permiso real de escritura es un fallo', async () => {
+  const { conectar } = clienteFalso({ escribe: false });
+  const informe = await comprobarDespliegue({ env: ENTORNO_PRODUCCION, conectar });
+  assert.equal(informe.datos.puedeEscribir, false);
+  assert.ok(informe.fallos.some((f) => f.includes('escribir en las tablas')), informe.fallos.join(' | '));
 });

@@ -5,6 +5,8 @@ const CLAVE_CIFRADO_HEX = /^[0-9a-f]{64}$/i;
 const MODOS_TLS = ['desactivado', 'requerido', 'verificado'];
 const CERTIFICADO_PEM = /^-----BEGIN CERTIFICATE-----[\sA-Za-z0-9+/=-]+-----END CERTIFICATE-----$/;
 const HOSTS_LOCALES = ['localhost', '127.0.0.1', '::1', '[::1]'];
+const SUFIJOS_DE_RED_PRIVADA = ['.local', '.internal', '.lan', '.localdomain'];
+const IPV4_PRIVADA = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/;
 const SERVIDOR_ADMINISTRADO = /(^|\.)supabase\.(co|com|net)$/;
 const PUERTO_DIRECTO_ADMINISTRADO = '5432';
 const PUERTO_AGRUPADOR_ADMINISTRADO = '6543';
@@ -19,7 +21,7 @@ function partesDeBaseDeDatos(databaseUrl) {
   if (!databaseUrl) return { host: '', puerto: '' };
   try {
     const url = new URL(databaseUrl);
-    return { host: url.hostname.toLowerCase(), puerto: url.port };
+    return { host: url.hostname.toLowerCase(), puerto: url.port || PUERTO_DIRECTO_ADMINISTRADO };
   } catch {
     return { host: '', puerto: '' };
   }
@@ -30,7 +32,9 @@ function hostDeBaseDeDatos(databaseUrl) {
 }
 
 function esHostLocal(host) {
-  return !host || HOSTS_LOCALES.includes(host) || !host.includes('.');
+  if (!host || HOSTS_LOCALES.includes(host) || !host.includes('.')) return true;
+  if (IPV4_PRIVADA.test(host)) return true;
+  return SUFIJOS_DE_RED_PRIVADA.some((sufijo) => host.endsWith(sufijo));
 }
 
 function tlsPedidoEnUrl(databaseUrl) {
