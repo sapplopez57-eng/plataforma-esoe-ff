@@ -37,8 +37,15 @@ function crearClienteMoodle(opciones = {}) {
     }
   };
 
-  function leer(direccion, peticion) {
-    return conReintentos(() => enviar(direccion, { ...red, ...peticion }), reintentos);
+  async function leer(direccion, peticion) {
+    try {
+      return await conReintentos(() => enviar(direccion, { ...red, ...peticion }), reintentos);
+    } catch (error) {
+      if (error instanceof ErrorDeRed && error.estado === 503) {
+        throw new ErrorDeMoodle('EN_MANTENIMIENTO', 'La plataforma esta en mantenimiento.');
+      }
+      throw error;
+    }
   }
 
   async function configuracionPublica(urlBase) {

@@ -103,7 +103,8 @@ async function crearMoodleFalso(opciones = {}) {
     ],
     peticiones: [],
     caido: false,
-    fallosTransitorios: 0
+    fallosTransitorios: 0,
+    enMantenimientoCli: false
   };
 
   const servidor = http.createServer((req, res) => {
@@ -118,6 +119,15 @@ async function crearMoodleFalso(opciones = {}) {
         res.end(JSON.stringify(dato));
       };
       if (estado.caido) return responder({ error: 'caido' }, 500);
+      if (estado.enMantenimientoCli) {
+        res.writeHead(503, {
+          Status: '503 Moodle under maintenance',
+          'Retry-After': '300',
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        });
+        return res.end('<h1>Sorry, maintenance in progress</h1>');
+      }
       if (estado.fallosTransitorios > 0) {
         estado.fallosTransitorios -= 1;
         return responder({ error: 'no disponible' }, 503);

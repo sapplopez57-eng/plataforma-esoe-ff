@@ -277,6 +277,30 @@ test('reintentos: un fallo definitivo no se reintenta ni una vez', async () => {
   assert.equal(llamadas, 1);
 });
 
+test('reintentos: un Retry-After por encima del presupuesto detiene los reintentos al instante', async () => {
+  const anotaciones = [];
+  let llamadas = 0;
+  const conEspera = (segundos) => {
+    const fallo = new ErrorDeRed('RESPUESTA_INESPERADA', 'estado 503');
+    fallo.estado = 503;
+    fallo.esperaPedidaMs = segundos * 1000;
+    return fallo;
+  };
+
+  await assert.rejects(() => conReintentos(() => { llamadas += 1; throw conEspera(300); }, {
+    intentos: 5, baseMs: 200, maximoMs: 2000, dormir: () => {}, anotar: (d) => anotaciones.push(d)
+  }), /503/);
+  assert.equal(llamadas, 1, 'no se insiste cuando el servidor pide 300 s y el presupuesto son 10 s');
+  assert.equal(anotaciones[0].decision, 'no se reintenta');
+  assert.equal(anotaciones[0].esperaPedidaMs, 300000);
+
+  llamadas = 0;
+  await assert.rejects(() => conReintentos(() => { llamadas += 1; throw conEspera(1); }, {
+    intentos: 3, baseMs: 200, maximoMs: 2000, dormir: () => {}, aleatorio: () => 0
+  }), /503/);
+  assert.equal(llamadas, 3, 'un Retry-After de 1 s si cabe en el presupuesto y se reintenta');
+});
+
 test('reintentos: cada espera queda anotada para el registro', async () => {
   const anotaciones = [];
   await assert.rejects(() => conReintentos(() => {
@@ -312,10 +336,29 @@ test('moodle: una lectura que nunca se recupera agota los reintentos y falla', a
     const cliente = crearClienteMoodle({ permitirRedPrivada: true, tiempoMaximoMs: 1500 });
     moodle.estado.fallosTransitorios = 99;
 
-    await assert.rejects(() => cliente.configuracionPublica(moodle.url), /estado 503/);
+    await assert.rejects(() => cliente.configuracionPublica(moodle.url), /mantenimiento/);
     assert.equal(
       moodle.estado.peticiones.filter((p) => p.ruta === '/lib/ajax/service-nologin.php').length, 3,
       'se esperan exactamente 3 intentos y ni uno mas');
+  } finally {
+    await moodle.cerrar();
+  }
+});
+
+test('moodle: el mantenimiento CLI real no gasta reintentos, porque Moodle pide 300 s', async () => {
+  const moodle = await crearMoodleFalso();
+  try {
+    const cliente = crearClienteMoodle({ permitirRedPrivada: true, tiempoMaximoMs: 1500 });
+    moodle.estado.enMantenimientoCli = true;
+
+    await assert.rejects(() => cliente.configuracionPublica(moodle.url), (error) => {
+      assert.equal(error.name, 'ErrorDeMoodle');
+      assert.equal(error.codigo, 'EN_MANTENIMIENTO');
+      return true;
+    });
+    assert.equal(
+      moodle.estado.peticiones.filter((p) => p.ruta === '/lib/ajax/service-nologin.php').length, 1,
+      'con Retry-After por encima del presupuesto no se reintenta ni una vez');
   } finally {
     await moodle.cerrar();
   }

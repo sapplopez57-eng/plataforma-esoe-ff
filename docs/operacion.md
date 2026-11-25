@@ -116,12 +116,35 @@ consulta del servicio web) se reintentan hasta 3 veces con espera exponencial y 
 504. El **envío de credenciales no se reintenta nunca**: insistir con una contraseña equivocada
 bloquea la cuenta del usuario en el sitio remoto.
 
-**Lo que esta clasificación es y lo que no:** la lista de códigos y estados transitorios es una
-decisión de diseño, **no una medición contra un Moodle real**. El `500` se deja fuera a propósito,
-por tratarse normalmente de un error de la aplicación remota y no de una indisponibilidad pasajera.
-Si se dispone de una instancia real, conviene observar con qué responde de verdad en mantenimiento y
-bajo carga, y ajustar la lista a lo observado. Las pruebas cubren el comportamiento del reintento
-—`tests/observabilidad.test.js` falla si se quita—, no que esos códigos sean los que Moodle emite.
+**De dónde sale esta clasificación.** No es una suposición: se comprobó contra el código de Moodle.
+En `lib/setup.php` (rama `MOODLE_405_STABLE`, líneas 354-375), el modo mantenimiento por CLI responde
+
+```php
+header($_SERVER['SERVER_PROTOCOL'] . ' 503 Moodle under maintenance');
+header('Retry-After: 300');
+```
+
+Ese bloque está en el arranque, antes de cualquier distinción de punto de entrada —su único
+condicional es `!CLI_SCRIPT`—, así que `/webservice/rest/server.php` y `/lib/ajax/service-nologin.php`
+reciben el mismo `503`, con cuerpo HTML y no JSON. La documentación de desarrollador de Moodle lo
+confirma: «During maintenance mode Moodle will serve a 503 Service Unavailable»
+(`docs.moodle.org/dev/Error_pages`), y en esa misma página el `502` queda descrito como fallo de un
+proxy o CDN por delante de Moodle, que es justamente lo que vale la pena reintentar.
+
+**Por eso se honra `Retry-After`.** Moodle pide 300 segundos y el presupuesto de reintentos son unos
+pocos segundos: insistir es tiempo perdido y además el usuario acabaría viendo «no respondió a
+tiempo» en lugar de «en mantenimiento». Cuando la respuesta trae un `Retry-After` por encima del
+presupuesto, no se reintenta: el fallo se traduce de inmediato a `EN_MANTENIMIENTO`. Un `503` sin
+`Retry-After`, como el de un proxy sobrecargado, sí se reintenta.
+
+El `500` se deja fuera a propósito: en Moodle los errores de la propia aplicación no viajan como
+estado HTTP, sino como `200` con una excepción en el cuerpo JSON, que `traducirError` ya traduce por
+`errorcode` (`sitemaintenance`, `upgraderunning`, `invalidtoken`...). Un `500` de verdad apunta a un
+fallo del servidor remoto, no a una indisponibilidad pasajera.
+
+`tests/ayuda.js` reproduce los dos casos tal como se midieron: el mantenimiento por CLI con su
+`503`, su `Retry-After: 300` y su cuerpo HTML, y el `503` de proxy sin `Retry-After`. Las pruebas
+fallan si se quita el reintento, comprobado por mutación.
 
 El migrador espera a que la base acepte conexiones hasta 6 intentos (500 ms a 8 s) ante
 `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`, `ETIMEDOUT`, `ECONNRESET`, `57P03` y `53300`. Un error de

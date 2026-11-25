@@ -100,6 +100,8 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
         respuesta.resume();
         const fallo = new ErrorDeRed('RESPUESTA_INESPERADA', `La plataforma respondio con el estado ${respuesta.statusCode}.`);
         fallo.estado = respuesta.statusCode;
+        const espera = Number.parseInt(respuesta.headers['retry-after'], 10);
+        if (Number.isFinite(espera) && espera > 0) fallo.esperaPedidaMs = espera * 1000;
         return rechazar(fallo);
       }
       const trozos = [];
@@ -158,12 +160,19 @@ async function conReintentos(trabajo, opciones = {}) {
   const dormir = typeof opciones.dormir === 'function' ? opciones.dormir : esperar;
   const aleatorio = typeof opciones.aleatorio === 'function' ? opciones.aleatorio : Math.random;
   const anotar = typeof opciones.anotar === 'function' ? opciones.anotar : () => {};
+  const presupuestoMs = Number.isSafeInteger(opciones.presupuestoMs) && opciones.presupuestoMs > 0
+    ? opciones.presupuestoMs : maximoMs * intentos;
 
   for (let intento = 1; ; intento += 1) {
     try {
       return await trabajo(intento);
     } catch (error) {
       if (intento >= intentos || !transitorio(error)) throw error;
+      const pedida = error && error.esperaPedidaMs;
+      if (Number.isFinite(pedida) && pedida > presupuestoMs) {
+        anotar({ intento, intentos, esperaPedidaMs: pedida, presupuestoMs, decision: 'no se reintenta' });
+        throw error;
+      }
       const retraso = retrasoDeReintento(intento, baseMs, maximoMs, aleatorio);
       anotar({ intento, intentos, retraso, codigo: error && error.codigo });
       await dormir(retraso);
