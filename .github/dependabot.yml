@@ -27,6 +27,11 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: deps
+    groups:
+      produccion:
+        dependency-type: production
+      desarrollo:
+        dependency-type: development
 
   - package-ecosystem: github-actions
     directory: /

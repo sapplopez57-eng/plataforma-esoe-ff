@@ -102,7 +102,8 @@ async function crearMoodleFalso(opciones = {}) {
       { id: 78, fullname: 'Homonimo Dos', email: 'repetido@institucion.example', idnumber: '' }
     ],
     peticiones: [],
-    caido: false
+    caido: false,
+    fallosTransitorios: 0
   };
 
   const servidor = http.createServer((req, res) => {
@@ -117,6 +118,10 @@ async function crearMoodleFalso(opciones = {}) {
         res.end(JSON.stringify(dato));
       };
       if (estado.caido) return responder({ error: 'caido' }, 500);
+      if (estado.fallosTransitorios > 0) {
+        estado.fallosTransitorios -= 1;
+        return responder({ error: 'no disponible' }, 503);
+      }
 
       if (url.pathname === '/lib/ajax/service-nologin.php') {
         return responder([{ error: false, data: {

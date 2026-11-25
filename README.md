@@ -142,11 +142,14 @@ La vista web estática se publica en GitHub Pages desde `public/`.
 
 ## 5. Observabilidad y Resiliencia
 
-* **Registro estructurado:** una línea JSON por evento, con `x-peticion-id` en toda respuesta para
-  correlacionar el acceso y el error de una misma petición. Las credenciales, cookies, tokens, DNI y
-  correos se redactan antes de serializar.
+* **Registro estructurado:** una línea JSON por evento, con `x-peticion-id` en toda respuesta que
+  atiende la aplicación, para correlacionar el acceso y el error de una misma petición. Las
+  credenciales, cookies, tokens, DNI y correos se redactan antes de serializar, incluido el mensaje
+  de un error. Las respuestas que emite Node sin llegar a Express (el `408` por cabeceras
+  incompletas) quedan fuera del registro.
 * **Límites de tiempo HTTP:** `keepAlive`, cabeceras y petición completa, con el intervalo de revisión
-  de conexiones derivado de ellos para que el corte se aplique de verdad.
+  de conexiones derivado de ellos para que el corte se aplique de verdad. Solo rigen donde el proceso
+  es dueño del servidor HTTP: **en el despliegue sin estado de Vercel no aplican.**
 * **Reintentos con espera exponencial:** en las lecturas a plataformas externas y en la espera a que
   la base de datos arranque. Nunca al enviar credenciales.
 * **Seguridad en el pipeline:** CodeQL (`security-extended`), revisión de dependencias en cada PR,

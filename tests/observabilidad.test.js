@@ -6,7 +6,7 @@ const net = require('node:net');
 const { once } = require('node:events');
 const { spawn } = require('node:child_process');
 const crypto = require('node:crypto');
-const { crearRegistro, redactar, identificadorDePeticion, NIVELES, CABECERA_PETICION } = require('../src/registro');
+const { crearRegistro, redactar, redactarTexto, identificadorDePeticion, NIVELES, CABECERA_PETICION } = require('../src/registro');
 const { conReintentos, esTransitorio, retrasoDeReintento, ErrorDeRed } = require('../src/seguridad/red');
 const { esFalloDeArranque } = require('../scripts/migrar');
 const { validarConfig, cargarConfig, tiemposHttpDe } = require('../src/config');
@@ -79,12 +79,45 @@ test('registro: los campos sensibles nunca llegan a la salida', () => {
   }
 });
 
+test('registro: el mensaje de un Error no filtra credenciales ni datos personales', () => {
+  const { registro, lineas, eventos } = capturar();
+  const fallo = new Error('password authentication failed: clave=Sup3rS3creta-1 para alumno@institucion.example (dni 0801199900001)');
+  fallo.code = '28P01';
+  registro.error('no se pudo conectar', { fallo });
+  const [evento] = eventos();
+  assert.equal(evento.fallo.code, '28P01');
+  const crudo = lineas.join('');
+  for (const fuga of ['Sup3rS3creta-1', 'alumno@institucion.example', '0801199900001']) {
+    assert.equal(crudo.includes(fuga), false, `se filtro ${fuga}`);
+  }
+  assert.ok(evento.fallo.mensaje.includes('[REDACTADO]'));
+});
+
+test('registro: el mensaje suelto tambien se redacta, no solo los campos', () => {
+  const { registro, lineas } = capturar();
+  registro.error('fallo con token=abc123-def456-ghi789 de correo@ejemplo.hn');
+  const crudo = lineas.join('');
+  assert.equal(crudo.includes('abc123-def456-ghi789'), false);
+  assert.equal(crudo.includes('correo@ejemplo.hn'), false);
+});
+
+test('registro: la redaccion de texto deja legible lo que no es secreto', () => {
+  assert.equal(redactarTexto('clase ELEC-1 de la promocion 2026'), 'clase ELEC-1 de la promocion 2026');
+  assert.equal(redactarTexto('password: hunter2'), 'password: [REDACTADO]');
+  assert.equal(redactarTexto('contacto en juan@esoe.hn'), 'contacto en [REDACTADO]');
+  assert.equal(redactarTexto(`clave ${'f'.repeat(64)}`), 'clave [REDACTADO]');
+  assert.equal(redactarTexto('expediente 0801199900001'), 'expediente [REDACTADO]');
+  assert.match(redactarTexto('peticion 5f1c2d3e-4b5a-6c7d-8e9f-0a1b2c3d4e5f'), /5f1c2d3e-4b5a/);
+});
+
 test('registro: recorta textos largos, corta la profundidad y resiste ciclos', () => {
   const ciclo = { nombre: 'raiz' };
   ciclo.yo = ciclo;
-  const limpio = redactar({ largo: 'x'.repeat(900), ciclo, hondo: { a: { b: { c: { d: 'invisible' } } } } });
+  const prosa = `${'palabra '.repeat(200)}final`;
+  const limpio = redactar({ largo: prosa, posibleSecreto: 'x'.repeat(900), ciclo, hondo: { a: { b: { c: { d: 'invisible' } } } } });
   assert.equal(limpio.largo.length, 512 + 5);
   assert.ok(limpio.largo.endsWith('[...]'));
+  assert.equal(limpio.posibleSecreto, '[REDACTADO]');
   assert.equal(limpio.ciclo.yo, '[CICLO]');
   assert.equal(limpio.hondo.a.b.c, '[REDACTADO]');
 });
@@ -255,23 +288,61 @@ test('reintentos: cada espera queda anotada para el registro', async () => {
   ]);
 });
 
-test('moodle: una lectura transitoria se reintenta y el envio de credenciales no', async () => {
+test('moodle: una lectura que falla de forma transitoria se reintenta y termina bien', async () => {
   const moodle = await crearMoodleFalso();
   try {
     const cliente = crearClienteMoodle({ permitirRedPrivada: true, tiempoMaximoMs: 1500 });
-    const base = moodle.url;
+    const configuracion = (ruta) => moodle.estado.peticiones.filter((p) => p.ruta === ruta).length;
+    const RUTA = '/lib/ajax/service-nologin.php';
 
-    moodle.estado.serviciosWeb = true;
-    const antes = moodle.estado.peticiones.length;
-    await cliente.configuracionPublica(base);
-    assert.equal(moodle.estado.peticiones.length - antes, 1);
+    moodle.estado.fallosTransitorios = 2;
+    const sitio = await cliente.configuracionPublica(moodle.url);
 
-    await assert.rejects(() => cliente.obtenerToken(base, 'alumno.prueba', 'Clave-Equivocada'), /credenciales/);
-    const intentosDeLogin = moodle.estado.peticiones.filter((p) => p.ruta === '/login/token.php').length;
-    assert.equal(intentosDeLogin, 1);
+    assert.equal(sitio.serviciosWeb, true);
+    assert.equal(configuracion(RUTA), 3, 'debieron hacerse dos reintentos antes del exito');
+    assert.equal(moodle.estado.fallosTransitorios, 0);
   } finally {
     await moodle.cerrar();
   }
+});
+
+test('moodle: una lectura que nunca se recupera agota los reintentos y falla', async () => {
+  const moodle = await crearMoodleFalso();
+  try {
+    const cliente = crearClienteMoodle({ permitirRedPrivada: true, tiempoMaximoMs: 1500 });
+    moodle.estado.fallosTransitorios = 99;
+
+    await assert.rejects(() => cliente.configuracionPublica(moodle.url), /estado 503/);
+    assert.equal(
+      moodle.estado.peticiones.filter((p) => p.ruta === '/lib/ajax/service-nologin.php').length, 3,
+      'se esperan exactamente 3 intentos y ni uno mas');
+  } finally {
+    await moodle.cerrar();
+  }
+});
+
+test('moodle: el envio de credenciales no se reintenta ni ante un fallo transitorio', async () => {
+  const moodle = await crearMoodleFalso();
+  try {
+    const cliente = crearClienteMoodle({ permitirRedPrivada: true, tiempoMaximoMs: 1500 });
+    const intentosDeLogin = () => moodle.estado.peticiones.filter((p) => p.ruta === '/login/token.php').length;
+
+    moodle.estado.fallosTransitorios = 1;
+    await assert.rejects(() => cliente.obtenerToken(moodle.url, 'alumno.prueba', 'Clave-Correcta-1'), /estado 503/);
+    assert.equal(intentosDeLogin(), 1, 'un 503 al enviar credenciales no se reintenta');
+
+    await assert.rejects(() => cliente.obtenerToken(moodle.url, 'alumno.prueba', 'Clave-Equivocada'), /credenciales/);
+    assert.equal(intentosDeLogin(), 2, 'una credencial rechazada tampoco se reintenta');
+  } finally {
+    await moodle.cerrar();
+  }
+});
+
+test('migrar: un plazo de conexion agotado cuenta como fallo de arranque y permite reintentar', () => {
+  const porPlazo = new Error('timeout expired');
+  assert.equal(esFalloDeArranque(porPlazo), true);
+  assert.equal(esFalloDeArranque(new Error('Connection terminated unexpectedly')), true);
+  assert.equal(esFalloDeArranque(new Error('password authentication failed')), false);
 });
 
 test('migrar: se reconocen los fallos de una base que aun esta arrancando', () => {
@@ -358,4 +429,61 @@ test('tiempos http: el servidor corta una peticion que no termina de enviar cabe
     hijo.kill('SIGKILL');
     await once(hijo, 'exit').catch(() => {});
   }
+});
+
+async function arrancarServidor(extra = {}, argumentos = ['src/server.js']) {
+  const puerto = 20000 + crypto.randomInt(20000);
+  const hijo = spawn(process.execPath, argumentos, {
+    cwd: process.cwd(),
+    env: {
+      ...process.env, NODE_ENV: 'test', DATABASE_URL: '', PORT: String(puerto),
+      HOST: '127.0.0.1', LOG_NIVEL: 'info', ...extra
+    },
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  const salida = [];
+  hijo.stdout.on('data', (t) => salida.push(t.toString('utf8')));
+  hijo.stderr.on('data', (t) => salida.push(t.toString('utf8')));
+  const activo = new Promise((resolver, rechazar) => {
+    const revisar = () => {
+      for (const linea of salida.join('').split('\n')) {
+        if (!linea.trim()) continue;
+        try {
+          const evento = JSON.parse(linea);
+          if (evento.mensaje === 'servidor activo' && evento.puerto === puerto) return resolver(evento);
+        } catch { continue; }
+      }
+      return null;
+    };
+    hijo.stdout.on('data', revisar);
+    hijo.once('exit', (codigo) => rechazar(new Error(`el servidor termino con codigo ${codigo}: ${salida.join('')}`)));
+  });
+  return { hijo, puerto, salida, activo };
+}
+
+test('apagado: una senal ordenada termina con codigo 0', async () => {
+  const { hijo, activo, salida } = await arrancarServidor();
+  await activo;
+  hijo.kill('SIGTERM');
+  const [codigo] = await once(hijo, 'exit');
+  assert.equal(codigo, 0, salida.join(''));
+  assert.match(salida.join(''), /"mensaje":"apagado completo"/);
+});
+
+test('apagado: una promesa rechazada sin manejador termina con codigo distinto de cero', async () => {
+  const { hijo, activo, salida } = await arrancarServidor(
+    {}, ['-e', "require('./src/server.js'); setTimeout(() => Promise.reject(new Error('fallo asincrono de prueba')), 300);"]);
+  await activo;
+  const [codigo] = await once(hijo, 'exit');
+  assert.notEqual(codigo, 0, `un fallo debe terminar con codigo != 0, termino con ${codigo}: ${salida.join('')}`);
+  assert.match(salida.join(''), /promesa rechazada sin manejador/);
+});
+
+test('apagado: una excepcion no capturada termina con codigo distinto de cero', async () => {
+  const { hijo, activo, salida } = await arrancarServidor(
+    {}, ['-e', "require('./src/server.js'); setTimeout(() => { throw new Error('fallo sincrono de prueba'); }, 300);"]);
+  await activo;
+  const [codigo] = await once(hijo, 'exit');
+  assert.notEqual(codigo, 0, `un crash debe terminar con codigo != 0, termino con ${codigo}: ${salida.join('')}`);
+  assert.match(salida.join(''), /excepcion no capturada/);
 });

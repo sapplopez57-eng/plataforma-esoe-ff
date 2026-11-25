@@ -9,9 +9,11 @@ const { conReintentos } = require('../src/seguridad/red');
 const CODIGOS_DE_ARRANQUE = new Set([
   'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT', 'ECONNRESET', '57P03', '53300'
 ]);
+const MENSAJES_DE_ARRANQUE = ['timeout expired', 'connection terminated'];
 const INTENTOS_DE_CONEXION = 6;
 const ESPERA_BASE_MS = 500;
 const ESPERA_MAXIMA_MS = 8000;
+const TIEMPO_DE_CONEXION_MS = 10000;
 
 const registro = crearRegistro({
   entorno: process.env.NODE_ENV || 'development',
@@ -20,7 +22,9 @@ const registro = crearRegistro({
 
 function esFalloDeArranque(error) {
   const codigos = [error && error.code, ...((error && error.errors) || []).map((e) => e && e.code)];
-  return codigos.some((codigo) => CODIGOS_DE_ARRANQUE.has(String(codigo)));
+  if (codigos.some((codigo) => CODIGOS_DE_ARRANQUE.has(String(codigo)))) return true;
+  const texto = String((error && error.message) || '').toLowerCase();
+  return MENSAJES_DE_ARRANQUE.some((frase) => texto.includes(frase));
 }
 
 function conectarConEspera(crearCliente) {
@@ -52,7 +56,12 @@ async function principal() {
 
   const { modo, ssl } = tlsDeBaseDeDatos(process.env);
   registro.info('conexion a la base de datos', { tls: modo });
-  const cliente = await conectarConEspera(() => new Client({ connectionString: url, ssl }));
+  const cliente = await conectarConEspera(() => new Client({
+    connectionString: url,
+    ssl,
+    connectionTimeoutMillis: TIEMPO_DE_CONEXION_MS,
+    statement_timeout: TIEMPO_DE_CONEXION_MS
+  }));
   try {
     const resultado = await migrar({ cliente, registrar: (m) => registro.info(m) });
     registro.info('esquema al dia', {

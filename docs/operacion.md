@@ -70,9 +70,15 @@ recolector (journald, Loki, CloudWatch) la ingiera sin parseo frágil:
 {"t":"2026-11-25T00:17:16.712Z","nivel":"info","servicio":"ESOE-SMS","entorno":"production","peticion":"5f1c...","mensaje":"peticion atendida","metodo":"GET","ruta":"/api/clases/:id","estado":200,"ms":12.4,"origen":"10.0.0.7"}
 ```
 
-Toda respuesta HTTP lleva la cabecera `x-peticion-id`. Si la petición entra con una propia y es
-válida (`[A-Za-z0-9_-]`, de 8 a 64 caracteres), se conserva para poder seguir una traza que empieza
-en la pasarela; si no lo es, se descarta y se genera un UUID. Ese identificador aparece en la línea
+Toda respuesta que atiende la aplicación lleva la cabecera `x-peticion-id`. Si la petición entra con
+una propia y es válida (`[A-Za-z0-9_-]`, de 8 a 64 caracteres), se conserva para poder seguir una
+traza que empieza en la pasarela; si no lo es, se descarta y se genera un UUID.
+
+**Excepción, medida:** las respuestas que emite Node sin pasar por la aplicación **no llevan la
+cabecera**. Es el caso del `408` por cabeceras incompletas de la sección siguiente: Node cierra esa
+conexión antes de que la petición llegue a Express, así que el registro no deja línea de acceso ni
+identificador para ella. Un recuento de peticiones basado solo en este registro no las ve; para
+contarlas hace falta el registro de la pasarela o del balanceador. Ese identificador aparece en la línea
 de acceso y en el error de la misma petición, de modo que un `500` se ata a quién lo provocó.
 
 `LOG_NIVEL` acepta `depuracion`, `info`, `aviso`, `error` y `silencio` (por defecto `info`, y
@@ -95,6 +101,13 @@ no se cumple. El intervalo con que Node revisa las conexiones a medias se deriva
 (la mitad del menor, con un piso de 250 ms): sin eso Node solo revisaría cada 30 s y el límite de
 cabeceras no se aplicaría de verdad.
 
+**Alcance, medido:** estos tres límites solo rigen donde el proceso es dueño de su servidor HTTP, es
+decir el contenedor y el arranque con `npm start`. **En el despliegue sin estado de Vercel no
+aplican**: ahí el punto de entrada (`api/index.js`) entrega la aplicación a la plataforma, que es la
+que acepta las conexiones, y Express no puede imponer un plazo de cabeceras. En ese despliegue la
+protección contra conexiones a medias es la que ofrezca la plataforma, no esta. Las cuatro variables
+`HTTP_*` quedan sin efecto y no hay por qué fijarlas.
+
 ## Reintentos ante fallos transitorios
 
 Las **lecturas** contra una plataforma externa (configuración pública de Moodle y las llamadas de
@@ -102,6 +115,13 @@ consulta del servicio web) se reintentan hasta 3 veces con espera exponencial y 
 (100-200 ms, 200-400 ms), solo ante `TIEMPO_AGOTADO`, `SIN_CONEXION` o los estados 429, 502, 503 y
 504. El **envío de credenciales no se reintenta nunca**: insistir con una contraseña equivocada
 bloquea la cuenta del usuario en el sitio remoto.
+
+**Lo que esta clasificación es y lo que no:** la lista de códigos y estados transitorios es una
+decisión de diseño, **no una medición contra un Moodle real**. El `500` se deja fuera a propósito,
+por tratarse normalmente de un error de la aplicación remota y no de una indisponibilidad pasajera.
+Si se dispone de una instancia real, conviene observar con qué responde de verdad en mantenimiento y
+bajo carga, y ajustar la lista a lo observado. Las pruebas cubren el comportamiento del reintento
+—`tests/observabilidad.test.js` falla si se quita—, no que esos códigos sean los que Moodle emite.
 
 El migrador espera a que la base acepte conexiones hasta 6 intentos (500 ms a 8 s) ante
 `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`, `ETIMEDOUT`, `ECONNRESET`, `57P03` y `53300`. Un error de

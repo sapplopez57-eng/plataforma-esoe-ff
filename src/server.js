@@ -47,19 +47,19 @@ servidor.listen(config.puerto, config.host, () => {
 });
 
 let apagando = false;
-function apagar(senal) {
+function apagar(senal, codigo = 0) {
   if (apagando) return;
   apagando = true;
   app.locals.aceptaTrafico = false;
   registro.info('apagado solicitado', { senal });
   servidor.close(async () => {
     if (db) await db.cerrar().catch(() => {});
-    registro.info('apagado completo', { senal });
-    process.exit(0);
+    registro.info('apagado completo', { senal, codigo });
+    process.exit(codigo);
   });
   setTimeout(() => {
     registro.error('apagado forzado: el drenaje no termino a tiempo', { senal, margenMs: MARGEN_DE_DRENAJE_MS });
-    process.exit(1);
+    process.exit(codigo || 1);
   }, MARGEN_DE_DRENAJE_MS).unref();
 }
 
@@ -67,10 +67,13 @@ process.on('SIGTERM', () => apagar('SIGTERM'));
 process.on('SIGINT', () => apagar('SIGINT'));
 
 process.on('unhandledRejection', (razon) => {
-  registro.error('promesa rechazada sin manejador', { fallo: razon instanceof Error ? razon : new Error(String(razon)) });
+  registro.error('promesa rechazada sin manejador: se inicia el apagado', {
+    fallo: razon instanceof Error ? razon : new Error(String(razon))
+  });
+  apagar('unhandledRejection', 1);
 });
 
 process.on('uncaughtException', (error) => {
   registro.error('excepcion no capturada: se inicia el apagado', { fallo: error });
-  apagar('uncaughtException');
+  apagar('uncaughtException', 1);
 });

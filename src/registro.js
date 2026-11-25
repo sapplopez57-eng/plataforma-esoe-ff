@@ -12,14 +12,30 @@ const MAXIMO_TEXTO = 512;
 const PROFUNDIDAD_MAXIMA = 4;
 const MAXIMO_ELEMENTOS = 20;
 const MAXIMO_CLAVES = 40;
+const PAREJA_SENSIBLE = /\b(authorization|cookie|clave|contrasena|password|passwd|secret|secreto|token|llave|apikey|api_key)\b(\s*[:=]\s*|\s+)("[^"]*"|'[^']*'|\S+)/gi;
+const CORREO = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
+const IDENTIDAD_LARGA = /\b\d{13,}\b/g;
+const SECRETO_LARGO = /\b[A-Za-z0-9_]{32,}\b/g;
 
 function recortar(texto) {
   return texto.length > MAXIMO_TEXTO ? `${texto.slice(0, MAXIMO_TEXTO)}[...]` : texto;
 }
 
+function redactarTexto(texto) {
+  return String(texto)
+    .replace(PAREJA_SENSIBLE, (_entero, clave, separador) => `${clave}${separador}${REDACTADO}`)
+    .replace(CORREO, REDACTADO)
+    .replace(IDENTIDAD_LARGA, REDACTADO)
+    .replace(SECRETO_LARGO, REDACTADO);
+}
+
+function limpiar(texto) {
+  return recortar(redactarTexto(texto));
+}
+
 function redactar(valor, profundidad = 0, vistos = new WeakSet()) {
   if (valor === null || valor === undefined) return null;
-  if (typeof valor === 'string') return recortar(valor);
+  if (typeof valor === 'string') return limpiar(valor);
   if (typeof valor === 'boolean') return valor;
   if (typeof valor === 'number') return Number.isFinite(valor) ? valor : String(valor);
   if (typeof valor === 'bigint') return valor.toString();
@@ -28,9 +44,9 @@ function redactar(valor, profundidad = 0, vistos = new WeakSet()) {
   if (valor instanceof Error) {
     return {
       nombre: valor.name,
-      mensaje: recortar(String(valor.message || '')),
-      ...(valor.codigo ? { codigo: recortar(String(valor.codigo)) } : {}),
-      ...(valor.code ? { code: recortar(String(valor.code)) } : {})
+      mensaje: limpiar(String(valor.message || '')),
+      ...(valor.codigo ? { codigo: limpiar(String(valor.codigo)) } : {}),
+      ...(valor.code ? { code: limpiar(String(valor.code)) } : {})
     };
   }
   if (profundidad >= PROFUNDIDAD_MAXIMA) return REDACTADO;
@@ -62,7 +78,7 @@ function crearRegistro({ servicio = 'ESOE-SMS', entorno = 'development', version
     const marca = new Date().toISOString();
     let linea;
     try {
-      const evento = { t: marca, nivel: nivelEvento, ...base, ...contexto, mensaje: recortar(String(mensaje)) };
+      const evento = { t: marca, nivel: nivelEvento, ...base, ...contexto, mensaje: limpiar(String(mensaje)) };
       if (datos !== undefined) Object.assign(evento, objetoDeDatos(datos));
       linea = JSON.stringify(evento);
     } catch {
@@ -93,9 +109,9 @@ function identificadorDePeticion(recibido) {
 
 function rutaDePeticion(req) {
   if (req.route && typeof req.route.path === 'string') {
-    return recortar(`${req.baseUrl || ''}${req.route.path}`) || '/';
+    return limpiar(`${req.baseUrl || ''}${req.route.path}`) || '/';
   }
-  return recortar(String(req.path || '/'));
+  return limpiar(String(req.path || '/'));
 }
 
 function nivelPorEstado(estado) {
@@ -129,6 +145,7 @@ module.exports = {
   crearRegistro,
   registroDePeticiones,
   redactar,
+  redactarTexto,
   identificadorDePeticion,
   NIVELES,
   CABECERA_PETICION
