@@ -77,18 +77,24 @@ async function carreraDeCalificacion(url) {
     await bajaElMaximo.query('UPDATE tareas SET puntaje_maximo = 50 WHERE id = 1');
 
     await califica.query('BEGIN');
-    const calificando = califica.query('UPDATE entregas SET nota = 90 WHERE id = 1');
+    const calificando = califica.query('UPDATE entregas SET nota = 90 WHERE id = 1')
+      .then(() => ({ fallo: null }), (error) => ({ fallo: error }));
     await new Promise((seguir) => setTimeout(seguir, VENTAJA_MS));
 
     await bajaElMaximo.query('COMMIT');
     resultado.confirmaron += 1;
-    try {
-      await calificando;
-      await califica.query('COMMIT');
-      resultado.confirmaron += 1;
-    } catch (error) {
-      resultado.error = error.message;
+    const { fallo } = await calificando;
+    if (fallo) {
+      resultado.error = fallo.message;
       await califica.query('ROLLBACK').catch(() => {});
+    } else {
+      try {
+        await califica.query('COMMIT');
+        resultado.confirmaron += 1;
+      } catch (error) {
+        resultado.error = error.message;
+        await califica.query('ROLLBACK').catch(() => {});
+      }
     }
     const { rows } = await bajaElMaximo.query(
       'SELECT t.puntaje_maximo AS tope, e.nota FROM tareas t JOIN entregas e ON e.tarea_id = t.id');
