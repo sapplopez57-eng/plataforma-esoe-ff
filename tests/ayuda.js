@@ -104,7 +104,13 @@ async function crearMoodleFalso(opciones = {}) {
     peticiones: [],
     caido: false,
     fallosTransitorios: 0,
-    enMantenimientoCli: false
+    enMantenimientoCli: false,
+    release: opciones.release || '4.5',
+    exponeArbolInterno: opciones.exponeArbolInterno === true,
+    funciones: opciones.funciones || [
+      'core_webservice_get_site_info', 'core_enrol_get_users_courses',
+      'core_user_get_users_by_field', 'gradereport_overview_get_course_grades'
+    ]
   };
 
   const servidor = http.createServer((req, res) => {
@@ -119,6 +125,14 @@ async function crearMoodleFalso(opciones = {}) {
         res.end(JSON.stringify(dato));
       };
       if (estado.caido) return responder({ error: 'caido' }, 500);
+      if (req.method === 'GET') {
+        const archivo = url.pathname.replace(/^\//, '');
+        const internos = ['composer.json', 'composer.lock', 'UPGRADING.md', 'Gruntfile.js', 'phpunit.xml.dist'];
+        if (estado.exponeArbolInterno && internos.includes(archivo)) {
+          return responder({ name: 'moodle/moodle' }, 200);
+        }
+        return responder({ error: 'no encontrado' }, 404);
+      }
       if (estado.enMantenimientoCli) {
         res.writeHead(503, {
           Status: '503 Moodle under maintenance',
@@ -155,7 +169,11 @@ async function crearMoodleFalso(opciones = {}) {
         if (token === estado.tokenServicio) {
           switch (campos.get('wsfunction')) {
             case 'core_webservice_get_site_info':
-              return responder({ userid: 2, fullname: 'Servicio', sitename: 'Moodle de pruebas', release: '4.5' });
+              return responder({
+                userid: 2, fullname: 'Servicio', sitename: 'Moodle de pruebas',
+                release: estado.release,
+                functions: estado.funciones.map((name) => ({ name, version: estado.release }))
+              });
             case 'core_user_get_users_by_field': {
               const campo = campos.get('field');
               const valor = String(campos.get('values[0]') || '').toLowerCase();

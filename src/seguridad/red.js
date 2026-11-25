@@ -134,6 +134,38 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
   });
 }
 
+function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000, maximoBytes = 65536 } = {}) {
+  return new Promise((resolver, rechazar) => {
+    const url = new URL(direccion);
+    const cliente = url.protocol === 'https:' ? https : http;
+    const peticion = cliente.request(url, {
+      method: 'GET',
+      lookup: resolucionSegura(permitirRedPrivada),
+      timeout: tiempoMaximoMs,
+      headers: { Accept: '*/*', 'User-Agent': 'PlataformaESOE/1.0' }
+    }, (respuesta) => {
+      const trozos = [];
+      let total = 0;
+      respuesta.on('data', (trozo) => {
+        total += trozo.length;
+        if (total > maximoBytes) return peticion.destroy();
+        trozos.push(trozo);
+      });
+      respuesta.on('end', () => resolver({
+        estado: respuesta.statusCode,
+        tipo: String(respuesta.headers['content-type'] || ''),
+        cuerpo: Buffer.concat(trozos).toString('utf8').slice(0, maximoBytes)
+      }));
+    });
+    peticion.on('timeout', () => peticion.destroy(new ErrorDeRed('TIEMPO_AGOTADO', 'La plataforma no respondio a tiempo.')));
+    peticion.on('error', (error) => {
+      if (error instanceof ErrorDeRed) return rechazar(error);
+      rechazar(new ErrorDeRed('SIN_CONEXION', 'No se pudo conectar con la plataforma.'));
+    });
+    peticion.end();
+  });
+}
+
 function esTransitorio(error) {
   if (!(error instanceof ErrorDeRed)) return false;
   if (CODIGOS_TRANSITORIOS.includes(error.codigo)) return true;
@@ -181,6 +213,6 @@ async function conReintentos(trabajo, opciones = {}) {
 }
 
 module.exports = {
-  ErrorDeRed, esDireccionInterna, normalizarUrlBase, enviar,
+  ErrorDeRed, esDireccionInterna, normalizarUrlBase, enviar, obtener,
   conReintentos, esTransitorio, retrasoDeReintento
 };

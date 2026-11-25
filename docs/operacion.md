@@ -150,6 +150,31 @@ El migrador espera a que la base acepte conexiones hasta 6 intentos (500 ms a 8 
 `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`, `ETIMEDOUT`, `ECONNRESET`, `57P03` y `53300`. Un error de
 credenciales (`28P01`) falla de inmediato. Así el contenedor no muere cuando la base todavía arranca.
 
+## Comprobación de la plataforma Moodle
+
+`npm run comprobar:moodle` interroga al Moodle configurado en `MOODLE_URL` y falla el despliegue si la
+integración no puede funcionar. No supone nada: todo lo que afirma lo pregunta.
+
+| Comprueba | Cómo | Si falla |
+|---|---|---|
+| `MOODLE_URL` canónica y HTTPS | `normalizarUrlBase` | fallo, sin salir a la red |
+| Es un Moodle, con servicios web y servicio móvil | `tool_mobile_get_public_config` | fallo |
+| El `DocumentRoot` apunta a `public/` | GET a `composer.json`, `composer.lock`, `UPGRADING.md`, `Gruntfile.js`, `phpunit.xml.dist` | fallo si alguno responde `200` |
+| El token puede llamar a las funciones que la integración usa | `core_webservice_get_site_info` → `functions` | fallo en las exigidas, aviso en las de notas |
+| La versión no es una rama de desarrollo | `release` de `site_info` | fallo en producción, aviso fuera |
+
+**Por qué el `DocumentRoot`.** Desde la reestructura de Moodle 5.1 el código servible vive en
+`public/`, y los cinco archivos de la tabla existen **solo** por encima de esa carpeta, nunca dentro.
+Si el servidor web responde `200` a alguno, el `DocumentRoot` apunta a la raíz del código y está
+publicando el árbol interno: `composer.json`, `composer.lock`, `admin/`, `lib/`, `scripts/`. El sitio
+parece funcionar igual, así que es un fallo silencioso. Las plantillas de despliegue de Azure para
+Moodle lo resuelven del mismo modo (`scripts/setup_webserver.sh`: `htmlRootDir="${htmlRootDir}/public"`).
+
+**Por qué la versión.** Una `release` que contenga `dev`, `alpha`, `beta` o `rc` es una rama de
+desarrollo con liberaciones semanales y madurez alfa, no una estable. En producción con expedientes
+reales eso es un fallo, no un aviso. Para referencia, las plantillas de Azure para Moodle solo admiten
+una versión en su `azuredeploy.json`: `MOODLE_503_STABLE`.
+
 ## Comprobación previa al despliegue
 
 `npm run comprobar:despliegue` valida contra la base real, sin modificarla, y termina con código

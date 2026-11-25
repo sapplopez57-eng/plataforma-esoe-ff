@@ -136,7 +136,21 @@ function crearClienteMoodle(opciones = {}) {
     return null;
   }
 
-  return { configuracionPublica, obtenerToken, infoDelSitio, cursosDelUsuario, detectarInscripcion };
+  async function capacidades(urlBase, token) {
+    const info = await llamar(urlBase, token, 'core_webservice_get_site_info');
+    if (!info || !Number.isInteger(info.userid)) {
+      throw new ErrorDeMoodle('ERROR_REMOTO', 'La plataforma no devolvio la identidad del usuario.');
+    }
+    const lista = Array.isArray(info.functions) ? info.functions : [];
+    return {
+      usuarioId: info.userid,
+      sitio: String(info.sitename || ''),
+      release: String(info.release || ''),
+      funciones: lista.map((f) => String((f && f.name) || '')).filter(Boolean)
+    };
+  }
+
+  return { configuracionPublica, obtenerToken, infoDelSitio, cursosDelUsuario, detectarInscripcion, capacidades };
 }
 
 module.exports = { crearClienteMoodle, ErrorDeMoodle, ErrorDeRed };
