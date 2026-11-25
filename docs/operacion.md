@@ -236,6 +236,50 @@ desarrollo con liberaciones semanales y madurez alfa, no una estable. En producc
 reales eso es un fallo, no un aviso. Para referencia, las plantillas de Azure para Moodle solo admiten
 una versión en su `azuredeploy.json`: `MOODLE_503_STABLE`.
 
+## TLS con la base de datos: por qué la URL no decide
+
+`node-postgres` da prioridad a los parámetros de la cadena de conexión sobre el objeto `ssl` que le
+pasa la aplicación. Comprobado contra PostgreSQL real: con `?sslmode=disable` en la URL y
+`ssl: { rejectUnauthorized: true }` en el objeto, **la conexión se establece sin cifrado** y
+`pg_stat_ssl.ssl` queda en `false`. Es decir, la política podía declarar `verificado` y el tráfico
+viajar en claro, con los expedientes dentro.
+
+Por eso la plataforma ya no acepta que la URL lleve la política:
+
+| En `DATABASE_URL` | Qué pasa |
+|---|---|
+| `sslmode` **más débil** que `DB_SSL` | **no arranca**, y el error dice cuál pide cada uno |
+| `sslmode` **más fuerte** que `DB_SSL` | arranca con el más fuerte de los dos |
+| `sslmode=prefer` o `allow` | **no arranca**: dejan la decisión al servidor |
+| `sslmode` sin `DB_SSL` | se adopta como política (`disable`→`desactivado`, `require`→**`verificado`**, `verify-*`→`verificado`) |
+
+`require` se honra como **`verificado`**, no como «cifra y no compruebes». En libpq, `require` cifra
+sin validar el certificado, y eso deja pasar a un intermediario que suplante la base de datos. La
+plataforma no ofrece eso por omisión: para TLS sin verificar hay que pedirlo a propósito con
+`DB_SSL=requerido`, y con una base remota en producción sigue sin arrancar. La regla es por fuerza,
+nunca por igualdad: lo que pida más gana, lo que pida menos se rechaza.
+| `ssl`, `sslrootcert`, `sslcert`, `sslkey`, `sslnegotiation` | **no arranca**: use `DB_SSL` y `DB_CA_CERT` |
+
+En todos los casos la URL que la aplicación usa para conectar sale **sin** esos parámetros, así que el
+objeto `ssl` es siempre el que manda. Los demás parámetros (`application_name` y compañía) se
+conservan. Esto aplica a la aplicación, al migrador, a `preparar-base`, a `crear-root` y al
+comprobador de despliegue: todos pasan por la misma limpieza.
+
+### Dos agujeros más de la misma familia
+
+**`DB_SSL=requerido` con base remota en producción ya no arranca.** `requerido` cifra pero no
+comprueba el certificado (`rejectUnauthorized: false`), así que un intermediario puede suplantar la
+base de datos. Con una base remota en producción hay que usar `verificado`.
+
+**Los hosts se clasifican por lo que son, no por cómo empiezan.** Antes, cualquier nombre que
+empezara por un prefijo de red privada se tomaba por privado, así que un dominio público como
+`10.database.example` se consideraba local y la exigencia de TLS no se aplicaba. Y cualquier host sin
+punto se tomaba por local, lo que incluía una dirección IPv6 pública como `2606:4700::1111`. Ahora se
+analiza con `net.isIP` y, cuando es una IP de verdad, se comprueba contra la misma lista de redes
+internas que usa la defensa contra SSRF. Un nombre de una sola etiqueta sigue siendo local, porque no
+puede ser un dominio público: eso mantiene funcionando el `esoe-db` de `docker-compose`, y hay una
+prueba que falla si deja de ser así.
+
 ## Comprobación previa al despliegue
 
 `npm run comprobar:despliegue` valida contra la base real, sin modificarla, y termina con código

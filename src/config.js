@@ -1,6 +1,9 @@
 'use strict';
 
+const net = require('node:net');
+
 const { NIVELES } = require('./registro');
+const { esDireccionInterna } = require('./seguridad/red');
 
 const VALORES_DE_EJEMPLO = ['esoe_secure_2026', 'esoe_jwt_secret_key_change_in_prod', 'changeme', 'cambiar'];
 const CLAVE_CIFRADO_HEX = /^[0-9a-f]{64}$/i;
@@ -8,7 +11,14 @@ const MODOS_TLS = ['desactivado', 'requerido', 'verificado'];
 const CERTIFICADO_PEM = /^-----BEGIN CERTIFICATE-----[\sA-Za-z0-9+/=-]+-----END CERTIFICATE-----$/;
 const HOSTS_LOCALES = ['localhost', '127.0.0.1', '::1', '[::1]'];
 const SUFIJOS_DE_RED_PRIVADA = ['.local', '.internal', '.lan', '.localdomain'];
-const IPV4_PRIVADA = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/;
+const PARAMETROS_TLS_DE_URL = ['sslmode', 'ssl', 'sslrootcert', 'sslcert', 'sslkey', 'sslnegotiation'];
+const MODO_POR_SSLMODE = Object.freeze({
+  disable: 'desactivado',
+  require: 'verificado',
+  'verify-ca': 'verificado',
+  'verify-full': 'verificado'
+});
+const FUERZA_TLS = Object.freeze({ desactivado: 0, requerido: 1, verificado: 2 });
 const SERVIDOR_ADMINISTRADO = /(^|\.)supabase\.(co|com|net)$/;
 const PUERTO_DIRECTO_ADMINISTRADO = '5432';
 const PUERTO_AGRUPADOR_ADMINISTRADO = '6543';
@@ -35,24 +45,86 @@ function hostDeBaseDeDatos(databaseUrl) {
 }
 
 function esHostLocal(host) {
-  if (!host || HOSTS_LOCALES.includes(host) || !host.includes('.')) return true;
-  if (IPV4_PRIVADA.test(host)) return true;
-  return SUFIJOS_DE_RED_PRIVADA.some((sufijo) => host.endsWith(sufijo));
+  if (!host) return true;
+  const limpio = String(host).replace(/^\[|\]$/g, '').toLowerCase();
+  if (HOSTS_LOCALES.includes(limpio)) return true;
+  if (net.isIP(limpio)) return esDireccionInterna(limpio);
+  if (!limpio.includes('.')) return true;
+  return SUFIJOS_DE_RED_PRIVADA.some((sufijo) => limpio.endsWith(sufijo));
 }
 
-function tlsPedidoEnUrl(databaseUrl) {
-  return /[?&]sslmode=(require|verify-ca|verify-full)(&|$)/i.test(String(databaseUrl || ''));
+function parametrosTlsDeUrl(databaseUrl) {
+  let url;
+  try {
+    url = new URL(String(databaseUrl || ''));
+  } catch {
+    return [];
+  }
+  return PARAMETROS_TLS_DE_URL
+    .filter((nombre) => url.searchParams.has(nombre))
+    .map((nombre) => ({ nombre, valor: url.searchParams.get(nombre) }));
+}
+
+function urlSinParametrosTls(databaseUrl) {
+  const texto = String(databaseUrl || '');
+  let url;
+  try {
+    url = new URL(texto);
+  } catch {
+    return texto;
+  }
+  let cambio = false;
+  for (const nombre of PARAMETROS_TLS_DE_URL) {
+    if (url.searchParams.has(nombre)) {
+      url.searchParams.delete(nombre);
+      cambio = true;
+    }
+  }
+  return cambio ? url.toString().replace(/\?$/, '') : texto;
+}
+
+function modoImplicitoPorUrl(databaseUrl) {
+  const pedido = parametrosTlsDeUrl(databaseUrl).find((p) => p.nombre === 'sslmode');
+  if (!pedido) return '';
+  const valor = String(pedido.valor || '').trim().toLowerCase();
+  return MODO_POR_SSLMODE[valor] || 'no_admitido';
 }
 
 function modoTlsPorDefecto(databaseUrl) {
   const { host } = partesDeBaseDeDatos(databaseUrl);
   if (!host) return 'desactivado';
-  return !esHostLocal(host) || tlsPedidoEnUrl(databaseUrl) ? 'verificado' : 'desactivado';
+  return esHostLocal(host) ? 'desactivado' : 'verificado';
 }
 
 function tlsDeBaseDeDatos(env = process.env) {
+  const databaseUrl = env.DATABASE_URL || '';
+  const implicito = modoImplicitoPorUrl(databaseUrl);
+  if (implicito === 'no_admitido') {
+    throw errorDeConfig(
+      'DATABASE_URL trae un sslmode que esta plataforma no admite. Los admitidos son disable, require, '
+      + 'verify-ca y verify-full; prefer y allow dejan la decision al servidor y no sirven aqui. '
+      + 'Lo recomendado es quitar el sslmode de la URL y declarar la politica en DB_SSL.'
+    );
+  }
+  const sobrantes = parametrosTlsDeUrl(databaseUrl).filter((p) => p.nombre !== 'sslmode');
+  if (sobrantes.length > 0) {
+    throw errorDeConfig(
+      `DATABASE_URL trae parametros de TLS (${sobrantes.map((p) => p.nombre).join(', ')}) que node-postgres `
+      + 'hace prevalecer sobre las opciones de la aplicacion. Quitelos y use DB_SSL y DB_CA_CERT.'
+    );
+  }
   const pedido = String(env.DB_SSL || '').trim().toLowerCase();
-  const modo = pedido || modoTlsPorDefecto(env.DATABASE_URL || '');
+  if (pedido && implicito && FUERZA_TLS[implicito] < FUERZA_TLS[pedido]) {
+    throw errorDeConfig(
+      `DB_SSL pide ${pedido} y el sslmode de DATABASE_URL pide ${implicito}, que es mas debil. `
+      + 'node-postgres haria caso al de la URL, asi que la politica declarada no seria la real. '
+      + 'Quite el sslmode de DATABASE_URL.'
+    );
+  }
+  const masFuerte = pedido && implicito
+    ? (FUERZA_TLS[implicito] > FUERZA_TLS[pedido] ? implicito : pedido)
+    : (pedido || implicito);
+  const modo = masFuerte || modoTlsPorDefecto(databaseUrl);
   if (!MODOS_TLS.includes(modo)) {
     throw errorDeConfig(`DB_SSL debe ser uno de: ${MODOS_TLS.join(', ')}.`);
   }
@@ -131,7 +203,7 @@ function cargarConfig(env = process.env) {
       maximoPublico: leerEntero(env.RATE_LIMIT_PUBLIC_MAX, 1200),
       almacen: env.RATE_LIMIT_STORE || (entorno === 'production' ? 'postgres' : 'memory')
     },
-    databaseUrl: env.DATABASE_URL || '',
+    databaseUrl: urlSinParametrosTls(env.DATABASE_URL || ''),
     sinEstado: env.VERCEL === '1',
     registro: {
       nivel: (env.LOG_NIVEL || (entorno === 'test' ? 'silencio' : 'info')).trim().toLowerCase()
@@ -237,6 +309,12 @@ function validarConfig(config) {
     if (!esHostLocal(host) && config.tlsBaseDeDatos === 'desactivado') {
       errores.push('DB_SSL no puede quedar desactivado con una base de datos remota: use verificado.');
     }
+    if (!esHostLocal(host) && config.tlsBaseDeDatos === 'requerido') {
+      errores.push(
+        'DB_SSL=requerido cifra pero no comprueba el certificado, asi que un intermediario puede suplantar '
+        + 'la base de datos. Con una base remota en produccion use verificado.'
+      );
+    }
     if (config.sinEstado && SERVIDOR_ADMINISTRADO.test(host) && puerto === PUERTO_DIRECTO_ADMINISTRADO) {
       errores.push(`En un despliegue sin estado use el agrupador de conexiones en el puerto ${PUERTO_AGRUPADOR_ADMINISTRADO}, no la conexion directa ${PUERTO_DIRECTO_ADMINISTRADO}.`);
     }
@@ -244,4 +322,4 @@ function validarConfig(config) {
   return errores;
 }
 
-module.exports = { cargarConfig, validarConfig, tiemposHttpDe, dominioDeClerk, tlsDeBaseDeDatos, hostDeBaseDeDatos, esHostLocal, MODOS_TLS };
+module.exports = { cargarConfig, validarConfig, tiemposHttpDe, urlSinParametrosTls, parametrosTlsDeUrl, modoImplicitoPorUrl, dominioDeClerk, tlsDeBaseDeDatos, hostDeBaseDeDatos, esHostLocal, MODOS_TLS };

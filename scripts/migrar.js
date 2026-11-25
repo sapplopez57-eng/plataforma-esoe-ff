@@ -2,7 +2,7 @@
 
 const { Client } = require('pg');
 const { migrar, ErrorDeMigracion } = require('../src/migraciones');
-const { tlsDeBaseDeDatos } = require('../src/config');
+const { tlsDeBaseDeDatos, urlSinParametrosTls } = require('../src/config');
 const { crearRegistro } = require('../src/registro');
 const { conReintentos } = require('../src/seguridad/red');
 
@@ -47,7 +47,7 @@ function conectarConEspera(crearCliente) {
 }
 
 async function principal() {
-  const url = process.env.DATABASE_URL;
+  const url = urlSinParametrosTls(process.env.DATABASE_URL || '');
   if (!url) {
     registro.error('falta DATABASE_URL: no hay base que migrar');
     process.exitCode = 1;

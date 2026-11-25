@@ -1,7 +1,7 @@
 'use strict';
 
 const { Client } = require('pg');
-const { tlsDeBaseDeDatos } = require('../src/config');
+const { tlsDeBaseDeDatos, urlSinParametrosTls } = require('../src/config');
 const { migrar } = require('../src/migraciones');
 
 async function prepararPermisos(cliente, clave, rol = 'esoe_app') {
@@ -44,7 +44,11 @@ async function principal() {
   if (decodeURIComponent(new URL(process.env.DATABASE_URL).password) === process.env.APP_DB_PASSWORD) {
     throw new Error('La clave de aplicacion debe ser distinta de la administrativa.');
   }
-  const cliente = new Client({ connectionString: process.env.DATABASE_URL, ssl: tlsDeBaseDeDatos(process.env).ssl, connectionTimeoutMillis: 5000 });
+  const cliente = new Client({
+    connectionString: urlSinParametrosTls(process.env.DATABASE_URL),
+    ssl: tlsDeBaseDeDatos(process.env).ssl,
+    connectionTimeoutMillis: 5000
+  });
   await cliente.connect();
   try {
     await migrar({ cliente });
