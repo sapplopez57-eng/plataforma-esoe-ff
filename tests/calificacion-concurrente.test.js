@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client } = require('pg');
 const { crearBaseDePrueba, URL_ADMIN } = require('./ayuda');
+const { leerMigraciones } = require('../src/migraciones');
 
 const sinBase = { skip: URL_ADMIN ? false : 'PRUEBAS_DATABASE_URL no definida' };
 const MIGRACION = path.join(__dirname, '..', 'database', 'migraciones', '0012_calificacion_serializada.sql');
@@ -153,9 +154,11 @@ test('carrera: con el candado, una nota que si cabe en el nuevo tope se acepta',
 test('carrera: la migracion 0012 se aplica sobre el esquema real sin romper nada', sinBase, async () => {
   const base = await crearBaseDePrueba();
   try {
+    const ultima = Math.max(...leerMigraciones().map((m) => m.version));
     const { rows } = await base.db.consultar(
       'SELECT MAX(version) AS version FROM migraciones_aplicadas');
-    assert.equal(Number(rows[0].version), 12, 'el esquema real debe llegar a la version 12');
+    assert.equal(Number(rows[0].version), ultima,
+      `el esquema real debe llegar a la ultima migracion en disco, la ${ultima}`);
     const { rows: funcion } = await base.db.consultar(
       `SELECT prosrc FROM pg_proc WHERE proname = 'exigir_nota_dentro_del_puntaje'`);
     assert.equal(funcion.length, 1);
