@@ -5,7 +5,6 @@ const assert = require('node:assert/strict');
 const net = require('node:net');
 const { once } = require('node:events');
 const { spawn } = require('node:child_process');
-const crypto = require('node:crypto');
 const { crearRegistro, redactar, redactarTexto, identificadorDePeticion, NIVELES, CABECERA_PETICION } = require('../src/registro');
 const { conReintentos, esTransitorio, retrasoDeReintento, obtener, ErrorDeRed } = require('../src/seguridad/red');
 const { esFalloDeArranque } = require('../scripts/migrar');
