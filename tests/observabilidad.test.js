@@ -7,7 +7,7 @@ const { once } = require('node:events');
 const { spawn } = require('node:child_process');
 const crypto = require('node:crypto');
 const { crearRegistro, redactar, redactarTexto, identificadorDePeticion, NIVELES, CABECERA_PETICION } = require('../src/registro');
-const { conReintentos, esTransitorio, retrasoDeReintento, ErrorDeRed } = require('../src/seguridad/red');
+const { conReintentos, esTransitorio, retrasoDeReintento, obtener, ErrorDeRed } = require('../src/seguridad/red');
 const { esFalloDeArranque } = require('../scripts/migrar');
 const { validarConfig, cargarConfig, tiemposHttpDe } = require('../src/config');
 const { levantar, crearMoodleFalso } = require('./ayuda');
@@ -419,8 +419,20 @@ test('tiempos http: la configuracion trae valores sanos y exige un orden coheren
   assert.deepEqual(validarConfig({ voz: {}, limitePeticiones: { almacen: 'memory' }, clerk: {}, integraciones: {} }), []);
 });
 
+function puertoLibre() {
+  return new Promise((resolver, rechazar) => {
+    const sonda = net.createServer();
+    sonda.unref();
+    sonda.on('error', rechazar);
+    sonda.listen(0, '127.0.0.1', () => {
+      const { port } = sonda.address();
+      sonda.close(() => resolver(port));
+    });
+  });
+}
+
 test('tiempos http: el servidor corta una peticion que no termina de enviar cabeceras', async () => {
-  const puerto = 20000 + crypto.randomInt(20000);
+  const puerto = await puertoLibre();
   const hijo = spawn(process.execPath, ['src/server.js'], {
     cwd: process.cwd(),
     env: {
@@ -475,7 +487,7 @@ test('tiempos http: el servidor corta una peticion que no termina de enviar cabe
 });
 
 async function arrancarServidor(extra = {}, argumentos = ['src/server.js']) {
-  const puerto = 20000 + crypto.randomInt(20000);
+  const puerto = await puertoLibre();
   const hijo = spawn(process.execPath, argumentos, {
     cwd: process.cwd(),
     env: {
@@ -529,4 +541,63 @@ test('apagado: una excepcion no capturada termina con codigo distinto de cero', 
   const [codigo] = await once(hijo, 'exit');
   assert.notEqual(codigo, 0, `un crash debe terminar con codigo != 0, termino con ${codigo}: ${salida.join('')}`);
   assert.match(salida.join(''), /excepcion no capturada/);
+});
+
+test('red: una respuesta mas grande que el limite rechaza y no deja la promesa colgada', async () => {
+  const http = require('node:http');
+  const servidor = http.createServer((_peticion, respuesta) => {
+    respuesta.writeHead(200, { 'Content-Type': 'text/plain' });
+    respuesta.write('a'.repeat(66000));
+    setTimeout(() => respuesta.end('final'), 5000).unref();
+  });
+  await new Promise((listo) => servidor.listen(0, '127.0.0.1', listo));
+  const { port } = servidor.address();
+  let reloj;
+  const conPlazo = (promesa) => Promise.race([
+    promesa,
+    new Promise((_sin, fallar) => {
+      reloj = setTimeout(() => fallar(new Error('la promesa quedo colgada')), 3000);
+    })
+  ]);
+  try {
+    await assert.rejects(
+      () => conPlazo(obtener(`http://127.0.0.1:${port}/`, {
+        permitirRedPrivada: true, tiempoMaximoMs: 20000, maximoBytes: 65536
+      })),
+      (error) => error instanceof ErrorDeRed && error.codigo === 'RESPUESTA_DEMASIADO_GRANDE'
+    );
+  } finally {
+    clearTimeout(reloj);
+    servidor.close();
+  }
+});
+
+test('reintentos: un Retry-After que cabe en el presupuesto fija el minimo de espera', async () => {
+  const conEspera = (ms) => {
+    const fallo = new ErrorDeRed('RESPUESTA_INESPERADA', 'estado 503');
+    fallo.estado = 503;
+    fallo.esperaPedidaMs = ms;
+    return fallo;
+  };
+
+  const esperasLargas = [];
+  const anotaciones = [];
+  await assert.rejects(() => conReintentos(() => { throw conEspera(1000); }, {
+    intentos: 3, baseMs: 200, maximoMs: 2000, aleatorio: () => 0,
+    dormir: (ms) => { esperasLargas.push(ms); }, anotar: (d) => anotaciones.push(d)
+  }), /503/);
+  assert.deepEqual(esperasLargas, [1000, 1000], 'sin honrar el Retry-After serian 100 y 200');
+  assert.equal(anotaciones[0].esperaPedidaMs, 1000);
+
+  const esperasCortas = [];
+  const anotacionesCortas = [];
+  await assert.rejects(() => conReintentos(() => { throw conEspera(50); }, {
+    intentos: 3, baseMs: 200, maximoMs: 2000, aleatorio: () => 0,
+    dormir: (ms) => { esperasCortas.push(ms); }, anotar: (d) => anotacionesCortas.push(d)
+  }), /503/);
+  assert.deepEqual(esperasCortas, [100, 200], 'un Retry-After menor que el exponencial no lo acorta');
+  assert.deepEqual(anotacionesCortas, [
+    { intento: 1, intentos: 3, retraso: 100, codigo: 'RESPUESTA_INESPERADA' },
+    { intento: 2, intentos: 3, retraso: 200, codigo: 'RESPUESTA_INESPERADA' }
+  ]);
 });

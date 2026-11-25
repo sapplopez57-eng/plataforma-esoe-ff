@@ -148,7 +148,10 @@ function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000
       let total = 0;
       respuesta.on('data', (trozo) => {
         total += trozo.length;
-        if (total > maximoBytes) return peticion.destroy();
+        if (total > maximoBytes) {
+          return peticion.destroy(
+            new ErrorDeRed('RESPUESTA_DEMASIADO_GRANDE', 'La respuesta de la plataforma es demasiado grande.'));
+        }
         trozos.push(trozo);
       });
       respuesta.on('end', () => resolver({
@@ -205,8 +208,12 @@ async function conReintentos(trabajo, opciones = {}) {
         anotar({ intento, intentos, esperaPedidaMs: pedida, presupuestoMs, decision: 'no se reintenta' });
         throw error;
       }
-      const retraso = retrasoDeReintento(intento, baseMs, maximoMs, aleatorio);
-      anotar({ intento, intentos, retraso, codigo: error && error.codigo });
+      const exponencial = retrasoDeReintento(intento, baseMs, maximoMs, aleatorio);
+      const honraPedida = Number.isFinite(pedida) && pedida > exponencial;
+      const retraso = honraPedida ? pedida : exponencial;
+      anotar(honraPedida
+        ? { intento, intentos, retraso, codigo: error && error.codigo, esperaPedidaMs: pedida }
+        : { intento, intentos, retraso, codigo: error && error.codigo });
       await dormir(retraso);
     }
   }
