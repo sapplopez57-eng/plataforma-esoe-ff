@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const { getAuth } = require('@clerk/express');
 const { AlmacenLimitesPostgres } = require('./limites');
+const { crearRegistro, registroDePeticiones } = require('./registro');
 const { crearAutenticacion } = require('./auth');
 const { crearPermisos } = require('./permisos');
 const { crearRutasDeIntegraciones } = require('./integraciones/rutas');
@@ -46,14 +47,22 @@ function politicaDeContenido(config) {
 
 function crearApp(config, dependencias = {}) {
   const app = express();
+  const registro = dependencias.registro || crearRegistro({
+    entorno: config.entorno,
+    version: config.version,
+    nivel: config.registro.nivel
+  });
   const auth = dependencias.auth || crearAutenticacion(config);
   const db = dependencias.db || null;
   const crearAlmacenLimites = (prefijo) => config.limitePeticiones.almacen === 'postgres'
     ? new AlmacenLimitesPostgres(db, prefijo) : undefined;
   app.locals.aceptaTrafico = true;
+  app.locals.registro = registro;
 
   app.disable('x-powered-by');
   if (config.proxiesDeConfianza > 0) app.set('trust proxy', config.proxiesDeConfianza);
+
+  app.use(registroDePeticiones(registro));
 
   app.use(helmet({
     contentSecurityPolicy: politicaDeContenido(config),
@@ -176,7 +185,7 @@ function crearApp(config, dependencias = {}) {
 
   app.use((err, req, res, _next) => {
     const estado = err.status === 503 ? 503 : err.status && err.status >= 400 && err.status < 500 ? err.status : 500;
-    if (estado === 500) console.error('[ESOE-SMS] Error no controlado:', err.message);
+    if (estado === 500) (req.registro || registro).error('error no controlado', { fallo: err });
     if (estado === 503) res.set('Retry-After', '5');
     const cuerpo = { error: estado === 503 ? 'Servicio temporalmente no disponible.' : estado === 500 ? 'Error interno del servidor.' : 'Solicitud invalida.' };
     if (req.path.startsWith('/api')) return res.status(estado).json(cuerpo);

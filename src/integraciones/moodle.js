@@ -1,6 +1,6 @@
 'use strict';
 
-const { enviar, ErrorDeRed } = require('../seguridad/red');
+const { enviar, conReintentos, ErrorDeRed } = require('../seguridad/red');
 
 const SERVICIO_MOVIL = 'moodle_mobile_app';
 
@@ -29,10 +29,20 @@ function traducirError(codigo, mensaje) {
 
 function crearClienteMoodle(opciones = {}) {
   const red = { permitirRedPrivada: opciones.permitirRedPrivada, tiempoMaximoMs: opciones.tiempoMaximoMs };
+  const registro = opciones.registro || null;
+  const reintentos = {
+    ...(opciones.reintentos || {}),
+    anotar: (detalle) => {
+      if (registro) registro.aviso('reintento contra plataforma remota', detalle);
+    }
+  };
+
+  function leer(direccion, peticion) {
+    return conReintentos(() => enviar(direccion, { ...red, ...peticion }), reintentos);
+  }
 
   async function configuracionPublica(urlBase) {
-    const respuesta = await enviar(`${urlBase}/lib/ajax/service-nologin.php?info=tool_mobile_get_public_config`, {
-      ...red,
+    const respuesta = await leer(`${urlBase}/lib/ajax/service-nologin.php?info=tool_mobile_get_public_config`, {
       json: [{ index: 0, methodname: 'tool_mobile_get_public_config', args: {} }]
     });
     const primero = Array.isArray(respuesta) ? respuesta[0] : null;
@@ -60,8 +70,7 @@ function crearClienteMoodle(opciones = {}) {
   }
 
   async function llamar(urlBase, token, funcion, parametros = {}) {
-    const respuesta = await enviar(`${urlBase}/webservice/rest/server.php`, {
-      ...red,
+    const respuesta = await leer(`${urlBase}/webservice/rest/server.php`, {
       formulario: { wstoken: token, wsfunction: funcion, moodlewsrestformat: 'json', ...parametros }
     });
     if (respuesta && respuesta.exception) throw traducirError(respuesta.errorcode, respuesta.message);

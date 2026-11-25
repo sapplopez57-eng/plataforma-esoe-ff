@@ -6,6 +6,11 @@ const https = require('node:https');
 const net = require('node:net');
 
 const TAMANO_MAXIMO = 2 * 1024 * 1024;
+const CODIGOS_TRANSITORIOS = Object.freeze(['TIEMPO_AGOTADO', 'SIN_CONEXION']);
+const ESTADOS_TRANSITORIOS = Object.freeze([429, 502, 503, 504]);
+const INTENTOS_POR_DEFECTO = 3;
+const ESPERA_BASE_MS = 200;
+const ESPERA_MAXIMA_MS = 2000;
 
 const redesInternas = new net.BlockList();
 [
@@ -93,7 +98,9 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
       }
       if (respuesta.statusCode !== 200) {
         respuesta.resume();
-        return rechazar(new ErrorDeRed('RESPUESTA_INESPERADA', `La plataforma respondio con el estado ${respuesta.statusCode}.`));
+        const fallo = new ErrorDeRed('RESPUESTA_INESPERADA', `La plataforma respondio con el estado ${respuesta.statusCode}.`);
+        fallo.estado = respuesta.statusCode;
+        return rechazar(fallo);
       }
       const trozos = [];
       let total = 0;
@@ -125,4 +132,46 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
   });
 }
 
-module.exports = { ErrorDeRed, esDireccionInterna, normalizarUrlBase, enviar };
+function esTransitorio(error) {
+  if (!(error instanceof ErrorDeRed)) return false;
+  if (CODIGOS_TRANSITORIOS.includes(error.codigo)) return true;
+  return ESTADOS_TRANSITORIOS.includes(error.estado);
+}
+
+function esperar(ms) {
+  return new Promise((resolver) => setTimeout(resolver, ms));
+}
+
+function retrasoDeReintento(intento, baseMs = ESPERA_BASE_MS, maximoMs = ESPERA_MAXIMA_MS, aleatorio = Math.random) {
+  const tope = Math.min(maximoMs, baseMs * 2 ** Math.max(0, intento - 1));
+  const mitad = tope / 2;
+  return Math.max(1, Math.round(mitad + aleatorio() * mitad));
+}
+
+async function conReintentos(trabajo, opciones = {}) {
+  const intentos = Number.isSafeInteger(opciones.intentos) && opciones.intentos > 0
+    ? opciones.intentos : INTENTOS_POR_DEFECTO;
+  const baseMs = Number.isSafeInteger(opciones.baseMs) && opciones.baseMs > 0 ? opciones.baseMs : ESPERA_BASE_MS;
+  const maximoMs = Number.isSafeInteger(opciones.maximoMs) && opciones.maximoMs > 0
+    ? opciones.maximoMs : ESPERA_MAXIMA_MS;
+  const transitorio = typeof opciones.transitorio === 'function' ? opciones.transitorio : esTransitorio;
+  const dormir = typeof opciones.dormir === 'function' ? opciones.dormir : esperar;
+  const aleatorio = typeof opciones.aleatorio === 'function' ? opciones.aleatorio : Math.random;
+  const anotar = typeof opciones.anotar === 'function' ? opciones.anotar : () => {};
+
+  for (let intento = 1; ; intento += 1) {
+    try {
+      return await trabajo(intento);
+    } catch (error) {
+      if (intento >= intentos || !transitorio(error)) throw error;
+      const retraso = retrasoDeReintento(intento, baseMs, maximoMs, aleatorio);
+      anotar({ intento, intentos, retraso, codigo: error && error.codigo });
+      await dormir(retraso);
+    }
+  }
+}
+
+module.exports = {
+  ErrorDeRed, esDireccionInterna, normalizarUrlBase, enviar,
+  conReintentos, esTransitorio, retrasoDeReintento
+};

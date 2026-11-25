@@ -1,0 +1,51 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: America/Tegucigalpa
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    commit-message:
+      prefix: deps
+    groups:
+      produccion:
+        dependency-type: production
+      desarrollo:
+        dependency-type: development
+
+  - package-ecosystem: npm
+    directory: /avatar-app-kit
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:15"
+      timezone: America/Tegucigalpa
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:30"
+      timezone: America/Tegucigalpa
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:45"
+      timezone: America/Tegucigalpa
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: docker

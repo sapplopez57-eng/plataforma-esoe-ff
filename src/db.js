@@ -2,8 +2,9 @@
 
 const { Pool } = require('pg');
 
-function crearBaseDeDatos(databaseUrl, opciones = {}) {
+function crearBaseDeDatos(databaseUrl, opciones = {}, entorno = {}) {
   if (!databaseUrl) return null;
+  const registro = entorno.registro || null;
   const pool = new Pool({
     connectionString: databaseUrl,
     max: 10,
@@ -12,7 +13,10 @@ function crearBaseDeDatos(databaseUrl, opciones = {}) {
     statement_timeout: 10000,
     ...opciones
   });
-  pool.on('error', (error) => console.error('[ESOE-SMS] Error en la conexion a la base de datos:', error.message));
+  pool.on('error', (error) => {
+    if (registro) return registro.error('fallo en la conexion a la base de datos', { fallo: error });
+    process.stderr.write(`${JSON.stringify({ nivel: 'error', mensaje: 'fallo en la conexion a la base de datos', detalle: error.message })}\n`);
+  });
   let cierre;
   return {
     consultar: (texto, parametros) => pool.query(texto, parametros),

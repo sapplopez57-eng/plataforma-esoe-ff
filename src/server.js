@@ -1,22 +1,49 @@
 'use strict';
 
+const http = require('node:http');
+
 const { cargarConfig } = require('./config');
 const { crearApp } = require('./app');
 const { crearBaseDeDatos } = require('./db');
+const { crearRegistro } = require('./registro');
+
+const MARGEN_DE_DRENAJE_MS = 30000;
 
 let config;
 try {
   config = cargarConfig();
 } catch (error) {
-  console.error(`[ESOE-SMS] ${error.message}`);
+  process.stderr.write(`${JSON.stringify({
+    t: new Date().toISOString(), nivel: 'error', servicio: 'ESOE-SMS',
+    mensaje: 'configuracion invalida', detalle: error.message
+  })}\n`);
   process.exit(1);
 }
 
-const db = crearBaseDeDatos(config.databaseUrl, config.baseDeDatos);
+const registro = crearRegistro({
+  entorno: config.entorno,
+  version: config.version,
+  nivel: config.registro.nivel
+});
 
-const app = crearApp(config, { db });
-const servidor = app.listen(config.puerto, config.host, () => {
-  console.log(`[ESOE-SMS] Servidor activo en http://${config.host}:${config.puerto} (${config.entorno})`);
+const db = crearBaseDeDatos(config.databaseUrl, config.baseDeDatos, { registro });
+
+const app = crearApp(config, { db, registro });
+
+const servidor = http.createServer({
+  keepAliveTimeout: config.tiemposHttp.keepAliveMs,
+  headersTimeout: config.tiemposHttp.cabecerasMs,
+  requestTimeout: config.tiemposHttp.peticionMs,
+  connectionsCheckingInterval: config.tiemposHttp.revisionMs
+}, app);
+
+servidor.listen(config.puerto, config.host, () => {
+  registro.info('servidor activo', {
+    host: config.host,
+    puerto: config.puerto,
+    baseDeDatos: db ? config.tlsBaseDeDatos : 'SIN_CONFIGURAR',
+    tiemposHttp: config.tiemposHttp
+  });
 });
 
 let apagando = false;
@@ -24,13 +51,26 @@ function apagar(senal) {
   if (apagando) return;
   apagando = true;
   app.locals.aceptaTrafico = false;
-  console.log(`[ESOE-SMS] ${senal} recibido, cerrando conexiones...`);
+  registro.info('apagado solicitado', { senal });
   servidor.close(async () => {
     if (db) await db.cerrar().catch(() => {});
+    registro.info('apagado completo', { senal });
     process.exit(0);
   });
-  setTimeout(() => process.exit(1), 30000).unref();
+  setTimeout(() => {
+    registro.error('apagado forzado: el drenaje no termino a tiempo', { senal, margenMs: MARGEN_DE_DRENAJE_MS });
+    process.exit(1);
+  }, MARGEN_DE_DRENAJE_MS).unref();
 }
 
 process.on('SIGTERM', () => apagar('SIGTERM'));
 process.on('SIGINT', () => apagar('SIGINT'));
+
+process.on('unhandledRejection', (razon) => {
+  registro.error('promesa rechazada sin manejador', { fallo: razon instanceof Error ? razon : new Error(String(razon)) });
+});
+
+process.on('uncaughtException', (error) => {
+  registro.error('excepcion no capturada: se inicia el apagado', { fallo: error });
+  apagar('uncaughtException');
+});

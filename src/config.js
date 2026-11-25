@@ -1,5 +1,7 @@
 'use strict';
 
+const { NIVELES } = require('./registro');
+
 const VALORES_DE_EJEMPLO = ['esoe_secure_2026', 'esoe_jwt_secret_key_change_in_prod', 'changeme', 'cambiar'];
 const CLAVE_CIFRADO_HEX = /^[0-9a-f]{64}$/i;
 const MODOS_TLS = ['desactivado', 'requerido', 'verificado'];
@@ -10,6 +12,7 @@ const IPV4_PRIVADA = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/;
 const SERVIDOR_ADMINISTRADO = /(^|\.)supabase\.(co|com|net)$/;
 const PUERTO_DIRECTO_ADMINISTRADO = '5432';
 const PUERTO_AGRUPADOR_ADMINISTRADO = '6543';
+const NIVELES_DE_REGISTRO = Object.freeze(Object.keys(NIVELES));
 
 function errorDeConfig(mensaje) {
   const error = new Error(`Configuracion invalida: ${mensaje}`);
@@ -100,6 +103,14 @@ function dominioDeClerk(llavePublica) {
   return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(dominio) ? dominio : '';
 }
 
+function tiemposHttpDe(env) {
+  const keepAliveMs = leerEnteroAcotado(env, 'HTTP_KEEPALIVE_TIMEOUT_MS', 5000, 1000, 300000);
+  const cabecerasMs = leerEnteroAcotado(env, 'HTTP_HEADERS_TIMEOUT_MS', 10000, 1000, 300000);
+  const peticionMs = leerEnteroAcotado(env, 'HTTP_REQUEST_TIMEOUT_MS', 30000, 1000, 600000);
+  const revisionMs = Math.max(250, Math.floor(Math.min(keepAliveMs, cabecerasMs) / 2));
+  return { keepAliveMs, cabecerasMs, peticionMs, revisionMs };
+}
+
 function cargarConfig(env = process.env) {
   const entorno = env.NODE_ENV || 'development';
   const llavePublica = (env.CLERK_PUBLISHABLE_KEY || '').trim();
@@ -122,6 +133,10 @@ function cargarConfig(env = process.env) {
     },
     databaseUrl: env.DATABASE_URL || '',
     sinEstado: env.VERCEL === '1',
+    registro: {
+      nivel: (env.LOG_NIVEL || (entorno === 'test' ? 'silencio' : 'info')).trim().toLowerCase()
+    },
+    tiemposHttp: tiemposHttpDe(env),
     tlsBaseDeDatos: tls.modo,
     baseDeDatos: {
       max: leerEnteroAcotado(env, 'DB_POOL_MAX', env.VERCEL === '1' ? 2 : 10, 1, 100),
@@ -177,6 +192,18 @@ function validarConfig(config) {
   if (!['memory', 'postgres'].includes(config.limitePeticiones.almacen)) {
     errores.push('RATE_LIMIT_STORE debe ser memory o postgres.');
   }
+  if (config.registro && !NIVELES_DE_REGISTRO.includes(config.registro.nivel)) {
+    errores.push(`LOG_NIVEL debe ser uno de: ${NIVELES_DE_REGISTRO.join(', ')}.`);
+  }
+  if (config.tiemposHttp) {
+    const { keepAliveMs, cabecerasMs, peticionMs } = config.tiemposHttp;
+    if (cabecerasMs <= keepAliveMs) {
+      errores.push('HTTP_HEADERS_TIMEOUT_MS debe ser mayor que HTTP_KEEPALIVE_TIMEOUT_MS para que Node cierre la conexion ociosa antes de agotar la cabecera.');
+    }
+    if (peticionMs <= cabecerasMs) {
+      errores.push('HTTP_REQUEST_TIMEOUT_MS debe ser mayor que HTTP_HEADERS_TIMEOUT_MS.');
+    }
+  }
   if (!config.esProduccion) return errores;
 
   if (config.limitePeticiones.almacen !== 'postgres') {
@@ -217,4 +244,4 @@ function validarConfig(config) {
   return errores;
 }
 
-module.exports = { cargarConfig, validarConfig, dominioDeClerk, tlsDeBaseDeDatos, hostDeBaseDeDatos, esHostLocal, MODOS_TLS };
+module.exports = { cargarConfig, validarConfig, tiemposHttpDe, dominioDeClerk, tlsDeBaseDeDatos, hostDeBaseDeDatos, esHostLocal, MODOS_TLS };

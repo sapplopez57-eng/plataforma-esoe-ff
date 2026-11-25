@@ -140,7 +140,21 @@ La vista web estática se publica en GitHub Pages desde `public/`.
 
 ---
 
-## 5. Documentación
+## 5. Observabilidad y Resiliencia
+
+* **Registro estructurado:** una línea JSON por evento, con `x-peticion-id` en toda respuesta para
+  correlacionar el acceso y el error de una misma petición. Las credenciales, cookies, tokens, DNI y
+  correos se redactan antes de serializar.
+* **Límites de tiempo HTTP:** `keepAlive`, cabeceras y petición completa, con el intervalo de revisión
+  de conexiones derivado de ellos para que el corte se aplique de verdad.
+* **Reintentos con espera exponencial:** en las lecturas a plataformas externas y en la espera a que
+  la base de datos arranque. Nunca al enviar credenciales.
+* **Seguridad en el pipeline:** CodeQL (`security-extended`), revisión de dependencias en cada PR,
+  `npm audit`, búsqueda de secretos y actualizaciones automáticas con Dependabot.
+
+Los detalles operativos están en [`docs/operacion.md`](docs/operacion.md).
+
+## 6. Documentación
 
 * [Manual de procedimientos](docs/manual.md): entorno, variables, verificación, estilo del código,
   archivos derivados y despliegue.
