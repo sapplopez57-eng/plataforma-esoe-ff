@@ -107,11 +107,11 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
       }
     }, (respuesta) => {
       if (respuesta.statusCode >= 300 && respuesta.statusCode < 400) {
-        respuesta.resume();
+        respuesta.destroy();
         return rechazar(new ErrorDeRed('REDIRECCION', 'La plataforma respondio con una redireccion; revise la direccion.'));
       }
       if (respuesta.statusCode !== 200) {
-        respuesta.resume();
+        respuesta.destroy();
         const fallo = new ErrorDeRed('RESPUESTA_INESPERADA', `La plataforma respondio con el estado ${respuesta.statusCode}.`);
         fallo.estado = respuesta.statusCode;
         const espera = esperaPedidaDe(respuesta.headers['retry-after']);
@@ -150,6 +150,7 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
 
 function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000, maximoBytes = 65536 } = {}) {
   return new Promise((resolver, rechazar) => {
+    let estadoRecibido = null;
     const url = new URL(direccion);
     const cliente = url.protocol === 'https:' ? https : http;
     const peticion = cliente.request(url, {
@@ -158,6 +159,7 @@ function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000
       timeout: tiempoMaximoMs,
       headers: { Accept: '*/*', 'User-Agent': 'PlataformaESOE/1.0' }
     }, (respuesta) => {
+      estadoRecibido = respuesta.statusCode;
       const trozos = [];
       let total = 0;
       respuesta.on('data', (trozo) => {
@@ -176,7 +178,11 @@ function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000
         cuerpo: Buffer.concat(trozos).toString('utf8').slice(0, maximoBytes)
       }));
     });
-    peticion.on('timeout', () => peticion.destroy(new ErrorDeRed('TIEMPO_AGOTADO', 'La plataforma no respondio a tiempo.')));
+    peticion.on('timeout', () => {
+      const plazo = new ErrorDeRed('TIEMPO_AGOTADO', 'La plataforma no respondio a tiempo.');
+      if (estadoRecibido !== null) plazo.estado = estadoRecibido;
+      peticion.destroy(plazo);
+    });
     peticion.on('error', (error) => {
       if (error instanceof ErrorDeRed) return rechazar(error);
       rechazar(new ErrorDeRed('SIN_CONEXION', 'No se pudo conectar con la plataforma.'));

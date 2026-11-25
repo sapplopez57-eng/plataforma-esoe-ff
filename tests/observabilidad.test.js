@@ -670,3 +670,71 @@ test('reintentos: Retry-After se admite en segundos y tambien como fecha HTTP', 
   assert.equal(esperaPedidaDe('', ahora), null);
   assert.equal(esperaPedidaDe(undefined, ahora), null);
 });
+
+test('red: un archivo que responde 200 y se cuelga tambien cuenta como expuesto', async () => {
+  const http = require('node:http');
+  const { revisarDocroot } = require('../scripts/comprobar-moodle');
+  const abiertas = [];
+  const servidor = http.createServer((peticion, respuesta) => {
+    if (peticion.url === '/UPGRADING.md') {
+      respuesta.writeHead(200, { 'Content-Type': 'text/plain' });
+      respuesta.write('a'.repeat(100));
+      abiertas.push(respuesta);
+      return;
+    }
+    respuesta.writeHead(404);
+    respuesta.end();
+  });
+  await new Promise((listo) => servidor.listen(0, '127.0.0.1', listo));
+  const { port } = servidor.address();
+  const informe = { datos: {}, fallos: [], avisos: [] };
+  try {
+    await revisarDocroot(`http://127.0.0.1:${port}`, { permitirRedPrivada: true, tiempoMaximoMs: 700 }, informe);
+  } finally {
+    for (const abierta of abiertas) abierta.destroy();
+    servidor.close();
+  }
+  assert.deepEqual(informe.datos.archivosExpuestos, ['UPGRADING.md'],
+    'el servidor respondio 200 y se quedo a medias: el archivo esta servido igual');
+  assert.match(informe.fallos[0], /DocumentRoot/);
+});
+
+test('red: un cuerpo no esperado no se descarga para descartarlo', async () => {
+  const http = require('node:http');
+  const { enviar, ErrorDeRed: Fallo } = require('../src/seguridad/red');
+  const TROZOS = 64;
+  let enviados = 0;
+  let completo = false;
+  let cerrada;
+  const servidor = http.createServer((_peticion, respuesta) => {
+    cerrada = once(respuesta, 'close');
+    respuesta.writeHead(503, { 'Content-Type': 'text/plain', 'Retry-After': '1' });
+    const trozo = 'a'.repeat(16384);
+    const seguir = () => {
+      if (enviados >= TROZOS) {
+        completo = true;
+        return respuesta.end();
+      }
+      enviados += 1;
+      if (respuesta.write(trozo)) return setImmediate(seguir);
+      return respuesta.once('drain', seguir);
+    };
+    seguir();
+  });
+  await new Promise((listo) => servidor.listen(0, '127.0.0.1', listo));
+  const { port } = servidor.address();
+  try {
+    await assert.rejects(
+      () => enviar(`http://127.0.0.1:${port}/`, {
+        permitirRedPrivada: true, tiempoMaximoMs: 5000, formulario: { a: '1' }
+      }),
+      (error) => error instanceof Fallo && error.estado === 503 && error.esperaPedidaMs === 1000
+    );
+    await cerrada;
+  } finally {
+    servidor.close();
+  }
+  assert.equal(completo, false,
+    `el cuerpo que se iba a descartar se descargo entero: ${enviados} de ${TROZOS} trozos`);
+  assert.ok(enviados < TROZOS, `se descargaron ${enviados} trozos de ${TROZOS}`);
+});
