@@ -16,13 +16,17 @@ const TERMINOS = new Set([
   '97f128115e33c769', '41c3e053e165453d', 'a245bf7ede84daf6', 'bafa4e6bcb0d0bd1',
   '450dcf23e621ff10', 'b1ece0f3fb4f7be0', '5667ef73dac709ef', '8316b399af662089',
   '2e8aae79d9566c63', '953de24889d67ab2', 'fb79a0a30e791cda', '803b3eb2b6af0271',
-  '5eff592cc497fccb', 'cdcbb68a3444fdd6', '0677069fdf937bd1', '7548fb6416154032'
+  '5eff592cc497fccb', 'cdcbb68a3444fdd6', '0677069fdf937bd1', '7548fb6416154032',
+  '5d0c0ab127fdea24', '1d772ffb5ed5f970', 'fc34547c4b463431'
 ]);
 
 const RUTAS = new Set([
   'e026f56c08dcdea4', '86ec294931340f57', 'a8af1293f42786da', '3dea8547906dd8f1',
   '8741d026568671be', '1602006cc336b8cf', 'f00ec2776cb8207b', 'a1d1128ffe5a2849',
-  '9f8c7948c9c7ef91', 'b951327c37d8a1ed', '104075468a9cad84', '8478dc8715bd3bb5'
+  '9f8c7948c9c7ef91', 'b951327c37d8a1ed', '104075468a9cad84', '8478dc8715bd3bb5',
+  'bccc86317c281a19', '315161dd3154081c', 'e486fc5f7ec848dd', 'b8294b25c15f7eb0',
+  '38f7cf0b4ff37a00', '327ad2697caff5db', '0b4f1539bf94c59b', 'd5d3368a61f8d02e',
+  '65e12b385a1d8a9f'
 ]);
 
 const SIN_REVISION_DE_COMENTARIOS = [/^public\/vendor\//, /^public\/fonts\//];
