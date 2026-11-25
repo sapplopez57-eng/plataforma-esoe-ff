@@ -280,6 +280,40 @@ internas que usa la defensa contra SSRF. Un nombre de una sola etiqueta sigue si
 puede ser un dominio público: eso mantiene funcionando el `esoe-db` de `docker-compose`, y hay una
 prueba que falla si deja de ser así.
 
+## Calificación y puntaje máximo: por qué hace falta un candado
+
+Dos disparadores se vigilaban mutuamente y ninguno bloqueaba la fila de la tarea: el de la
+calificación leía el puntaje máximo vigente y el del puntaje máximo miraba las notas ya puestas. Con
+las dos operaciones a la vez, **las dos comprobaciones pasaban con el estado anterior y las dos
+confirmaban**. Reproducido contra PostgreSQL real: un administrador baja el máximo de 100 a 50
+mientras el catedrático califica con 90, y queda en la base una nota de 90 con un tope de 50.
+
+La migración `0012_calificacion_serializada.sql` reemplaza `exigir_nota_dentro_del_puntaje` para que
+lea la tarea con `FOR UPDATE`. Eso serializa las dos operaciones en cualquier orden:
+
+* si la bajada del máximo va primero, la calificación espera, relee `50` y se rechaza;
+* si la calificación va primero, la bajada espera, ve la nota de `90` y se rechaza.
+
+`tests/calificacion-concurrente.test.js` monta la carrera de verdad, con dos conexiones y dos
+transacciones, y comprueba las dos caras: **sin** la migración el invariante se rompe, **con** ella
+aguanta. También comprueba que la función viva en el esquema real toma el candado.
+
+La migración 0011 no se edita: una migración ya aplicada no se toca, y el migrador lo rechaza por
+huella. El cambio entra como migración nueva.
+
+## El rol de la aplicación y la versión del esquema
+
+`preparar-base` retira al rol de la aplicación todo permiso sobre `migraciones_aplicadas` y luego le
+concede **solo `SELECT`**. Sin esa lectura, `npm run comprobar:despliegue` fallaba siempre aunque todo
+estuviera bien: la consulta de la versión moría con `42501` (permiso denegado), que el manejador no
+distinguía de `42P01` (sin esquema), y tampoco servía ejecutarlo como administrador porque el propio
+comprobador rechaza roles con privilegios de administración.
+
+La versión del esquema no es un dato sensible y la herramienta de despliegue la necesita. Escribirla
+sigue prohibido: `tests/permisos-base.test.js` comprueba que el rol lee la versión y que el `INSERT`,
+el `UPDATE` y el `DELETE` sobre esa tabla siguen devolviendo `42501`. El comprobador, además, ya
+distingue los dos códigos y dice qué ejecutar.
+
 ## Comprobación previa al despliegue
 
 `npm run comprobar:despliegue` valida contra la base real, sin modificarla, y termina con código

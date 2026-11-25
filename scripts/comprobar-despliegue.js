@@ -101,7 +101,13 @@ async function revisarBaseDeDatos(config, env, informe, conectar) {
       informe.fallos.push(`El esquema esta en la version ${aplicada}, mas nueva que la ${esperada} que conoce este codigo. Actualice el codigo.`);
     }
   } catch (error) {
-    if (error.code === '42P01') {
+    if (error.code === '42501') {
+      informe.fallos.push(
+        `El rol ${informe.datos.usuario || 'de la aplicacion'} no puede leer migraciones_aplicadas, `
+        + "asi que no se puede comprobar la version del esquema. Ejecute 'npm run preparar-base' para "
+        + 'concederle solo lectura sobre esa tabla.'
+      );
+    } else if (error.code === '42P01') {
       informe.fallos.push("La base de datos no tiene el esquema aplicado. Ejecute 'npm run migrar'.");
     } else {
       informe.fallos.push(`Fallo una comprobacion en la base de datos: ${error.message}`);

@@ -24,6 +24,7 @@ async function prepararPermisos(cliente, clave, rol = 'esoe_app') {
       'GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO %I',
       'GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO %I',
       'REVOKE ALL ON migraciones_aplicadas FROM %I',
+      'GRANT SELECT ON migraciones_aplicadas TO %I',
       'REVOKE UPDATE,DELETE ON auditoria FROM %I'
     ]) {
       const { rows } = sentencia.includes('ON DATABASE')

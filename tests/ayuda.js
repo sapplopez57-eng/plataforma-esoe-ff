@@ -82,6 +82,7 @@ async function crearBaseDePrueba() {
   const db = crearBaseDeDatos(url.toString());
   return {
     db,
+    url: url.toString(),
     async cerrar() {
       await db.cerrar();
       await admin.query(`DROP DATABASE IF EXISTS ${nombre}`);

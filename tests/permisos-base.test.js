@@ -30,7 +30,12 @@ test('operacion: la aplicacion opera con permisos limitados y no puede alterar e
     assert.ok((await aplicacion.query('SELECT id FROM instituciones')).rows.length > 0);
     await assert.rejects(aplicacion.query('CREATE TABLE fuera_del_alcance (id integer)'), { code: '42501' });
     await assert.rejects(aplicacion.query('SELECT * FROM pg_authid'), { code: '42501' });
-    await assert.rejects(aplicacion.query('SELECT * FROM migraciones_aplicadas'), { code: '42501' });
+    const version = await aplicacion.query('SELECT MAX(version) AS version FROM migraciones_aplicadas');
+    assert.ok(Number(version.rows[0].version) > 0, 'la aplicacion debe poder leer la version del esquema');
+    await assert.rejects(aplicacion.query(
+      "INSERT INTO migraciones_aplicadas (version, nombre, huella) VALUES (999, 'falsa', repeat('0', 64))"), { code: '42501' });
+    await assert.rejects(aplicacion.query('UPDATE migraciones_aplicadas SET nombre = $1', ['alterada']), { code: '42501' });
+    await assert.rejects(aplicacion.query('DELETE FROM migraciones_aplicadas'), { code: '42501' });
     await assert.rejects(aplicacion.query('DELETE FROM auditoria'), { code: '42501' });
     const almacen = new AlmacenLimitesPostgres({ consultar: (...args) => aplicacion.query(...args) }, 'permisos');
     almacen.init({ windowMs: 60000 });
