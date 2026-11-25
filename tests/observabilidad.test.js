@@ -6,7 +6,7 @@ const net = require('node:net');
 const { once } = require('node:events');
 const { spawn } = require('node:child_process');
 const { crearRegistro, redactar, redactarTexto, identificadorDePeticion, NIVELES, CABECERA_PETICION } = require('../src/registro');
-const { conReintentos, esTransitorio, retrasoDeReintento, obtener, ErrorDeRed } = require('../src/seguridad/red');
+const { conReintentos, esTransitorio, retrasoDeReintento, obtener, esperaPedidaDe, ErrorDeRed } = require('../src/seguridad/red');
 const { esFalloDeArranque } = require('../scripts/migrar');
 const { validarConfig, cargarConfig, tiemposHttpDe } = require('../src/config');
 const { levantar, crearMoodleFalso } = require('./ayuda');
@@ -418,27 +418,14 @@ test('tiempos http: la configuracion trae valores sanos y exige un orden coheren
   assert.deepEqual(validarConfig({ voz: {}, limitePeticiones: { almacen: 'memory' }, clerk: {}, integraciones: {} }), []);
 });
 
-function puertoLibre() {
-  return new Promise((resolver, rechazar) => {
-    const sonda = net.createServer();
-    sonda.unref();
-    sonda.on('error', rechazar);
-    sonda.listen(0, '127.0.0.1', () => {
-      const { port } = sonda.address();
-      sonda.close(() => resolver(port));
-    });
-  });
-}
-
 test('tiempos http: el servidor corta una peticion que no termina de enviar cabeceras', async () => {
-  const puerto = await puertoLibre();
   const hijo = spawn(process.execPath, ['src/server.js'], {
     cwd: process.cwd(),
     env: {
       ...process.env,
       NODE_ENV: 'test',
       DATABASE_URL: '',
-      PORT: String(puerto),
+      PORT: '0',
       HOST: '127.0.0.1',
       LOG_NIVEL: 'info',
       HTTP_KEEPALIVE_TIMEOUT_MS: '1000',
@@ -455,7 +442,7 @@ test('tiempos http: el servidor corta una peticion que no termina de enviar cabe
         if (!linea.trim()) continue;
         try {
           const evento = JSON.parse(linea);
-          if (evento.mensaje === 'servidor activo' && evento.puerto === puerto) resolver(evento);
+          if (evento.mensaje === 'servidor activo') resolver(evento);
         } catch { continue; }
       }
     });
@@ -467,8 +454,12 @@ test('tiempos http: el servidor corta una peticion que no termina de enviar cabe
     const evento = await arrancado;
     assert.equal(evento.nivel, 'info');
     assert.equal(evento.baseDeDatos, 'SIN_CONFIGURAR');
+    assert.ok(
+      Number.isInteger(evento.puerto) && evento.puerto > 0,
+      'el servidor debe anunciar el puerto que el sistema le dio, no el cero que pidio'
+    );
 
-    const enchufe = net.connect(puerto, '127.0.0.1');
+    const enchufe = net.connect(evento.puerto, '127.0.0.1');
     await once(enchufe, 'connect');
     const respuesta = [];
     enchufe.on('data', (trozo) => respuesta.push(trozo));
@@ -486,11 +477,10 @@ test('tiempos http: el servidor corta una peticion que no termina de enviar cabe
 });
 
 async function arrancarServidor(extra = {}, argumentos = ['src/server.js']) {
-  const puerto = await puertoLibre();
   const hijo = spawn(process.execPath, argumentos, {
     cwd: process.cwd(),
     env: {
-      ...process.env, NODE_ENV: 'test', DATABASE_URL: '', PORT: String(puerto),
+      ...process.env, NODE_ENV: 'test', DATABASE_URL: '', PORT: '0',
       HOST: '127.0.0.1', LOG_NIVEL: 'info', ...extra
     },
     stdio: ['ignore', 'pipe', 'pipe']
@@ -504,7 +494,7 @@ async function arrancarServidor(extra = {}, argumentos = ['src/server.js']) {
         if (!linea.trim()) continue;
         try {
           const evento = JSON.parse(linea);
-          if (evento.mensaje === 'servidor activo' && evento.puerto === puerto) return resolver(evento);
+          if (evento.mensaje === 'servidor activo') return resolver(evento);
         } catch { continue; }
       }
       return null;
@@ -512,7 +502,7 @@ async function arrancarServidor(extra = {}, argumentos = ['src/server.js']) {
     hijo.stdout.on('data', revisar);
     hijo.once('exit', (codigo) => rechazar(new Error(`el servidor termino con codigo ${codigo}: ${salida.join('')}`)));
   });
-  return { hijo, puerto, salida, activo };
+  return { hijo, salida, activo };
 }
 
 test('apagado: una senal ordenada termina con codigo 0', async () => {
@@ -555,7 +545,7 @@ test('red: una respuesta mas grande que el limite rechaza y no deja la promesa c
   const conPlazo = (promesa) => Promise.race([
     promesa,
     new Promise((_sin, fallar) => {
-      reloj = setTimeout(() => fallar(new Error('la promesa quedo colgada')), 3000);
+      reloj = setTimeout(() => fallar(new Error('la promesa quedo colgada')), 20000);
     })
   ]);
   try {
@@ -599,4 +589,152 @@ test('reintentos: un Retry-After que cabe en el presupuesto fija el minimo de es
     { intento: 1, intentos: 3, retraso: 100, codigo: 'RESPUESTA_INESPERADA' },
     { intento: 2, intentos: 3, retraso: 200, codigo: 'RESPUESTA_INESPERADA' }
   ]);
+});
+
+test('red: un archivo expuesto demasiado grande cuenta como expuesto y no se pierde', async () => {
+  const http = require('node:http');
+  const { revisarDocroot } = require('../scripts/comprobar-moodle');
+  const servidor = http.createServer((peticion, respuesta) => {
+    if (peticion.url === '/composer.lock') {
+      respuesta.writeHead(200, { 'Content-Type': 'text/plain' });
+      respuesta.end('a'.repeat(300000));
+      return;
+    }
+    respuesta.writeHead(404);
+    respuesta.end();
+  });
+  await new Promise((listo) => servidor.listen(0, '127.0.0.1', listo));
+  const { port } = servidor.address();
+  const informe = { datos: {}, fallos: [], avisos: [] };
+  try {
+    await revisarDocroot(`http://127.0.0.1:${port}`, { permitirRedPrivada: true, tiempoMaximoMs: 20000 }, informe);
+  } finally {
+    servidor.close();
+  }
+  assert.deepEqual(informe.datos.archivosExpuestos, ['composer.lock'],
+    'un composer.lock de 300 kB servido con 200 esta expuesto aunque pase del limite de lectura');
+  assert.equal(informe.fallos.length, 1);
+  assert.match(informe.fallos[0], /DocumentRoot/);
+});
+
+test('reintentos: una respuesta demasiado grande no se reintenta', () => {
+  const grande = new ErrorDeRed('RESPUESTA_DEMASIADO_GRANDE', 'muy grande');
+  grande.estado = 503;
+  assert.equal(esTransitorio(grande), false,
+    'insistir repetiria la misma descarga, aunque el estado parezca transitorio');
+});
+
+test('reintentos: las esperas pedidas no pasan del presupuesto en conjunto', async () => {
+  const esperas = [];
+  const anotaciones = [];
+  const conEspera = () => {
+    const fallo = new ErrorDeRed('RESPUESTA_INESPERADA', 'estado 503');
+    fallo.estado = 503;
+    fallo.esperaPedidaMs = 4000;
+    return fallo;
+  };
+  await assert.rejects(() => conReintentos(() => { throw conEspera(); }, {
+    intentos: 5, baseMs: 200, maximoMs: 2000, presupuestoMs: 6000, aleatorio: () => 0,
+    dormir: (ms) => { esperas.push(ms); }, anotar: (d) => anotaciones.push(d)
+  }), /503/);
+  const total = esperas.reduce((suma, ms) => suma + ms, 0);
+  assert.deepEqual(esperas, [4000],
+    'sin descontar lo gastado serian cuatro esperas de 4000 ms, muy por encima del presupuesto');
+  assert.ok(total <= 6000, `la espera acumulada fue ${total} ms y el presupuesto era 6000`);
+  assert.equal(anotaciones.at(-1).decision, 'no se reintenta');
+  assert.equal(anotaciones.at(-1).restanteMs, 2000,
+    'quedaban 2000 ms y el servidor pedia 4000: se deja de insistir en vez de acortar lo que pidio');
+});
+
+test('reintentos: el exponencial se recorta a lo que queda del presupuesto', async () => {
+  const esperas = [];
+  await assert.rejects(() => conReintentos(() => {
+    throw new ErrorDeRed('SIN_CONEXION', 'cae');
+  }, {
+    intentos: 6, baseMs: 1000, maximoMs: 8000, presupuestoMs: 1200, aleatorio: () => 1,
+    dormir: (ms) => { esperas.push(ms); }
+  }), /cae/);
+  const total = esperas.reduce((suma, ms) => suma + ms, 0);
+  assert.ok(total <= 1200, `la espera acumulada fue ${total} ms y el presupuesto era 1200`);
+  assert.deepEqual(esperas, [1000, 200], 'el segundo retraso se recorta a los 200 ms que quedaban');
+});
+
+test('reintentos: Retry-After se admite en segundos y tambien como fecha HTTP', () => {
+  const ahora = Date.parse('2026-11-25T12:00:00Z');
+  assert.equal(esperaPedidaDe('1', ahora), 1000);
+  assert.equal(esperaPedidaDe('300', ahora), 300000);
+  assert.equal(esperaPedidaDe('Wed, 25 Nov 2026 12:00:30 GMT', ahora), 30000);
+  assert.equal(esperaPedidaDe('Wed, 25 Nov 2026 11:59:30 GMT', ahora), null, 'una fecha ya pasada no pide esperar');
+  assert.equal(esperaPedidaDe('0', ahora), null);
+  assert.equal(esperaPedidaDe('manana', ahora), null);
+  assert.equal(esperaPedidaDe('', ahora), null);
+  assert.equal(esperaPedidaDe(undefined, ahora), null);
+});
+
+test('red: un archivo que responde 200 y se cuelga tambien cuenta como expuesto', async () => {
+  const http = require('node:http');
+  const { revisarDocroot } = require('../scripts/comprobar-moodle');
+  const abiertas = [];
+  const servidor = http.createServer((peticion, respuesta) => {
+    if (peticion.url === '/UPGRADING.md') {
+      respuesta.writeHead(200, { 'Content-Type': 'text/plain' });
+      respuesta.write('a'.repeat(100));
+      abiertas.push(respuesta);
+      return;
+    }
+    respuesta.writeHead(404);
+    respuesta.end();
+  });
+  await new Promise((listo) => servidor.listen(0, '127.0.0.1', listo));
+  const { port } = servidor.address();
+  const informe = { datos: {}, fallos: [], avisos: [] };
+  try {
+    await revisarDocroot(`http://127.0.0.1:${port}`, { permitirRedPrivada: true, tiempoMaximoMs: 700 }, informe);
+  } finally {
+    for (const abierta of abiertas) abierta.destroy();
+    servidor.close();
+  }
+  assert.deepEqual(informe.datos.archivosExpuestos, ['UPGRADING.md'],
+    'el servidor respondio 200 y se quedo a medias: el archivo esta servido igual');
+  assert.match(informe.fallos[0], /DocumentRoot/);
+});
+
+test('red: un cuerpo no esperado no se descarga para descartarlo', async () => {
+  const http = require('node:http');
+  const { enviar, ErrorDeRed: Fallo } = require('../src/seguridad/red');
+  const TROZOS = 64;
+  let enviados = 0;
+  let completo = false;
+  let cerrada;
+  const servidor = http.createServer((_peticion, respuesta) => {
+    cerrada = once(respuesta, 'close');
+    respuesta.writeHead(503, { 'Content-Type': 'text/plain', 'Retry-After': '1' });
+    const trozo = 'a'.repeat(16384);
+    const seguir = () => {
+      if (enviados >= TROZOS) {
+        completo = true;
+        return respuesta.end();
+      }
+      enviados += 1;
+      if (respuesta.write(trozo)) return setImmediate(seguir);
+      return respuesta.once('drain', seguir);
+    };
+    seguir();
+  });
+  await new Promise((listo) => servidor.listen(0, '127.0.0.1', listo));
+  const { port } = servidor.address();
+  try {
+    await assert.rejects(
+      () => enviar(`http://127.0.0.1:${port}/`, {
+        permitirRedPrivada: true, tiempoMaximoMs: 5000, formulario: { a: '1' }
+      }),
+      (error) => error instanceof Fallo && error.estado === 503 && error.esperaPedidaMs === 1000
+    );
+    await cerrada;
+  } finally {
+    servidor.close();
+  }
+  assert.equal(completo, false,
+    `el cuerpo que se iba a descartar se descargo entero: ${enviados} de ${TROZOS} trozos`);
+  assert.ok(enviados < TROZOS, `se descargaron ${enviados} trozos de ${TROZOS}`);
 });

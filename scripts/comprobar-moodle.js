@@ -13,6 +13,7 @@ const FUNCIONES_RECOMENDADAS = Object.freeze(['gradereport_overview_get_course_g
 const ARCHIVOS_FUERA_DEL_DOCROOT = Object.freeze([
   'composer.json', 'composer.lock', 'UPGRADING.md', 'Gruntfile.js', 'phpunit.xml.dist'
 ]);
+const CODIGOS_DE_ARCHIVO_SERVIDO = Object.freeze(['RESPUESTA_DEMASIADO_GRANDE', 'TIEMPO_AGOTADO']);
 const RELEASE_INESTABLE = /(^|[^a-z])(dev|alpha|beta|rc[0-9]*)([^a-z]|$)/i;
 const TIEMPO_MAXIMO_MS = 10000;
 
@@ -28,6 +29,7 @@ async function revisarDocroot(urlBase, red, informe) {
       if (respuesta.estado === 200) expuestos.push(archivo);
     } catch (error) {
       if (!(error instanceof ErrorDeRed)) throw error;
+      if (CODIGOS_DE_ARCHIVO_SERVIDO.includes(error.codigo) && error.estado === 200) expuestos.push(archivo);
     }
   }
   informe.datos.archivosExpuestos = expuestos;

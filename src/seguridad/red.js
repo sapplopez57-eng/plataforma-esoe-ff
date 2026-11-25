@@ -7,6 +7,7 @@ const net = require('node:net');
 
 const TAMANO_MAXIMO = 2 * 1024 * 1024;
 const CODIGOS_TRANSITORIOS = Object.freeze(['TIEMPO_AGOTADO', 'SIN_CONEXION']);
+const CODIGOS_NUNCA_TRANSITORIOS = Object.freeze(['RESPUESTA_DEMASIADO_GRANDE']);
 const ESTADOS_TRANSITORIOS = Object.freeze([429, 502, 503, 504]);
 const INTENTOS_POR_DEFECTO = 3;
 const ESPERA_BASE_MS = 200;
@@ -19,6 +20,19 @@ const redesInternas = new net.BlockList();
 ].forEach(([red, prefijo]) => redesInternas.addSubnet(red, prefijo, 'ipv4'));
 [['::', 127], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8]]
   .forEach(([red, prefijo]) => redesInternas.addSubnet(red, prefijo, 'ipv6'));
+
+function esperaPedidaDe(cabecera, ahora = Date.now()) {
+  const texto = String(cabecera === undefined || cabecera === null ? '' : cabecera).trim();
+  if (texto === '') return null;
+  if (/^\d+$/.test(texto)) {
+    const segundos = Number.parseInt(texto, 10);
+    return Number.isSafeInteger(segundos) && segundos > 0 ? segundos * 1000 : null;
+  }
+  const momento = Date.parse(texto);
+  if (!Number.isFinite(momento)) return null;
+  const falta = momento - ahora;
+  return falta > 0 ? falta : null;
+}
 
 class ErrorDeRed extends Error {
   constructor(codigo, mensaje) {
@@ -93,15 +107,15 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
       }
     }, (respuesta) => {
       if (respuesta.statusCode >= 300 && respuesta.statusCode < 400) {
-        respuesta.resume();
+        respuesta.destroy();
         return rechazar(new ErrorDeRed('REDIRECCION', 'La plataforma respondio con una redireccion; revise la direccion.'));
       }
       if (respuesta.statusCode !== 200) {
-        respuesta.resume();
+        respuesta.destroy();
         const fallo = new ErrorDeRed('RESPUESTA_INESPERADA', `La plataforma respondio con el estado ${respuesta.statusCode}.`);
         fallo.estado = respuesta.statusCode;
-        const espera = Number.parseInt(respuesta.headers['retry-after'], 10);
-        if (Number.isFinite(espera) && espera > 0) fallo.esperaPedidaMs = espera * 1000;
+        const espera = esperaPedidaDe(respuesta.headers['retry-after']);
+        if (espera !== null) fallo.esperaPedidaMs = espera;
         return rechazar(fallo);
       }
       const trozos = [];
@@ -136,6 +150,7 @@ function enviar(direccion, { formulario, json, permitirRedPrivada = false, tiemp
 
 function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000, maximoBytes = 65536 } = {}) {
   return new Promise((resolver, rechazar) => {
+    let estadoRecibido = null;
     const url = new URL(direccion);
     const cliente = url.protocol === 'https:' ? https : http;
     const peticion = cliente.request(url, {
@@ -144,13 +159,16 @@ function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000
       timeout: tiempoMaximoMs,
       headers: { Accept: '*/*', 'User-Agent': 'PlataformaESOE/1.0' }
     }, (respuesta) => {
+      estadoRecibido = respuesta.statusCode;
       const trozos = [];
       let total = 0;
       respuesta.on('data', (trozo) => {
         total += trozo.length;
         if (total > maximoBytes) {
-          return peticion.destroy(
-            new ErrorDeRed('RESPUESTA_DEMASIADO_GRANDE', 'La respuesta de la plataforma es demasiado grande.'));
+          const grande = new ErrorDeRed(
+            'RESPUESTA_DEMASIADO_GRANDE', 'La respuesta de la plataforma es demasiado grande.');
+          grande.estado = respuesta.statusCode;
+          return peticion.destroy(grande);
         }
         trozos.push(trozo);
       });
@@ -160,7 +178,11 @@ function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000
         cuerpo: Buffer.concat(trozos).toString('utf8').slice(0, maximoBytes)
       }));
     });
-    peticion.on('timeout', () => peticion.destroy(new ErrorDeRed('TIEMPO_AGOTADO', 'La plataforma no respondio a tiempo.')));
+    peticion.on('timeout', () => {
+      const plazo = new ErrorDeRed('TIEMPO_AGOTADO', 'La plataforma no respondio a tiempo.');
+      if (estadoRecibido !== null) plazo.estado = estadoRecibido;
+      peticion.destroy(plazo);
+    });
     peticion.on('error', (error) => {
       if (error instanceof ErrorDeRed) return rechazar(error);
       rechazar(new ErrorDeRed('SIN_CONEXION', 'No se pudo conectar con la plataforma.'));
@@ -171,6 +193,7 @@ function obtener(direccion, { permitirRedPrivada = false, tiempoMaximoMs = 10000
 
 function esTransitorio(error) {
   if (!(error instanceof ErrorDeRed)) return false;
+  if (CODIGOS_NUNCA_TRANSITORIOS.includes(error.codigo)) return false;
   if (CODIGOS_TRANSITORIOS.includes(error.codigo)) return true;
   return ESTADOS_TRANSITORIOS.includes(error.estado);
 }
@@ -198,22 +221,31 @@ async function conReintentos(trabajo, opciones = {}) {
   const presupuestoMs = Number.isSafeInteger(opciones.presupuestoMs) && opciones.presupuestoMs > 0
     ? opciones.presupuestoMs : maximoMs * intentos;
 
+  let gastadoMs = 0;
   for (let intento = 1; ; intento += 1) {
     try {
       return await trabajo(intento);
     } catch (error) {
       if (intento >= intentos || !transitorio(error)) throw error;
+      const restanteMs = presupuestoMs - gastadoMs;
+      if (restanteMs <= 0) {
+        anotar({ intento, intentos, presupuestoMs, gastadoMs, decision: 'presupuesto agotado' });
+        throw error;
+      }
       const pedida = error && error.esperaPedidaMs;
-      if (Number.isFinite(pedida) && pedida > presupuestoMs) {
-        anotar({ intento, intentos, esperaPedidaMs: pedida, presupuestoMs, decision: 'no se reintenta' });
+      if (Number.isFinite(pedida) && pedida > restanteMs) {
+        anotar({
+          intento, intentos, esperaPedidaMs: pedida, presupuestoMs, restanteMs, decision: 'no se reintenta'
+        });
         throw error;
       }
       const exponencial = retrasoDeReintento(intento, baseMs, maximoMs, aleatorio);
       const honraPedida = Number.isFinite(pedida) && pedida > exponencial;
-      const retraso = honraPedida ? pedida : exponencial;
+      const retraso = Math.max(1, Math.min(honraPedida ? pedida : exponencial, restanteMs));
       anotar(honraPedida
         ? { intento, intentos, retraso, codigo: error && error.codigo, esperaPedidaMs: pedida }
         : { intento, intentos, retraso, codigo: error && error.codigo });
+      gastadoMs += retraso;
       await dormir(retraso);
     }
   }
@@ -221,5 +253,5 @@ async function conReintentos(trabajo, opciones = {}) {
 
 module.exports = {
   ErrorDeRed, esDireccionInterna, normalizarUrlBase, enviar, obtener,
-  conReintentos, esTransitorio, retrasoDeReintento
+  conReintentos, esTransitorio, retrasoDeReintento, esperaPedidaDe
 };

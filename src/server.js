@@ -40,7 +40,7 @@ const servidor = http.createServer({
 servidor.listen(config.puerto, config.host, () => {
   registro.info('servidor activo', {
     host: config.host,
-    puerto: config.puerto,
+    puerto: servidor.address().port,
     baseDeDatos: db ? config.tlsBaseDeDatos : 'SIN_CONFIGURAR',
     tiemposHttp: config.tiemposHttp
   });
