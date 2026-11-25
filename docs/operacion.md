@@ -192,7 +192,41 @@ actualización de seguridad entra sin conflictos.
 **Lo que esto no arregla.** Cambiar de rama no convierte en estable una base de datos que ya se migró
 con el esquema de 6.0dev. Si el sitio ya corrió con 6.0dev, el esquema está por delante de 5.3 y
 Moodle **no baja de versión**: hay que partir de una base limpia o de un respaldo anterior a esa
-migración. Compruébelo antes de cambiar nada.
+migración.
+
+### Comprobar la base antes de cambiar de rama
+
+`npm run comprobar:moodle-base` responde eso, y es lo primero que hay que correr: **antes** de apuntar
+el sitio a `esoe/estable`. No se puede dejar en manos de `comprobar:moodle`, que pregunta por la API
+del sitio y por tanto **llega tarde**: si el esquema está por delante, Moodle no arranca y no hay API a
+la que preguntar.
+
+Lee `MOODLE_DB_URL` en solo lectura y compara el `version` de la tabla de configuración contra el
+`version` que fija `deploy/moodle/version-objetivo.json`:
+
+| En la base | Qué significa | Resultado |
+|---|---|---|
+| no existe `mdl_config` | base limpia, sin instalar | **pasa**, con aviso |
+| `version` por detrás del objetivo | Moodle actualizará hacia adelante | **pasa**, con aviso de respaldar |
+| `version` igual al objetivo | ya alineada | **pasa** |
+| `version` por delante del objetivo | esquema de una rama de desarrollo | **falla**: base limpia o respaldo anterior |
+| la tabla existe sin fila `version` | instalación a medias | **pasa**, con aviso |
+| el rol no puede leer la tabla | no se puede afirmar nada | **falla** |
+
+La comparación es **por partes, no por coma flotante**: `2026100501.2` es posterior a `2026100501.02`,
+y leerlas como número decimal las ordenaría al revés. El prefijo se toma de `MOODLE_DB_PREFIX` (por
+omisión `mdl_`) y se valida contra el identificador que admite Moodle antes de tocar la base, porque un
+nombre de tabla no se puede parametrizar: un prefijo con comillas o punto y coma se rechaza sin
+conectar. El `release` instalado se registra junto al informe, de modo que en el registro queda escrito
+`6.0dev` y no solo un número.
+
+La política TLS es la misma de la plataforma, no una aparte: `MOODLE_DB_SSL` y `MOODLE_DB_CA_CERT`
+pasan por el mismo código que `DB_SSL` y `DB_CA_CERT`, así que la URL tampoco decide aquí. Esa base
+guarda expedientes, así que le aplica el mismo piso.
+
+`tests/moodle-base.test.js` monta los seis casos contra PostgreSQL real, con una base desechable por
+caso y un rol sin permiso de lectura para el último. Comprobado por mutación: desactivando el candado
+de «por delante del objetivo», la prueba del esquema de desarrollo falla.
 
 ### Servidor web endurecido
 

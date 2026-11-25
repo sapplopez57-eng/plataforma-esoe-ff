@@ -116,6 +116,16 @@ Antes de dirigir tráfico a una versión nueva, se comprueba el entorno real al 
 npm run comprobar:despliegue
 ```
 
+Y antes de levantar el Moodle institucional sobre la rama estable, se comprueba que su base de datos
+no arrastre el esquema de una rama de desarrollo, porque Moodle no baja de versión:
+
+```bash
+npm run comprobar:moodle-base
+```
+
+Esto va **antes** que `npm run comprobar:moodle`, que interroga al sitio ya levantado: si el esquema
+está por delante, el sitio no arranca y no hay API a la que preguntar.
+
 Las presentaciones a clientes usan una cuenta real de Clerk con datos de una institución de
 demostración. No existe un formulario alternativo para omitir la autenticación. El nombre de la
 bienvenida procede de la sesión verificada y el recorrido guiado explica las herramientas del perfil.
