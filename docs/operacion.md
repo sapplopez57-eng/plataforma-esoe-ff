@@ -150,6 +150,67 @@ El migrador espera a que la base acepte conexiones hasta 6 intentos (500 ms a 8 
 `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`, `ETIMEDOUT`, `ECONNRESET`, `57P03` y `53300`. Un error de
 credenciales (`28P01`) falla de inmediato. Así el contenedor no muere cuando la base todavía arranca.
 
+## El Moodle de la ESOE: versión y servidor web
+
+### Versión objetivo, y por qué
+
+`deploy/moodle/version-objetivo.json` fija la versión a la que el Moodle institucional debe estar
+alineado, con el commit comprobado. Lo esencial:
+
+| | Objetivo | Rechazado |
+|---|---|---|
+| Rama | `MOODLE_503_STABLE` | `main` |
+| `release` | `5.3.1+ (Build: 20261124)` | `6.0dev (Build: 20261124)` |
+| `maturity` | **`MATURITY_STABLE`** | **`MATURITY_ALPHA`** |
+| Commit comprobado | `5fdb0b5b1abfd8d1d084c616fd35d141db8ab27a` | — |
+
+Una rama de desarrollo de Moodle libera cada semana: el número de versión cambia con ella, no hay
+garantía de ruta de actualización del esquema entre dos instantáneas, y los parches de seguridad no
+siguen la disciplina de *backport* de una rama estable. Con expedientes de personal militar eso no es
+defendible. Como referencia externa, el `azuredeploy.json` de `Azure/Moodle` —mantenido al día— admite
+una sola versión en su `allowedValues`: `MOODLE_503_STABLE`.
+
+Comprobado: `public/version.php` existe también en 5.3 estable, así que el endurecimiento del servidor
+web de más abajo aplica igual, y el bloque de mantenimiento de `public/lib/setup.php` es idéntico
+(`503` + `Retry-After: 300`), de modo que los reintentos de la integración siguen siendo correctos
+después del cambio de rama.
+
+### Llevar el fork a la rama estable
+
+Esto se ejecuta en el repositorio del Moodle institucional, no aquí:
+
+```bash
+git remote add upstream https://github.com/moodle/moodle
+git fetch upstream MOODLE_503_STABLE
+git switch -c esoe/estable upstream/MOODLE_503_STABLE
+```
+
+Luego, en cada actualización, `git fetch upstream` y `git merge upstream/MOODLE_503_STABLE`. Lo que
+sea propio de la ESOE vive en `public/local/` y en un tema propio, nunca editando el núcleo: así una
+actualización de seguridad entra sin conflictos.
+
+**Lo que esto no arregla.** Cambiar de rama no convierte en estable una base de datos que ya se migró
+con el esquema de 6.0dev. Si el sitio ya corrió con 6.0dev, el esquema está por delante de 5.3 y
+Moodle **no baja de versión**: hay que partir de una base limpia o de un respaldo anterior a esa
+migración. Compruébelo antes de cambiar nada.
+
+### Servidor web endurecido
+
+`deploy/moodle/nginx.conf` y `deploy/moodle/apache.conf` son equivalentes y aplican dos capas:
+
+1. **El docroot va a `public/`.** Desde la reestructura de Moodle 5.1 es ahí donde vive el código
+   servible. Apuntar a la raíz publica el árbol interno.
+2. **Reglas de denegación, por si alguien mueve el docroot.** Niegan 16 archivos y 5 directorios que
+   se comprobó que **no existen** dentro de `public/` (`composer.json`, `composer.lock`, `UPGRADING.md`,
+   `Gruntfile.js`, `phpunit.xml.dist`, `rector.php`, `vendor/`, `node_modules/`, `bin/`, `scripts/`...),
+   más los archivos ocultos y el estado de php-fpm. Si el docroot se mueve por error, esto lo tapa
+   mientras se corrige. La configuración de Azure no tiene esta segunda capa: confía solo en el docroot.
+
+Las rutas que **sí** se sirven desde `public/` —`admin`, `lib`, `local`, `theme`, `course`, `user`,
+`webservice`— no se niegan, y `tests/moodle-despliegue.test.js` falla si alguna llegara a negarse. Esa
+prueba verifica además el docroot, el enrutado por `r.php` de Moodle 5.1+, HSTS, `nosniff`, el mínimo
+de TLS, la redirección a HTTPS y que la versión fijada siga siendo estable.
+
 ## Comprobación de la plataforma Moodle
 
 `npm run comprobar:moodle` interroga al Moodle configurado en `MOODLE_URL` y falla el despliegue si la

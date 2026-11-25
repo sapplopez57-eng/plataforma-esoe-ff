@@ -1,0 +1,18 @@
+{
+  "repositorio": "https://github.com/moodle/moodle",
+  "rama": "MOODLE_503_STABLE",
+  "commitVerificado": "5fdb0b5b1abfd8d1d084c616fd35d141db8ab27a",
+  "release": "5.3.1+ (Build: 20261124)",
+  "branch": "503",
+  "maturity": "MATURITY_STABLE",
+  "version": "2026100501.02",
+  "codigoServibleEn": "public/",
+  "verificadoEl": "2026-11-25",
+  "porQue": "Rama estable con backport de parches de seguridad. Es tambien la unica version que admite el azuredeploy.json de Azure/Moodle, cuyo allowedValues es MOODLE_503_STABLE.",
+  "rechazado": {
+    "rama": "main",
+    "release": "6.0dev (Build: 20261124)",
+    "maturity": "MATURITY_ALPHA",
+    "porQue": "Rama de desarrollo con liberacion semanal: el numero de version cambia cada semana, no hay garantia de ruta de actualizacion del esquema entre instantaneas y no hay disciplina de backport de seguridad."
+  }
+}
