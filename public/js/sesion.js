@@ -141,6 +141,39 @@ async function entrarConSesionReal() {
   mostrarPantalla('app');
   renderSidebarAndHeader();
   renderMainView();
+  montarBotonDeUsuario();
+}
+
+function opcionesDelBotonDeUsuario() {
+  return {
+    appearance: { variables: variablesDeAcceso() },
+    showName: false,
+    afterSignOutUrl: window.location.origin + window.location.pathname
+  };
+}
+
+function montarBotonDeUsuario() {
+  const caja = document.getElementById('sidebar-user-boton');
+  if (!caja || !sesionReal.clerk || !sesionReal.clerk.isSignedIn) return;
+  sesionReal.clerk.mountUserButton(caja, opcionesDelBotonDeUsuario());
+  caja.classList.remove('hidden');
+  document.getElementById('sidebar-user-avatar').classList.add('hidden');
+  const salir = document.querySelector('.btn-logout');
+  if (salir) salir.classList.add('hidden');
+  vigilarTemaDelBoton(caja);
+}
+
+function vigilarTemaDelBoton(caja) {
+  if (sesionReal.vigilaTemaBoton) return;
+  let eraNoche = document.documentElement.hasAttribute('data-noche');
+  sesionReal.vigilaTemaBoton = new MutationObserver(() => {
+    const esNoche = document.documentElement.hasAttribute('data-noche');
+    if (esNoche === eraNoche || !sesionReal.clerk.isSignedIn) return;
+    eraNoche = esNoche;
+    sesionReal.clerk.unmountUserButton(caja);
+    sesionReal.clerk.mountUserButton(caja, opcionesDelBotonDeUsuario());
+  });
+  sesionReal.vigilaTemaBoton.observe(document.documentElement, { attributes: true, attributeFilter: ['data-noche'] });
 }
 
 async function iniciarSesionReal(configuracion) {

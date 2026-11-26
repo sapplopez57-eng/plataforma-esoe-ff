@@ -372,3 +372,18 @@ test('diseno: ningun punto ni faro que parpadee sin fin en la interfaz', () => {
   }
   assert.ok(!/reloj-punto|latido/.test(css + html), 'el punto del reloj no vuelve');
 });
+
+test('estructura: el menu de usuario usa el componente de Clerk y no un avatar propio', () => {
+  const sesion = fs.readFileSync(path.join(PUBLICO, 'js', 'sesion.js'), 'utf8');
+  assert.match(html, /id="sidebar-user-boton"[^>]*class="user-boton hidden"/,
+    'index.html debe traer el contenedor del boton de usuario, oculto hasta que haya sesion');
+  assert.match(css, /\.user-boton \{/, 'la hoja debe dimensionar el contenedor');
+  assert.match(sesion, /clerk\.mountUserButton\(caja, opcionesDelBotonDeUsuario\(\)\)/,
+    'la sesion debe montar el componente de Clerk');
+  assert.match(sesion, /clerk\.unmountUserButton\(caja\)/,
+    'debe desmontarse antes de volver a montar, o el tema deja dos botones');
+  assert.match(sesion, /sidebar-user-avatar'\)\.classList\.add\('hidden'\)/,
+    'el avatar de iniciales debe ocultarse cuando entra el componente');
+  assert.match(sesion, /salir\.classList\.add\('hidden'\)/,
+    'el boton propio de cerrar sesion debe ocultarse: el componente ya lo ofrece');
+});
