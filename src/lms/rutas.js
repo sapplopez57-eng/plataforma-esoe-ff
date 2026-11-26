@@ -3,6 +3,7 @@
 const express = require('express');
 const { validarLms } = require('./validacion');
 const { esUuid } = require('../permisos');
+const { crearActorAuditado } = require('../actor-auditado');
 
 const LECTURA_CURSO = 'id, clase_id, titulo, descripcion, publicado, creado_en, actualizado_en';
 const LECTURA_UNIDAD = 'id, curso_id, orden, titulo, descripcion, publicada';
@@ -70,6 +71,7 @@ function listaDeColumnas(tipo, datos) {
 }
 
 function crearRutasLms({ auth, db, permisos }) {
+  const comoUsuario = crearActorAuditado(db);
   const rutas = express.Router();
   if (!db) return rutas;
 
@@ -257,10 +259,10 @@ function crearRutasLms({ auth, db, permisos }) {
     const nombres = listaDeColumnas('tarea', datos);
     if (!nombres.length) return rechazar(res, { _cuerpo: 'No hay nada que cambiar.' });
     try {
-      const { rows } = await db.consultar(
+      const rows = await comoUsuario(req, (consultar) => consultar(
         `UPDATE tareas SET ${nombres.map((c, i) => `${c} = $${i + 2}`).join(', ')}
           WHERE id = $1 RETURNING ${LECTURA_TAREA}`,
-        [req.params.id, ...nombres.map((c) => datos[c])]);
+        [req.params.id, ...nombres.map((c) => datos[c])]).then((r) => r.rows));
       res.json({ tarea: rows[0] });
     } catch (error) {
       const traducido = traducirError(error);
@@ -358,7 +360,7 @@ function crearRutasLms({ auth, db, permisos }) {
       return rechazar(res, { nota: `No puede pasar del puntaje maximo de la tarea (${maximo}).` });
     }
     try {
-      const { rows } = await db.consultar(
+      const rows = await comoUsuario(req, (consultar) => consultar(
         `UPDATE entregas
             SET nota = $2, retroalimentacion = $3, estado = $4,
                 calificada_por = $5, calificada_en = CURRENT_TIMESTAMP,
@@ -366,7 +368,7 @@ function crearRutasLms({ auth, db, permisos }) {
           WHERE id = $1 AND estado <> 'BORRADOR'
          RETURNING ${LECTURA_ENTREGA}`,
         [req.params.id, datos.nota ?? null, datos.retroalimentacion ?? null, datos.estado,
-          req.vinculo.usuarioLocalId]);
+          req.vinculo.usuarioLocalId]).then((r) => r.rows));
       if (!rows.length) {
         return res.status(409).json({ error: 'Esa entrega sigue en borrador: el estudiante no la ha entregado.', codigo: 'SIN_ENTREGAR' });
       }

@@ -170,3 +170,52 @@ test('auditoria: el rastro del aula virtual tampoco se puede borrar ni modificar
     await base.cerrar();
   }
 });
+
+test('auditoria: el rastro guarda quien califico, no un autor generico', sinBase, async () => {
+  const base = await crearBaseDePrueba();
+  try {
+    const s = await sembrar(base.db);
+    const usuario = await base.db.consultar(
+      `INSERT INTO usuarios (institucion_id, username, proveedor_id, rol, nombre_completo)
+       VALUES ($1, 'catedratico.aud', 'usr_prueba', 'CATEDRATICO', 'Catedratico De Prueba')
+       RETURNING id`, [s.institucionId]);
+    const usuarioId = usuario.rows[0].id;
+
+    await base.db.transaccion(async (consultar) => {
+      await consultar(
+        `SELECT set_config('esoe.usuario_id', $1, true), set_config('esoe.autor', $2, true)`,
+        [usuarioId, 'api:usr_prueba']);
+      await consultar(
+        `INSERT INTO entregas (institucion_id, tarea_id, estudiante_id, texto, estado, nota, calificada_en)
+         VALUES ($1, $2, $3, 'Entrega', 'CALIFICADA', 80, CURRENT_TIMESTAMP)`,
+        [s.institucionId, s.tareaId, s.estudianteId]);
+    });
+
+    const nota = (await cambios(base.db, 'entregas')).filter((f) => f.campo === 'nota');
+    assert.equal(nota.length, 1);
+    assert.equal(nota[0].estudiante_id, s.estudianteId);
+    assert.equal(nota[0].autor, 'api:usr_prueba',
+      'sin contexto de actor el rastro guardaria un autor generico de base de datos');
+    const { rows } = await base.db.consultar(
+      "SELECT usuario_id FROM auditoria WHERE tabla = 'entregas' AND campo = 'nota'");
+    assert.equal(rows[0].usuario_id, usuarioId, 'el rastro debe decir que usuario califico');
+  } finally {
+    await base.cerrar();
+  }
+});
+
+test('auditoria: sin contexto de actor el rastro queda sin usuario, que es lo que se corrigio', sinBase, async () => {
+  const base = await crearBaseDePrueba();
+  try {
+    const s = await sembrar(base.db);
+    await calificar(base.db, s, s.estudianteId, 55);
+
+    const { rows } = await base.db.consultar(
+      "SELECT usuario_id, autor FROM auditoria WHERE tabla = 'entregas' AND campo = 'nota'");
+    assert.equal(rows[0].usuario_id, null);
+    assert.match(rows[0].autor, /^sql:/,
+      'una escritura fuera del envoltorio de actor cae al autor de base de datos');
+  } finally {
+    await base.cerrar();
+  }
+});

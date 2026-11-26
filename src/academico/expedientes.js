@@ -3,6 +3,7 @@
 const express = require('express');
 const { validar } = require('./validacion');
 const { esUuid } = require('../permisos');
+const { conTope, avisarSiTopa } = require('../tope-de-listado');
 
 const CAMPOS = {
   estudianteCompleto: ['id', 'codigo_alumno', 'dni', 'nombres', 'apellidos', 'condicion', 'grado',
@@ -128,7 +129,8 @@ function crearRutasExpedientes({ auth, db, permisos }) {
         consulta = `SELECT ${ESTUDIANTE.completo} FROM estudiantes WHERE id = $1 AND institucion_id = $2`;
         parametros = [req.vinculo.referenciaId, req.vinculo.institucionId];
       }
-      const { rows } = await db.consultar(consulta, parametros);
+      const { rows } = await db.consultar(conTope(consulta), parametros);
+      avisarSiTopa(req.registro, rows, 'estudiantes');
       privado(res).json({ estudiantes: rows });
     } catch (error) {
       next(error);
@@ -157,7 +159,8 @@ function crearRutasExpedientes({ auth, db, permisos }) {
         ? `SELECT ${CATEDRATICO.completo} FROM catedraticos WHERE institucion_id = $1 ORDER BY apellidos, nombres`
         : `SELECT ${CATEDRATICO.directorio} FROM catedraticos
             WHERE institucion_id = $1 AND activo = TRUE ORDER BY apellidos, nombres`;
-      const { rows } = await db.consultar(consulta, [req.vinculo.institucionId]);
+      const { rows } = await db.consultar(conTope(consulta), [req.vinculo.institucionId]);
+      avisarSiTopa(req.registro, rows, 'catedraticos');
       privado(res).json({ catedraticos: rows });
     } catch (error) {
       next(error);
