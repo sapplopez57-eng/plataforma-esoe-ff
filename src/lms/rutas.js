@@ -321,7 +321,7 @@ function crearRutasLms({ auth, db, permisos }) {
       return res.status(409).json({ error: 'La fecha de entrega ya vencio.', codigo: 'FUERA_DE_PLAZO' });
     }
     try {
-      const { rows } = await db.consultar(
+      const rows = await comoUsuario(req, (consultar) => consultar(
         `INSERT INTO entregas (institucion_id, tarea_id, estudiante_id, texto, url, estado, entregada_en)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (tarea_id, estudiante_id) DO UPDATE
@@ -332,7 +332,8 @@ function crearRutasLms({ auth, db, permisos }) {
             AND NOT (EXCLUDED.estado = 'BORRADOR' AND entregas.estado <> 'BORRADOR')
          RETURNING ${LECTURA_ENTREGA}, (xmax = 0) AS nueva`,
         [req.vinculo.institucionId, req.params.id, req.vinculo.referenciaId,
-          datos.texto ?? null, datos.url ?? null, datos.estado, entregada ? new Date().toISOString() : null]);
+          datos.texto ?? null, datos.url ?? null, datos.estado, entregada ? new Date().toISOString() : null])
+        .then((r) => r.rows));
       if (!rows.length) {
         const { rows: [previa] } = await db.consultar(
           'SELECT estado FROM entregas WHERE tarea_id = $1 AND estudiante_id = $2',
