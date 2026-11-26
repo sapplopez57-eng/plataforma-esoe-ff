@@ -23,6 +23,7 @@
     "comprobar:despliegue": "node --env-file-if-exists=.env scripts/comprobar-despliegue.js",
     "localizacion": "node scripts/generar-localizacion.js",
     "construir:campus": "esbuild interfaz/campus3d/entrada.js --bundle --format=esm --minify --target=es2020 --legal-comments=eof --outfile=public/vendor/campus3d.js",
+    "preparar-base": "node --env-file-if-exists=.env scripts/preparar-base.js",
     "crear-root": "node --env-file-if-exists=.env scripts/crear-root.js",
     "comprobar:moodle": "node --env-file-if-exists=.env scripts/comprobar-moodle.js",
     "comprobar:moodle-base": "node --env-file-if-exists=.env scripts/comprobar-moodle-base.js"

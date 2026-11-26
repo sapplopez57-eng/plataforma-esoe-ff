@@ -30,7 +30,7 @@ function clienteFalso(respuestas = {}) {
           rolcreatedb: estado.crearBases, rolcreaterole: false, rolbypassrls: false }] };
       }
       if (texto.includes('has_table_privilege')) {
-        return { rows: [{ inserta: estado.escribe, actualiza: estado.escribe }] };
+        return { rows: [{ inserta: estado.escribe, actualiza: estado.escribe, aula: estado.escribe }] };
       }
       if (texto.includes('pg_is_in_recovery')) return { rows: [{ disponible: estado.escritura }] };
       if (texto.includes('migraciones_aplicadas')) {

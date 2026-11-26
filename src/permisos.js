@@ -105,7 +105,7 @@ function crearPermisos(db) {
       `SELECT 1
          FROM estudiantes e
          JOIN clases c ON c.promocion_id = e.promocion_id
-        WHERE e.id = $1 AND c.id = $2 AND c.activa = TRUE`,
+        WHERE e.id = $1 AND c.id = $2 AND c.activa = TRUE AND e.estado <> 'BAJA'`,
       [estudianteId, claseId]
     );
     return rows.length > 0;

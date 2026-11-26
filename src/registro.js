@@ -15,6 +15,11 @@ const MAXIMO_CLAVES = 40;
 const PAREJA_SENSIBLE = /\b(authorization|cookie|clave|contrasena|password|passwd|secret|secreto|token|llave|apikey|api_key)\b(\s*[:=]\s*|\s+)("[^"]*"|'[^']*'|\S+)/gi;
 const CORREO = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const IDENTIDAD_LARGA = /\b\d{13,}\b/g;
+const IDENTIDAD_CON_GUIONES = /\b\d{4}-\d{4}-\d{5}\b/g;
+const CREDENCIAL_EN_URL = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#]*:[^\s/?#]*@/gi;
+const ESQUEMA_DE_AUTORIZACION = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/g;
+const TESTIGO_FIRMADO = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g;
+const LLAVE_DE_PROVEEDOR = /\b(sk|rk|whsec)_[A-Za-z0-9_]{6,}/g;
 const SECRETO_LARGO = /\b[A-Za-z0-9_]{32,}\b/g;
 
 function recortar(texto) {
@@ -23,9 +28,14 @@ function recortar(texto) {
 
 function redactarTexto(texto) {
   return String(texto)
+    .replace(CREDENCIAL_EN_URL, (_entero, esquema) => `${esquema}${REDACTADO}@`)
+    .replace(ESQUEMA_DE_AUTORIZACION, (_entero, esquema) => `${esquema} ${REDACTADO}`)
+    .replace(TESTIGO_FIRMADO, REDACTADO)
+    .replace(LLAVE_DE_PROVEEDOR, REDACTADO)
     .replace(PAREJA_SENSIBLE, (_entero, clave, separador) => `${clave}${separador}${REDACTADO}`)
     .replace(CORREO, REDACTADO)
     .replace(IDENTIDAD_LARGA, REDACTADO)
+    .replace(IDENTIDAD_CON_GUIONES, REDACTADO)
     .replace(SECRETO_LARGO, REDACTADO);
 }
 

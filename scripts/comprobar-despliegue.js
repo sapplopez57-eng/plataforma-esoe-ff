@@ -11,7 +11,8 @@ const ATRIBUTOS_DE_ADMINISTRACION = {
   rolsuper: 'superusuario',
   rolcreatedb: 'crear bases',
   rolcreaterole: 'crear roles',
-  rolbypassrls: 'omitir seguridad por fila'
+  rolbypassrls: 'omitir seguridad por fila',
+  rolreplication: 'replicacion'
 };
 
 async function conectarConPg(url, ssl) {
@@ -94,7 +95,7 @@ async function revisarBaseDeDatos(config, env, informe, conectar) {
     }
 
     const { rows: [rol] } = await cliente.query(
-      `SELECT current_user AS usuario, rolsuper, rolcreatedb, rolcreaterole, rolbypassrls
+      `SELECT current_user AS usuario, rolsuper, rolcreatedb, rolcreaterole, rolbypassrls, rolreplication
          FROM pg_roles WHERE rolname = current_user`);
     informe.datos.usuario = rol ? rol.usuario : '';
     const privilegios = rol
@@ -112,8 +113,11 @@ async function revisarBaseDeDatos(config, env, informe, conectar) {
 
     const { rows: [permisos] } = await cliente.query(
       `SELECT has_table_privilege('estudiantes', 'INSERT') AS inserta,
-              has_table_privilege('calificaciones', 'UPDATE') AS actualiza`);
-    informe.datos.puedeEscribir = Boolean(permisos && permisos.inserta && permisos.actualiza);
+              has_table_privilege('calificaciones', 'UPDATE') AS actualiza,
+              (SELECT bool_and(has_table_privilege(tabla, permiso))
+                 FROM unnest(ARRAY['cursos', 'unidades', 'contenidos', 'tareas', 'entregas']) AS tabla,
+                      unnest(ARRAY['SELECT', 'INSERT', 'UPDATE']) AS permiso) AS aula`);
+    informe.datos.puedeEscribir = Boolean(permisos && permisos.inserta && permisos.actualiza && permisos.aula);
     if (!informe.datos.puedeEscribir) {
       informe.fallos.push(`El rol ${informe.datos.usuario} no tiene permiso para escribir en las tablas de la aplicacion.`);
     }
