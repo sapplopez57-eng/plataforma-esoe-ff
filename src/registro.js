@@ -16,7 +16,7 @@ const PAREJA_SENSIBLE = /\b(authorization|cookie|clave|contrasena|password|passw
 const CORREO = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const IDENTIDAD_LARGA = /\b\d{13,}\b/g;
 const IDENTIDAD_CON_GUIONES = /\b\d{4}-\d{4}-\d{5}\b/g;
-const CREDENCIAL_EN_URL = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#]*:[^\s/?#]*@/gi;
+const CREDENCIAL_EN_URL = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#:@]+:[^\s/?#]*@/gi;
 const ESQUEMA_DE_AUTORIZACION = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/g;
 const TESTIGO_FIRMADO = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g;
 const LLAVE_DE_PROVEEDOR = /\b(sk|rk|whsec)_[A-Za-z0-9_]{6,}/g;
