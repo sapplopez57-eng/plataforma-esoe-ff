@@ -449,6 +449,7 @@ svg { flex-shrink: 0; }
 
 .sidebar-footer { padding: 16px 18px; border-top: 1px solid var(--trazo-claro); }
 .user-mini-profile { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.user-boton { display: grid; place-items: center; width: 36px; height: 36px; flex: none; }
 .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--decoracion-viva); color: var(--sobre-accion); font-weight: 700; font-size: var(--fs-meta); display: flex; align-items: center; justify-content: center; }
 .user-info { overflow: hidden; }
 .user-info strong { color: var(--sobre-estructura); display: block; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
