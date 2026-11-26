@@ -5,6 +5,8 @@ const { cargarConfig, tlsDeBaseDeDatos, hostDeBaseDeDatos, esHostLocal } = requi
 const { leerMigraciones } = require('../src/migraciones');
 
 const TIEMPO_MAXIMO_MS = 10000;
+const LLAVE_DE_PRUEBA = /^(pk|sk)_test_/;
+const DOMINIO_DE_DESARROLLO = /(^|\.)accounts\.dev$/i;
 const ATRIBUTOS_DE_ADMINISTRACION = {
   rolsuper: 'superusuario',
   rolcreatedb: 'crear bases',
@@ -38,6 +40,33 @@ function revisarConfiguracion(env, informe) {
     informe.fallos.push(error.message);
     return null;
   }
+}
+
+function revisarInstanciaClerk(config, informe) {
+  const { clerk } = config;
+  if (!clerk.habilitado) return;
+
+  const llavesDePrueba = [];
+  if (LLAVE_DE_PRUEBA.test(clerk.llavePublica)) llavesDePrueba.push('CLERK_PUBLISHABLE_KEY');
+  if (LLAVE_DE_PRUEBA.test(clerk.llaveSecreta)) llavesDePrueba.push('CLERK_SECRET_KEY');
+  const dominioDeDesarrollo = DOMINIO_DE_DESARROLLO.test(clerk.dominio);
+  const esDeDesarrollo = llavesDePrueba.length > 0 || dominioDeDesarrollo;
+
+  informe.datos.dominioClerk = clerk.dominio;
+  informe.datos.instanciaClerk = esDeDesarrollo ? 'desarrollo' : 'produccion';
+  if (!esDeDesarrollo) return;
+
+  const motivos = [...llavesDePrueba];
+  if (dominioDeDesarrollo) motivos.push(`el dominio ${clerk.dominio}`);
+  const detalle = `La instancia de Clerk es de desarrollo (${motivos.join(', ')}).`;
+  if (!config.esProduccion) {
+    informe.avisos.push(detalle);
+    return;
+  }
+  informe.fallos.push(
+    `${detalle} Cree una instancia de produccion en el panel de Clerk y reemplace `
+    + 'CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY y CLERK_JWT_KEY por las de esa instancia.'
+  );
 }
 
 async function revisarBaseDeDatos(config, env, informe, conectar) {
@@ -120,7 +149,10 @@ async function revisarBaseDeDatos(config, env, informe, conectar) {
 async function comprobarDespliegue({ env = process.env, conectar = conectarConPg } = {}) {
   const informe = { fallos: [], avisos: [], datos: {} };
   const config = revisarConfiguracion(env, informe);
-  if (config) await revisarBaseDeDatos(config, env, informe, conectar);
+  if (config) {
+    revisarInstanciaClerk(config, informe);
+    await revisarBaseDeDatos(config, env, informe, conectar);
+  }
   return informe;
 }
 

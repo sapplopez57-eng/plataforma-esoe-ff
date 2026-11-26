@@ -128,6 +128,58 @@ test('despliegue: un rol con otros privilegios de administracion tampoco pasa', 
   assert.ok(informe.fallos.some((f) => f.includes('crear bases')), informe.fallos.join(' | '));
 });
 
+test('despliegue: una instancia de Clerk de desarrollo no pasa a produccion', async () => {
+  const { conectar } = clienteFalso();
+  const informe = await comprobarDespliegue({
+    env: {
+      ...ENTORNO_PRODUCCION,
+      CLERK_PUBLISHABLE_KEY: `pk_test_${Buffer.from('alegre-puma-12.clerk.accounts.dev$').toString('base64')}`,
+      CLERK_SECRET_KEY: `sk_test_${'s'.repeat(40)}`
+    },
+    conectar
+  });
+  assert.equal(informe.datos.instanciaClerk, 'desarrollo');
+  assert.ok(informe.fallos.some((f) => f.includes('CLERK_PUBLISHABLE_KEY')), informe.fallos.join(' | '));
+  assert.ok(informe.fallos.some((f) => f.includes('CLERK_SECRET_KEY')), informe.fallos.join(' | '));
+  assert.ok(informe.fallos.some((f) => f.includes('accounts.dev')), informe.fallos.join(' | '));
+});
+
+test('despliegue: una llave viva sobre un dominio accounts.dev tampoco pasa', async () => {
+  const { conectar } = clienteFalso();
+  const informe = await comprobarDespliegue({
+    env: {
+      ...ENTORNO_PRODUCCION,
+      CLERK_PUBLISHABLE_KEY: `pk_live_${Buffer.from('alegre-puma-12.clerk.accounts.dev$').toString('base64')}`
+    },
+    conectar
+  });
+  assert.equal(informe.datos.instanciaClerk, 'desarrollo');
+  assert.ok(informe.fallos.some((f) => f.includes('accounts.dev')), informe.fallos.join(' | '));
+});
+
+test('despliegue: fuera de produccion la instancia de desarrollo solo avisa', async () => {
+  const { conectar } = clienteFalso();
+  const informe = await comprobarDespliegue({
+    env: {
+      ...ENTORNO_PRODUCCION,
+      NODE_ENV: 'development',
+      CLERK_PUBLISHABLE_KEY: `pk_test_${Buffer.from('alegre-puma-12.clerk.accounts.dev$').toString('base64')}`,
+      CLERK_SECRET_KEY: `sk_test_${'s'.repeat(40)}`
+    },
+    conectar
+  });
+  assert.equal(informe.datos.instanciaClerk, 'desarrollo');
+  assert.ok(informe.avisos.some((a) => a.includes('Clerk es de desarrollo')), informe.avisos.join(' | '));
+  assert.ok(!informe.fallos.some((f) => f.includes('Clerk')), informe.fallos.join(' | '));
+});
+
+test('despliegue: una instancia de produccion queda registrada en el informe', async () => {
+  const { conectar } = clienteFalso();
+  const informe = await comprobarDespliegue({ env: ENTORNO_PRODUCCION, conectar });
+  assert.equal(informe.datos.instanciaClerk, 'produccion');
+  assert.equal(informe.datos.dominioClerk, 'clerk.esoe.example');
+});
+
 test('despliegue: un rol sin permiso real de escritura es un fallo', async () => {
   const { conectar } = clienteFalso({ escribe: false });
   const informe = await comprobarDespliegue({ env: ENTORNO_PRODUCCION, conectar });
