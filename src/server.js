@@ -6,6 +6,7 @@ const { cargarConfig } = require('./config');
 const { crearApp } = require('./app');
 const { crearBaseDeDatos } = require('./db');
 const { crearRegistro } = require('./registro');
+const { atenderErroresDeCliente } = require('./errores-de-cliente');
 
 const MARGEN_DE_DRENAJE_MS = 30000;
 
@@ -36,6 +37,7 @@ const servidor = http.createServer({
   requestTimeout: config.tiemposHttp.peticionMs,
   connectionsCheckingInterval: config.tiemposHttp.revisionMs
 }, app);
+atenderErroresDeCliente(servidor, registro);
 
 servidor.listen(config.puerto, config.host, () => {
   registro.info('servidor activo', {

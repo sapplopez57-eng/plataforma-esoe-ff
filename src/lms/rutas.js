@@ -1,9 +1,11 @@
 'use strict';
 
+const { createHash } = require('node:crypto');
 const express = require('express');
 const { validarLms } = require('./validacion');
 const { esUuid } = require('../permisos');
 const { crearActorAuditado } = require('../actor-auditado');
+const { conTope, avisarSiTopa } = require('../tope-de-listado');
 
 const LECTURA_CURSO = 'id, clase_id, titulo, descripcion, publicado, creado_en, actualizado_en';
 const LECTURA_UNIDAD = 'id, curso_id, orden, titulo, descripcion, publicada';
@@ -42,6 +44,7 @@ const NO_ENCONTRADO = {
   entrega: 'Entrega no encontrada.'
 };
 
+const CLAVE_DE_IDEMPOTENCIA = /^[A-Za-z0-9_-]{8,64}$/;
 const SIN_PERMISO = 'No tiene permiso para consultar este recurso.';
 const rechazar = (res, campos) => res.status(422).json({ error: 'Hay datos que corregir.', campos });
 const privado = (res) => res.set('Cache-Control', 'no-store');
@@ -108,6 +111,13 @@ function crearRutasLms({ auth, db, permisos }) {
     return rows[0] || null;
   }
 
+  async function estudianteDeLaPromocion(estudianteId, claseId) {
+    const { rows } = await db.consultar(
+      `SELECT 1 FROM estudiantes es JOIN clases cl ON cl.promocion_id = es.promocion_id
+        WHERE es.id = $1 AND cl.id = $2`, [estudianteId, claseId]);
+    return rows.length > 0;
+  }
+
   rutas.get('/clases/:id/curso', ...viendoLaClase, async (req, res, next) => {
     try {
       const curso = await cursoDeLaClase(req.params.id);
@@ -115,20 +125,23 @@ function crearRutasLms({ auth, db, permisos }) {
       const soloPublicado = soloLectura(req);
       if (soloPublicado && !curso.publicado) return res.status(404).json({ error: NO_ENCONTRADO.curso });
       const { rows: unidades } = await db.consultar(
-        `SELECT ${LECTURA_UNIDAD} FROM unidades
-          WHERE curso_id = $1 AND ($2::boolean IS FALSE OR publicada = TRUE) ORDER BY orden`,
+        conTope(`SELECT ${LECTURA_UNIDAD} FROM unidades
+          WHERE curso_id = $1 AND ($2::boolean IS FALSE OR publicada = TRUE) ORDER BY orden`),
         [curso.id, soloPublicado]);
+      avisarSiTopa(req.registro, unidades, 'unidades');
       const { rows: contenidos } = await db.consultar(
-        `SELECT co.id, co.unidad_id, co.orden, co.titulo, co.tipo, co.cuerpo, co.url, co.publicado
+        conTope(`SELECT co.id, co.unidad_id, co.orden, co.titulo, co.tipo, co.cuerpo, co.url, co.publicado
            FROM contenidos co JOIN unidades u ON u.id = co.unidad_id
           WHERE co.unidad_id = ANY($1::uuid[])
             AND ($2::boolean IS FALSE OR (co.publicado = TRUE AND u.publicada = TRUE))
-          ORDER BY co.orden`,
+          ORDER BY co.orden`),
         [unidades.map((u) => u.id), soloPublicado]);
+      avisarSiTopa(req.registro, contenidos, 'contenidos');
       const { rows: tareas } = await db.consultar(
-        `SELECT ${LECTURA_TAREA} FROM tareas
-          WHERE curso_id = $1 AND ($2::boolean IS FALSE OR publicada = TRUE) ORDER BY fecha_entrega`,
+        conTope(`SELECT ${LECTURA_TAREA} FROM tareas
+          WHERE curso_id = $1 AND ($2::boolean IS FALSE OR publicada = TRUE) ORDER BY fecha_entrega`),
         [curso.id, soloPublicado]);
+      avisarSiTopa(req.registro, tareas, 'tareas');
       privado(res).json({
         curso,
         unidades: unidades.map((u) => ({ ...u, contenidos: contenidos.filter((c) => c.unidad_id === u.id) })),
@@ -237,15 +250,37 @@ function crearRutasLms({ auth, db, permisos }) {
   rutas.post('/clases/:id/curso/tareas', ...sobreLaClase, async (req, res, next) => {
     const { datos, campos } = validarLms('tarea', req.body);
     if (Object.keys(campos).length) return rechazar(res, campos);
+    const clave = req.get('idempotency-key');
+    if (clave !== undefined && !CLAVE_DE_IDEMPOTENCIA.test(clave)) {
+      return rechazar(res, { 'idempotency-key': 'Debe tener de 8 a 64 letras, numeros, guiones o guiones bajos.' });
+    }
     try {
       const curso = await cursoDeLaClase(req.params.id);
       if (!curso) return res.status(404).json({ error: NO_ENCONTRADO.curso });
       const nombres = listaDeColumnas('tarea', datos);
+      const columnas = ['institucion_id', 'curso_id', ...nombres];
+      const valores = [req.vinculo.institucionId, curso.id, ...nombres.map((c) => datos[c])];
+      const huella = clave === undefined ? null
+        : createHash('sha256').update(JSON.stringify(nombres.map((c) => [c, datos[c]]))).digest('hex');
+      if (huella) {
+        columnas.push('clave_idempotencia', 'huella_peticion');
+        valores.push(clave, huella);
+      }
       const { rows } = await db.consultar(
-        `INSERT INTO tareas (institucion_id, curso_id, ${nombres.join(', ')})
-         VALUES ($1, $2, ${nombres.map((_, i) => `$${i + 3}`).join(', ')}) RETURNING ${LECTURA_TAREA}`,
-        [req.vinculo.institucionId, curso.id, ...nombres.map((c) => datos[c])]);
-      res.status(201).json({ tarea: rows[0] });
+        `INSERT INTO tareas (${columnas.join(', ')})
+         VALUES (${columnas.map((_, i) => `$${i + 1}`).join(', ')})
+         ON CONFLICT (curso_id, clave_idempotencia) WHERE clave_idempotencia IS NOT NULL DO NOTHING
+         RETURNING ${LECTURA_TAREA}`,
+        valores);
+      if (rows.length) return res.status(201).json({ tarea: rows[0] });
+      const { rows: [previa] } = await db.consultar(
+        `SELECT ${LECTURA_TAREA}, huella_peticion FROM tareas WHERE curso_id = $1 AND clave_idempotencia = $2`,
+        [curso.id, clave]);
+      if (!previa || previa.huella_peticion !== huella) {
+        return res.status(409).json({ error: 'Esa clave ya se uso con otros datos.', codigo: 'CLAVE_REUTILIZADA' });
+      }
+      delete previa.huella_peticion;
+      res.status(200).json({ tarea: previa });
     } catch (error) {
       const traducido = traducirError(error);
       if (traducido) return res.status(traducido[0]).json(traducido[1]);
@@ -274,15 +309,16 @@ function crearRutasLms({ auth, db, permisos }) {
   rutas.get('/tareas/:id/entregas', ...conSesion, exigirRecurso('tarea'), async (req, res, next) => {
     try {
       const { rows } = await db.consultar(
-        `SELECT e.id, e.estudiante_id, e.estado, e.texto, e.url, e.nota,
+        conTope(`SELECT e.id, e.estudiante_id, e.estado, e.texto, e.url, e.nota,
                 e.retroalimentacion, e.entregada_en, e.calificada_en,
                 es.codigo_alumno, es.nombres, es.apellidos
            FROM estudiantes es
            JOIN clases c ON c.promocion_id = es.promocion_id
            LEFT JOIN entregas e ON e.estudiante_id = es.id AND e.tarea_id = $1
           WHERE c.id = $2
-          ORDER BY es.apellidos, es.nombres`,
+          ORDER BY es.apellidos, es.nombres`),
         [req.params.id, req.recurso.clase_id]);
+      avisarSiTopa(req.registro, rows, 'entregas');
       privado(res).json({ tareaId: req.params.id, entregas: rows });
     } catch (error) {
       next(error);
@@ -330,6 +366,8 @@ function crearRutasLms({ auth, db, permisos }) {
                 calificada_por = NULL, calificada_en = NULL, actualizada_en = CURRENT_TIMESTAMP
           WHERE entregas.estado <> 'CALIFICADA'
             AND NOT (EXCLUDED.estado = 'BORRADOR' AND entregas.estado <> 'BORRADOR')
+            AND NOT (entregas.estado = 'DEVUELTA' AND entregas.texto IS NOT DISTINCT FROM EXCLUDED.texto
+                     AND entregas.url IS NOT DISTINCT FROM EXCLUDED.url)
          RETURNING ${LECTURA_ENTREGA}, (xmax = 0) AS nueva`,
         [req.vinculo.institucionId, req.params.id, req.vinculo.referenciaId,
           datos.texto ?? null, datos.url ?? null, datos.estado, entregada ? new Date().toISOString() : null])
@@ -340,6 +378,9 @@ function crearRutasLms({ auth, db, permisos }) {
           [req.params.id, req.vinculo.referenciaId]);
         if (previa && previa.estado === 'CALIFICADA') {
           return res.status(409).json({ error: 'La entrega ya fue calificada y no se puede cambiar.', codigo: 'YA_CALIFICADA' });
+        }
+        if (previa && previa.estado === 'DEVUELTA' && datos.estado === 'ENTREGADA') {
+          return res.status(409).json({ error: 'La entrega devuelta necesita cambios antes de reenviarla.', codigo: 'SIN_CAMBIOS' });
         }
         return res.status(409).json({
           error: 'Una entrega ya enviada no vuelve a borrador.', codigo: 'NO_REGRESA_A_BORRADOR' });
@@ -367,10 +408,16 @@ function crearRutasLms({ auth, db, permisos }) {
                 calificada_por = $5, calificada_en = CURRENT_TIMESTAMP,
                 actualizada_en = CURRENT_TIMESTAMP
           WHERE id = $1 AND estado <> 'BORRADOR'
+            AND EXISTS (SELECT 1 FROM estudiantes es
+                          JOIN clases cl ON cl.promocion_id = es.promocion_id
+                         WHERE es.id = entregas.estudiante_id AND cl.id = $6)
          RETURNING ${LECTURA_ENTREGA}`,
         [req.params.id, datos.nota ?? null, datos.retroalimentacion ?? null, datos.estado,
-          req.vinculo.usuarioLocalId]).then((r) => r.rows));
+          req.vinculo.usuarioLocalId, req.recurso.clase_id]).then((r) => r.rows));
       if (!rows.length) {
+        if (!await estudianteDeLaPromocion(req.recurso.estudiante_id, req.recurso.clase_id)) {
+          return res.status(409).json({ error: 'El estudiante ya no pertenece a la promocion de esta clase.', codigo: 'FUERA_DE_PROMOCION' });
+        }
         return res.status(409).json({ error: 'Esa entrega sigue en borrador: el estudiante no la ha entregado.', codigo: 'SIN_ENTREGAR' });
       }
       privado(res).json({ entrega: rows[0] });
@@ -385,7 +432,7 @@ function crearRutasLms({ auth, db, permisos }) {
     }
     try {
       const { rows } = await db.consultar(
-        `SELECT t.id, t.titulo, t.fecha_entrega, t.puntaje_maximo, t.permite_atraso,
+        conTope(`SELECT t.id, t.titulo, t.fecha_entrega, t.puntaje_maximo, t.permite_atraso,
                 c.clase_id, cl.codigo_clase, m.nombre AS materia_nombre,
                 COALESCE(e.estado, 'BORRADOR') AS estado, e.nota
            FROM estudiantes es
@@ -394,9 +441,10 @@ function crearRutasLms({ auth, db, permisos }) {
            JOIN materias m ON m.id = cl.materia_id
            JOIN tareas t ON t.curso_id = c.id AND t.publicada = TRUE
            LEFT JOIN entregas e ON e.tarea_id = t.id AND e.estudiante_id = es.id
-          WHERE es.id = $1 AND es.institucion_id = $2
-          ORDER BY t.fecha_entrega`,
+          WHERE es.id = $1 AND es.institucion_id = $2 AND es.estado <> 'BAJA'
+          ORDER BY t.fecha_entrega`),
         [req.vinculo.referenciaId, req.vinculo.institucionId]);
+      avisarSiTopa(req.registro, rows, 'mis-tareas');
       privado(res).json({ tareas: rows });
     } catch (error) {
       next(error);

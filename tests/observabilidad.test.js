@@ -738,3 +738,19 @@ test('red: un cuerpo no esperado no se descarga para descartarlo', async () => {
     `el cuerpo que se iba a descartar se descargo entero: ${enviados} de ${TROZOS} trozos`);
   assert.ok(enviados < TROZOS, `se descargaron ${enviados} trozos de ${TROZOS}`);
 });
+
+test('observabilidad: la redaccion de credenciales en URL no se degrada con muchos dos puntos', () => {
+  const medir = (n) => {
+    const entrada = `postgres://${':'.repeat(n)}`;
+    const inicio = process.hrtime.bigint();
+    assert.equal(redactarTexto(entrada), entrada);
+    return Number(process.hrtime.bigint() - inicio) / 1e6;
+  };
+  medir(1000);
+  const corto = Math.max(medir(4000), 0.05);
+  const largo = medir(16000);
+  assert.ok(largo < corto * 8,
+    `cuadruplicar la entrada multiplico el tiempo por ${(largo / corto).toFixed(1)}: hay retroceso cuadratico`);
+  assert.equal(redactarTexto('postgres://usuario:Clave@Con@Arrobas@db/base'), 'postgres://[REDACTADO]@db/base');
+  assert.equal(redactarTexto('ver https://esoe.hn/ruta:1 hoy'), 'ver https://esoe.hn/ruta:1 hoy');
+});

@@ -4,7 +4,7 @@ const recorridoGuiado = (function prepararRecorrido() {
   dialogo.setAttribute('aria-labelledby', 'recorrido-titulo');
   dialogo.setAttribute('aria-describedby', 'recorrido-descripcion');
   dialogo.innerHTML = `
-    <header class="recorrido-cabecera"><p class="rotulo">Conozca su plataforma</p><button type="button" class="btn btn-outline recorrido-cerrar" aria-label="Cerrar recorrido">×</button></header>
+    <header class="recorrido-cabecera"><p class="rotulo">Conozca su plataforma</p><button type="button" class="recorrido-cerrar" aria-label="Cerrar recorrido">×</button></header>
     <p class="rotulo recorrido-progreso" aria-live="polite"></p>
     <h2 id="recorrido-titulo"></h2>
     <p id="recorrido-descripcion"></p>

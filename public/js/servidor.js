@@ -79,12 +79,22 @@ async function pedirVarias(rutas) {
   });
 }
 
+async function cargarEstudiantes(rol, promociones) {
+  if (rol === 'ESTUDIANTE') {
+    const [propio] = await pedirVarias(['/estudiantes']);
+    return (propio?.estudiantes || []).map(traducir.estudiante);
+  }
+  const rosters = await pedirVarias(promociones.map(
+    (p) => `/estudiantes?promocion_id=${encodeURIComponent(p.id)}`));
+  return rosters.flatMap((roster) => (roster?.estudiantes || []).map(traducir.estudiante));
+}
+
 async function cargarDesdeServidor() {
   datosServidor.cargando = true;
   datosServidor.aviso = '';
   const rol = appState.currentRole;
-  const [periodos, promociones, materias, catedraticos, clases, estudiantes] = await pedirVarias([
-    '/periodos', '/promociones', '/materias', '/catedraticos', '/clases', '/estudiantes'
+  const [periodos, promociones, materias, catedraticos, clases] = await pedirVarias([
+    '/periodos', '/promociones', '/materias', '/catedraticos', '/clases'
   ]);
   const nuevo = emptyStore();
   nuevo.periodos = (periodos?.periodos || []).map(traducir.periodo);
@@ -92,7 +102,7 @@ async function cargarDesdeServidor() {
   nuevo.materias = (materias?.materias || []).map(traducir.materia);
   nuevo.catedraticos = (catedraticos?.catedraticos || []).map(traducir.catedratico);
   nuevo.clases = (clases?.clases || []).map(traducir.clase);
-  nuevo.estudiantes = (estudiantes?.estudiantes || []).map(traducir.estudiante);
+  nuevo.estudiantes = await cargarEstudiantes(rol, nuevo.promociones);
 
   if (rol === 'ESTUDIANTE') {
     const propio = nuevo.estudiantes[0];
