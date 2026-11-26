@@ -3,6 +3,7 @@
 const express = require('express');
 const { validar, validarNotas, validarAsistencia, NOTAS } = require('./validacion');
 const { esUuid } = require('../permisos');
+const { crearActorAuditado } = require('../actor-auditado');
 
 const LECTURA_CLASE = `id, codigo_clase, periodo_id, promocion_id, materia_id, catedratico_id,
                        horario, aula, activa`;
@@ -37,15 +38,7 @@ function crearRutasDeClases({ auth, db, permisos }) {
   const soloAdministracion = [auth.exigirRol('ADMIN'), resolverVinculo];
   const privado = (res) => res.set('Cache-Control', 'no-store');
 
-  function comoUsuario(req, trabajo) {
-    return db.transaccion(async (consultar) => {
-      await consultar(
-        `SELECT set_config('esoe.usuario_id', $1, true), set_config('esoe.autor', $2, true)`,
-        [req.vinculo?.usuarioLocalId || '', `api:${req.identidad.usuarioId}`]
-      );
-      return trabajo(consultar);
-    });
-  }
+  const comoUsuario = crearActorAuditado(db);
 
   rutas.post('/clases', ...soloAdministracion, async (req, res, next) => {
     const { datos, campos } = validar('clase', req.body);

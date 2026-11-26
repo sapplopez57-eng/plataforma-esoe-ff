@@ -1,16 +1,31 @@
 const sesionReal = { activa: false, clerk: null, integraciones: false, sinServidor: false, nombre: '', correo: '' };
 
-const APARIENCIA_ACCESO = {
-  variables: {
+function tokenDeTema(nombre, respaldo) {
+  const valor = getComputedStyle(document.documentElement).getPropertyValue(nombre);
+  return (valor || '').trim() || respaldo;
+}
+
+function variablesDeAcceso() {
+  const esNoche = document.documentElement.hasAttribute('data-noche');
+  return {
     fontFamily: "'DM Sans', system-ui, sans-serif",
     fontFamilyButtons: "'DM Sans', system-ui, sans-serif",
     borderRadius: '14px',
-    colorPrimary: '#0A2A35',
-    colorText: '#0F2A33',
-    colorTextSecondary: '#41606B',
-    colorInputBackground: 'rgba(255, 255, 255, 0.72)',
-    colorInputText: '#0F2A33',
-    colorDanger: '#B8440C'
+    colorPrimary: tokenDeTema('--marca-2', '#0A2A35'),
+    colorText: tokenDeTema('--texto', '#0F2A33'),
+    colorTextSecondary: tokenDeTema('--sobre-estructura-tenue', '#41606B'),
+    colorBackground: 'transparent',
+    colorInputBackground: esNoche
+      ? tokenDeTema('--acceso-campo-noche', 'rgba(255, 255, 255, 0.08)')
+      : tokenDeTema('--vidrio-pulgar', 'rgba(255, 255, 255, 0.72)'),
+    colorInputText: tokenDeTema('--texto', '#0F2A33'),
+    colorDanger: tokenDeTema('--acento-titulo', '#B8440C')
+  };
+}
+
+const APARIENCIA_ACCESO = {
+  get variables() {
+    return variablesDeAcceso();
   },
   layout: { socialButtonsPlacement: 'bottom', socialButtonsVariant: 'blockButton', showOptionalFields: false },
   elements: {
@@ -153,11 +168,39 @@ async function iniciarSesionReal(configuracion) {
   if (sesionReal.clerk.isSignedIn) {
     await entrarConSesionReal();
   } else {
-    sesionReal.clerk.mountSignIn(document.getElementById('login-clerk'), { appearance: APARIENCIA_ACCESO, routing: 'virtual', forceRedirectUrl: regreso, fallbackRedirectUrl: regreso });
+    montarAcceso(regreso);
+    seguirElTema(regreso);
     sesionReal.clerk.addListener(({ session }) => {
       if (session && !appState.authenticated) entrarConSesionReal();
     });
   }
+}
+
+function montarAcceso(regreso) {
+  const caja = document.getElementById('login-clerk');
+  if (!caja || !sesionReal.clerk) return;
+  sesionReal.clerk.mountSignIn(caja, {
+    appearance: { ...APARIENCIA_ACCESO, variables: variablesDeAcceso() },
+    routing: 'virtual',
+    forceRedirectUrl: regreso,
+    fallbackRedirectUrl: regreso
+  });
+}
+
+function seguirElTema(regreso) {
+  if (sesionReal.vigilaTema) return;
+  const caja = document.getElementById('login-clerk');
+  if (!caja) return;
+  let eraNoche = document.documentElement.hasAttribute('data-noche');
+  sesionReal.vigilaTema = new MutationObserver(() => {
+    const esNoche = document.documentElement.hasAttribute('data-noche');
+    if (esNoche === eraNoche) return;
+    eraNoche = esNoche;
+    if (sesionReal.clerk.isSignedIn) return;
+    sesionReal.clerk.unmountSignIn(caja);
+    montarAcceso(regreso);
+  });
+  sesionReal.vigilaTema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-noche'] });
 }
 
 async function cerrarSesionReal() {

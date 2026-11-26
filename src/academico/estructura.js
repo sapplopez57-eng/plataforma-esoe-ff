@@ -2,6 +2,7 @@
 
 const express = require('express');
 const { validar } = require('./validacion');
+const { conTope, avisarSiTopa } = require('../tope-de-listado');
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -44,8 +45,9 @@ function crearRutasEstructura({ auth, db, permisos }) {
     rutas.get(`/${r.ruta}`, ...conSesion, async (req, res, next) => {
       try {
         const { rows } = await db.consultar(
-          `SELECT ${r.lectura} FROM ${r.tabla} WHERE institucion_id = $1 ORDER BY ${r.orden}`,
+          conTope(`SELECT ${r.lectura} FROM ${r.tabla} WHERE institucion_id = $1 ORDER BY ${r.orden}`),
           [req.vinculo.institucionId]);
+        avisarSiTopa(req.registro, rows, r.ruta);
         res.set('Cache-Control', 'no-store');
         res.json({ [r.ruta]: rows });
       } catch (error) {
